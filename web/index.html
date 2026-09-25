@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DormMate</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>DormMate</h1>
+
+  <section class="input-area">
+    <label for="temperature">温度（℃）</label>
+    <input type="text" id="temperature" inputmode="decimal" placeholder="如 25">
+    <label for="humidity">湿度（%）</label>
+    <input type="text" id="humidity" inputmode="decimal" placeholder="如 55">
+    <button id="analyzeBtn" type="button">分析环境</button>
+  </section>
+
+  <p id="errorMsg" class="error" hidden></p>
+
+  <section class="result-area">
+    <h2>当前状态</h2>
+    <p id="statusText">—</p>
+    <p id="adviceText">—</p>
+  </section>
+
+  <section class="history-area">
+    <h2>历史记录</h2>
+    <ul id="historyList"></ul>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DormMate 回归测试</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 2rem;
+      max-width: 640px;
+    }
+    ul { list-style: none; padding: 0; }
+    li {
+      margin: 0.4rem 0;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+    }
+    .pass { background: #e6f7e6; color: #1a7f37; }
+    .fail { background: #fde8e8; color: #c0392b; }
+    #summary { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>DormMate 统一状态规则 — 回归测试</h1>
+  <p>四组统一回归数据（SPEC §6），调用与 index.html 相同的 script.js</p>
+  <ul id="results"></ul>
+  <p id="summary"></p>
+
+  <script src="script.js"></script>
+  <script>
+    // SPEC §6 四组回归测试数据（不可改）
+    const CASES = [
+      { temperature: 25, humidity: 60, expected: "正常" },
+      { temperature: 16, humidity: 60, expected: "偏冷" },
+      { temperature: 31, humidity: 60, expected: "偏热" },
+      { temperature: 25, humidity: 80, expected: "偏湿" }
+    ];
+
+    const list = document.getElementById("results");
+    let passed = 0;
+    CASES.forEach(function (c) {
+      const actual = computeStatus(c.temperature, c.humidity);
+      const ok = actual === c.expected;
+      if (ok) passed++;
+      const li = document.createElement("li");
+      li.className = ok ? "pass" : "fail";
+      li.textContent = c.temperature + "/" + c.humidity + " → " + actual +
+        "（期望 " + c.expected + "）" + (ok ? " ✅ 通过" : " ❌ 失败");
+      list.appendChild(li);
+    });
+
+    document.getElementById("summary").textContent =
+      passed === CASES.length ? "全部通过（" + passed + "/" + CASES.length + "）"
+                              : "存在失败（" + passed + "/" + CASES.length + "）";
+  </script>
+</body>
+</html>

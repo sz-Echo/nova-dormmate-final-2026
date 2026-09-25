@@ -1,0 +1,12 @@
+/* M1 基础骨架样式（S6 统一整理与自定义） */
+body {
+  font-family: system-ui, sans-serif;
+  margin: 2rem;
+  max-width: 640px;
+}
+
+.input-area,
+.result-area,
+.history-area {
+  margin-bottom: 1.5rem;
+}
