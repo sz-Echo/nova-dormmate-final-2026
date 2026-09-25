@@ -1,12 +1,135 @@
-/* M1 基础骨架样式（S6 统一整理与自定义） */
+/* DormMate 样式（S6 收尾整理）
+   自定义布局全部位于本文件，未使用第三方样式库：
+   ① 卡片式三区块（.input-area / .result-area / .history-area 的白底圆角卡片）
+   ② 输入区双列网格（.input-fields）
+   ③ 状态大字高亮、历史虚线分隔、空历史占位 */
+
+:root {
+  --brand: #3b6ef5;
+  --brand-dark: #2f5ad1;
+  --text: #24292f;
+  --muted: #6b7280;
+  --border: #dfe3e8;
+  --card-bg: #ffffff;
+  --page-bg: #eef1f6;
+  --error: #c0392b;
+}
+
 body {
-  font-family: system-ui, sans-serif;
-  margin: 2rem;
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: var(--page-bg);
+  color: var(--text);
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
   max-width: 640px;
 }
 
+h1 {
+  margin: 0 0 1.25rem;
+  font-size: 1.7rem;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.75rem;
+}
+
+/* ① 卡片式三区块布局 */
 .input-area,
 .result-area,
 .history-area {
-  margin-bottom: 1.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ② 输入区双列网格 */
+.input-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.field input {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 1rem;
+  background: #fff;
+}
+
+#analyzeBtn {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.65rem;
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+#analyzeBtn:hover {
+  background: var(--brand-dark);
+}
+
+/* ③ 状态高亮 + 历史列表 */
+#statusText {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+#adviceText {
+  color: var(--muted);
+  margin: 0.2rem 0 0;
+}
+
+#historyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#historyList li {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px dashed var(--border);
+  font-size: 0.92rem;
+}
+
+#historyList li:last-child {
+  border-bottom: none;
+}
+
+#historyList:empty::after {
+  content: "暂无记录";
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+/* 错误提示（S4 起使用）：红色加粗，显示/隐藏由 hidden 属性控制 */
+.error {
+  color: var(--error);
+  font-weight: bold;
+}
+
+/* 窄屏时输入框改单列 */
+@media (max-width: 420px) {
+  .input-fields {
+    grid-template-columns: 1fr;
+  }
 }

@@ -10,10 +10,17 @@
   <h1>DormMate</h1>
 
   <section class="input-area">
-    <label for="temperature">温度（℃）</label>
-    <input type="text" id="temperature" inputmode="decimal" placeholder="如 25">
-    <label for="humidity">湿度（%）</label>
-    <input type="text" id="humidity" inputmode="decimal" placeholder="如 55">
+    <h2>环境输入</h2>
+    <div class="input-fields">
+      <div class="field">
+        <label for="temperature">温度（℃）</label>
+        <input type="text" id="temperature" inputmode="decimal" placeholder="如 25">
+      </div>
+      <div class="field">
+        <label for="humidity">湿度（%）</label>
+        <input type="text" id="humidity" inputmode="decimal" placeholder="如 55">
+      </div>
+    </div>
     <button id="analyzeBtn" type="button">分析环境</button>
   </section>
 

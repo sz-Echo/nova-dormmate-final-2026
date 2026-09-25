@@ -19,7 +19,7 @@
 | 阶段 | 目标 | 依赖 | 完成线 | 证据 | 状态 |
 |---|---|---|---|---|---|
 | 阶段0 | 建立 docs/ 两份唯一事实源文档 | 无 | 文档通过自检 | docs/ 两文件 | 已完成 |
-| M1 | Web 主应用（输入 / 判断 / 记录）+ 统一规则 | 阶段0 | 四组回归全对 + 任务书 5 条验收 | 页面 + test.html + 历史截图 | 未开始 |
+| M1 | Web 主应用（输入 / 判断 / 记录）+ 统一规则 | 阶段0 | 四组回归全对 + 任务书 5 条验收 | 页面 + test.html + 历史截图 | 已完成 |
 | M2 | 离线数据分析与报告（CSV -> Python -> trend.png / report.html） | M1 | 任务书 6-10 条；换 CSV 全量重生成 | CSV + 脚本 + 两产物 | 未开始 |
 | M3 | Camera / ASR / TTS + Git / GitHub | M1 | 任务书 11-15 条；≥3 次有意义 Commit | 快照 / 识别 / 提交记录 / README | 未开始 |
 | M4 | 移动端小程序核心页面（单宿舍） | M1 | 微信开发者工具稳定运行 | 开发者工具截图 | 未开始 |
@@ -167,11 +167,13 @@
 
 ## 4. 当前阶段看板
 
-- **当前阶段**：M1（Web 主应用：输入、判断、记录）
-- **当前只做**：按 docs/M1_PLAN.md 执行 M1；S2 统一规则与回归测试已完成并提交（Commit 1），S3（接入输入 + 建议）进行中
-- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；S1 静态骨架（web/ 三文件，用户浏览器确认）；S2 统一规则 + 四组回归（node 自检与用户浏览器均 4/4 通过）
+- **当前阶段**：M2（离线数据分析与报告）——待用户启动；进入前先建 docs/M2_PLAN.md（同 M1 模式）
+- **当前只做**：M1 已收口（S1-S7 全过、现场验证完成），待提交 Commit 2 后转入 M2
+- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7：静态骨架 / 统一规则 + 四组回归 / 输入建议 / 校验 / 历史 / 样式 / 验收，证据在 docs/evidence/m1/）
 - **阻塞**：无
-- **下一步**：S3 接入输入 + 建议（analyze 读取输入 → computeStatus → 显示状态与建议），随后 S4 输入校验
+- **下一步**：用户确认后提交 Commit 2（M1 收口提交）；随后建 docs/M2_PLAN.md 启动 M2
+- **最近Commit**：64e2aa0 feat(nova-dormmate-final-2026): M1 skeleton and status rule with regression tests
+- **下一阶段接口**：M2 依赖 M1 的 computeStatus() 与历史 JSON（window.dormmateHistory）；M3 依赖 M1 的 analyze() 入口
 - **最近Commit**：e1b01a7 docs(nova-dommate-final-2026): add spec, plan and claude.md
 - **下一阶段接口**：M2 依赖 M1 的 computeStatus() 与历史 JSON；M3 依赖 M1 的 analyze() 入口
 
