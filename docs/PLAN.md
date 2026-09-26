@@ -20,7 +20,7 @@
 |---|---|---|---|---|---|
 | 阶段0 | 建立 docs/ 两份唯一事实源文档 | 无 | 文档通过自检 | docs/ 两文件 | 已完成 |
 | M1 | Web 主应用（输入 / 判断 / 记录）+ 统一规则 | 阶段0 | 四组回归全对 + 任务书 5 条验收 | 页面 + test.html + 历史截图 | 已完成 |
-| M2 | 离线数据分析与报告（CSV -> Python -> trend.png / report.html） | M1 | 任务书 6-10 条；换 CSV 全量重生成 | CSV + 脚本 + 两产物 | 未开始 |
+| M2 | 离线数据分析与报告（CSV -> Python -> trend.png / report.html） | M1 | 任务书 6-10 条；换 CSV 全量重生成 | CSV + 脚本 + 两产物 | 已完成 |
 | M3 | Camera / ASR / TTS + Git / GitHub | M1 | 任务书 11-15 条；≥3 次有意义 Commit | 快照 / 识别 / 提交记录 / README | 未开始 |
 | M4 | 移动端小程序核心页面（单宿舍） | M1 | 微信开发者工具稳定运行 | 开发者工具截图 | 未开始 |
 | M5 | 本机 Broker + 模拟节点三宿舍 + Dashboard | M1（M4 可交叉） | 三节点同屏不串线 | 运行截图 | 未开始 |
@@ -60,7 +60,7 @@
 - **阶段**：M2
 - **目标**：M1 历史 → 导出 data/dormmate.csv → analysis/ Python 读取 → 统计（记录数、温湿度最高 / 最低）→ 对全部记录重跑统一规则（各状态数量、关注记录）→ matplotlib 生成 trend.png → 自动生成 report.html（摘要、关注记录、趋势图）
 - **注**：任务书未明确定义"需要关注的记录"，本项目暂按 status 非正常（偏冷 / 偏热 / 偏湿）为准
-- **输入**：M1 的 computeStatus() 与历史 JSON；SPEC 第 5 节 CSV 格式
+- **输入**：M1 的 computeStatus() 与历史 JSON；SPEC 第 5 节 CSV 格式；详细步骤见 docs/M2_PLAN.md
 - **输出**：data/dormmate.csv；analysis/ Python 脚本；data/trend.png；data/report.html
 - **依赖**：M1
 - **完成线**：任务书 M2 验收条目全部满足；**换一份新 CSV 后统计、图、报告全部由程序重新生成**，禁止手工修改结果冒充程序生成
@@ -167,13 +167,13 @@
 
 ## 4. 当前阶段看板
 
-- **当前阶段**：M2（离线数据分析与报告）——待用户启动；进入前先建 docs/M2_PLAN.md（同 M1 模式）
-- **当前只做**：无进行中任务；M1 已收口（S1-S7 全过、现场验证完成、Commit 1/2 已提交）
-- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7：静态骨架 / 统一规则 + 四组回归 / 输入建议 / 校验 / 历史 / 样式 / 验收，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24）
+- **当前阶段**：M3（本机交互 + 版本记录）——待用户启动；进入前先建 docs/M3_PLAN.md（同 M1/M2 模式）
+- **当前只做**：无进行中任务；M2 已收口（S1-S7 全过，用户实测验收通过）
+- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24）；M2 全部（S1-S7：Web 导出 CSV（Blob/download，UTF-8 BOM，4 列）/ Python 规则移植 + 四组回归自测 / pandas 统计 + 关注记录 / matplotlib trend.png / report.html 三要素 + C3 扩展点 / 换 CSV 全量重生成验收 / 收口，证据在 docs/evidence/m2/，提交见最近Commit）
 - **阻塞**：无
-- **下一步**：用户说"继续 M2"即建 docs/M2_PLAN.md 启动 M2
-- **最近Commit**：f9bcd24 feat(nova-dormmate-final-2026): M1 web input judge history acceptance
-- **下一阶段接口**：M2 复用 M1 的 computeStatus() 规则（Python 移植须过 SPEC §6 同一四组回归）与统一 JSON 结构，CSV 落盘与导出步骤在 M2 内建；M3 复用 M1 的 analyze() 入口（支持直接传数值，成功返回本次记录 JSON）
+- **下一步**：用户说"继续 M3"即建 docs/M3_PLAN.md 启动 M3
+- **最近Commit**：feat(nova-dormmate-final-2026): M2 offline analysis CSV export and python report（本看板随该提交更新）
+- **下一阶段接口**：M3 复用 M1 的 analyze() 入口（支持直接传数值，成功返回本次记录 JSON）与 web/ 页面；M3 起用 localhost（Live Server）运行；ASR 优先 Chrome/Edge SpeechRecognition，不可用按 SPEC §13 约定 3 等价替代并在 README 记录；GitHub 方案已定（用户确认）：沿用 F:\AIcoding 现有仓库 + git subtree 推送 nova-dormmate-final-2026 子目录到 GitHub 的 nova-dormmate-final-2026 仓库（M3 执行，push 前先经用户确认）
 
 ## 5. 给 Claude Code 的调用模板
 

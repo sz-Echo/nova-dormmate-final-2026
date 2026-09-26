@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DormMate 离线分析报告</title>
+<style>
+body { font-family: "Microsoft YaHei", system-ui, sans-serif; margin: 2rem auto; max-width: 860px; color: #2c3e50; background: #f5f7fa; }
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.15rem; border-left: 4px solid #3498db; padding-left: .5rem; }
+section { background: #fff; border: 1px solid #e3e8ee; border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; margin: .5rem 0; }
+th, td { border: 1px solid #e3e8ee; padding: .4rem .6rem; text-align: left; }
+th { background: #f0f4f8; }
+.meta { color: #7f8c8d; }
+td.status { font-weight: bold; color: #c0392b; }
+img { max-width: 100%; border: 1px solid #e3e8ee; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>DormMate 离线分析报告</h1>
+<p class="meta">生成时间：2026-09-26 15:53:04 · 数据来源：dormmate2.csv（9 条记录）</p>
+<!-- C3 扩展点：IsolationForest 结果接回此 section（勿删本注释） -->
+<section>
+<h2>摘要</h2>
+<table><tr><th>记录数</th><td>9</td></tr><tr><th>温度最高</th><td>32℃（2026-09-26 15:44:29）</td></tr><tr><th>温度最低</th><td>15℃（2026-09-26 15:44:48）</td></tr><tr><th>湿度最高</th><td>90%（2026-09-26 15:44:29）</td></tr><tr><th>湿度最低</th><td>50%（2026-09-26 15:44:18）</td></tr><tr><th>状态自查</th><td>CSV status 列与重算不一致 0 条</td></tr></table>
+<h3>各状态数量（按统一规则重算）</h3>
+<table><tr><th>正常</th><td>6</td></tr><tr><th>偏冷</th><td>2</td></tr><tr><th>偏热</th><td>1</td></tr><tr><th>偏湿</th><td>0</td></tr></table>
+</section>
+<section>
+<h2>关注记录（status 非正常）</h2>
+<table><tr><th>时间</th><th>温度</th><th>湿度</th><th>状态</th></tr><tr><td>2026-09-26 15:44:29</td><td>32℃</td><td>90%</td><td class='status'>偏热</td></tr><tr><td>2026-09-26 15:44:48</td><td>15℃</td><td>80%</td><td class='status'>偏冷</td></tr><tr><td>2026-09-26 15:44:49</td><td>15℃</td><td>80%</td><td class='status'>偏冷</td></tr></table>
+</section>
+<section>
+<h2>趋势图</h2>
+<img src="trend.png" alt="温度 / 湿度随时间趋势图">
+</section>
+</body>
+</html>

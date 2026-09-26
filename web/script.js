@@ -112,6 +112,35 @@ function analyze(rawTemperature, rawHumidity) {
   return record;
 }
 
+// M2 S1：CSV 导出（SPEC §5 最小格式：time,temperature,humidity,status 严格 4 列，UTF-8）
+// buildCsv 纯函数：入参历史数组 → CSV 字符串；不含 nodeId/action；time 全格式原样输出；CRLF 换行
+function buildCsv(history) {
+  const header = "time,temperature,humidity,status";
+  const rows = history.map(function (record) {
+    return [record.time, record.temperature, record.humidity, record.status].join(",");
+  });
+  return [header].concat(rows).join("\r\n") + "\r\n";
+}
+
+// downloadCsv：把 dormmateHistory 导出为 dormmate.csv（Blob + 临时 <a download>）
+// 加 UTF-8 BOM（﻿）保证 Excel/WPS 打开中文 status 不乱码；Python 端统一 utf-8-sig 读取
+function downloadCsv() {
+  if (dormmateHistory.length === 0) {
+    alert("暂无历史记录，先分析几条数据再导出");
+    return;
+  }
+  const csv = "﻿" + buildCsv(dormmateHistory);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "dormmate.csv";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 // 直接暴露到全局：test.html 回归测试与 M3 语音指令都依赖
 // 历史数组不叫 window.history（浏览器自带同名 API），用 dormmateHistory 避免覆盖
 if (typeof window !== "undefined") {
@@ -121,6 +150,8 @@ if (typeof window !== "undefined") {
   window.validateInputs = validateInputs;
   window.analyze = analyze;
   window.dormmateHistory = dormmateHistory;
+  window.buildCsv = buildCsv;
+  window.downloadCsv = downloadCsv;
 }
 
 // DOM 操作一律包在 DOMContentLoaded 内，保证 test.html 引入本文件时不触碰 DOM
@@ -128,6 +159,9 @@ if (typeof document !== "undefined") {
   document.addEventListener("DOMContentLoaded", function () {
     const analyzeBtn = document.getElementById("analyzeBtn");
     if (analyzeBtn) analyzeBtn.addEventListener("click", function () { analyze(); });
+    // M2 S1：导出 CSV 按钮（历史为空时 downloadCsv 内提示，不导出空文件）
+    const exportBtn = document.getElementById("exportBtn");
+    if (exportBtn) exportBtn.addEventListener("click", downloadCsv);
     // 输入框按 Enter 同样触发分析（页面无 form 提交路径）
     ["temperature", "humidity"].forEach(function (id) {
       const input = document.getElementById(id);
