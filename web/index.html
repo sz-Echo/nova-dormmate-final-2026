@@ -42,7 +42,7 @@
 
   <section class="voice-area">
     <h2>语音指令（等价 ASR）</h2>
-    <p class="hint">点击下方输入框聚焦后按 Win+H 说话，系统语音输入会把识别文字打进输入框，程序自动匹配指令（也可直接打字测试）</p>
+    <p class="hint">点击下方输入框聚焦后按 Win+H 说话（也可直接打字），说完按 Enter 或点击别处执行；可用指令：朗读状态 / 拍照</p>
     <input type="text" id="voiceCommand" placeholder="如：朗读状态 / 拍照" autocomplete="off">
     <p id="voiceResult" class="hint" hidden></p>
   </section>
@@ -52,8 +52,8 @@
     <video id="cameraVideo" autoplay playsinline muted></video>
     <div class="camera-buttons">
       <button id="startCameraBtn" type="button">打开摄像头</button>
-      <button id="snapshotBtn" type="button" disabled>保存快照</button>
-      <button id="stopCameraBtn" type="button" disabled>关闭摄像头</button>
+      <button id="snapshotBtn" type="button">保存快照</button>
+      <button id="stopCameraBtn" type="button">关闭摄像头</button>
     </div>
     <p id="cameraMsg" class="hint" hidden></p>
   </section>

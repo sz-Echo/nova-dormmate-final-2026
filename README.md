@@ -5,7 +5,7 @@
 ## 运行方式
 
 - **主应用（M3 起必须用 Live Server，不能用 file:// 双击打开）**：VS Code 安装 Live Server 扩展 → 右键 `web/index.html` → "Open with Live Server" → 浏览器打开 `http://127.0.0.1:5500/web/index.html`。原因：Camera（getUserMedia）要求 localhost / https，file:// 下会被浏览器安全策略禁用
-- **回归测试**：Live Server 下打开 `web/test.html`，四组统一回归数据（SPEC §6）应全部显示通过
+- **回归测试**：打开 `web/test.html`（直接双击即可，也可用 Live Server），四组统一回归数据（SPEC §6）应全部显示通过
 - **离线分析（M2）**：Web 页"导出 CSV"得到 dormmate.csv 放到 `data/` 后，在项目根目录运行（需 Python 3 + pandas + matplotlib）：
   - `python analysis/analyze.py` —— 自动选择 `data/` 中**最新的 CSV**（"更换 CSV"即新文件生效，旧文件保留），输出统计并生成 `data/trend.png`、`data/report.html`
   - `python analysis/analyze.py 其他CSV路径` —— 指定某个 CSV 全量重新生成统计与两产物（验收要求，禁止手工修改）
@@ -14,8 +14,8 @@
 
 ## 主要功能
 
-- **输入判断（M1）**：温湿度输入 → 校验（空值 / 非数字 / 超出范围拦截）→ 统一状态规则（`<18 偏冷 → ≥30 偏热 → ≥75 偏湿 → 其余 正常`，顺序固定）→ 状态 + 建议（偏冷→注意保暖 / 偏热→注意通风 / 偏湿→注意除湿 / 正常→环境舒适）→ 带时间历史
-- **CSV 导出（M2）**：历史一键导出 `dormmate.csv`（4 列最小格式、UTF-8 带 BOM、time 全格式）
+- **输入判断（M1）**：温湿度输入 → 校验（空值 / 非数字 / 超出范围（温度 −50~50、湿度 0~100）拦截，不进入分析、不追加历史）→ 统一状态规则（`<18 偏冷 → ≥30 偏热 → ≥75 偏湿 → 其余 正常`，顺序固定）→ 状态 + 建议（偏冷→注意保暖 / 偏热→注意通风 / 偏湿→注意除湿 / 正常→环境舒适）→ 带时间历史
+- **CSV 导出（M2）**：历史一键导出 `dormmate.csv`（4 列最小格式、UTF-8 带 BOM、time 全格式）；历史仅存内存（统一 JSON 结构），刷新页面后清空，导出 CSV 落盘
 - **离线分析（M2）**：Python（pandas + matplotlib）重跑统一规则 → 统计（记录数 / 温湿度最高最低 / 各状态数量 / 关注记录）→ `data/trend.png` + `data/report.html`；换新 CSV 全量重新生成
 - **Camera（M3）**：点击请求权限 → video 预览 → 保存一张现场快照（不连续采集、不自动开启）
 - **ASR 语音指令（M3）**：系统语音输入（Win+H）识别文字进入"语音指令"输入框 → 程序匹配固定指令并触发已有功能："朗读状态" → TTS 朗读当前状态；"拍照" → 保存快照（原因与替代方案见"已知限制"）

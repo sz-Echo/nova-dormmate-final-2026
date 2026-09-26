@@ -84,12 +84,10 @@ function analyze(rawTemperature, rawHumidity) {
 
   const result = validateInputs(rawTemperatureValue, rawHumidityValue);
   if (result.messages.length > 0) {
-    errorMsg.textContent = result.messages.join("；");
-    errorMsg.hidden = false;
+    showMsg(errorMsg, result.messages.join("；"), true);
     return null;
   }
-  errorMsg.textContent = "";
-  errorMsg.hidden = true;
+  showMsg(errorMsg, "", false);
 
   const status = computeStatus(result.temperature, result.humidity);
   statusText.textContent = status;
@@ -104,6 +102,7 @@ function analyze(rawTemperature, rawHumidity) {
     action: ""
   };
   dormmateHistory.push(record);
+  lastRecord = record;  // M3 TTS 朗读数据源（"朗读状态"指令 / 朗读按钮都读它）
 
   const li = document.createElement("li");
   li.textContent = `${record.time} · ${record.nodeId} · ${record.temperature}℃ / ${record.humidity}% · ${record.status}`;
@@ -122,7 +121,7 @@ function buildCsv(history) {
   return [header].concat(rows).join("\r\n") + "\r\n";
 }
 
-// downloadCsv：把 dormmateHistory 导出为 dormmate.csv（Blob + 临时 <a download>）
+// downloadCsv：把 dormmateHistory 导出为 dormmate.csv（复用 downloadBlob）
 // 加 UTF-8 BOM（﻿）保证 Excel/WPS 打开中文 status 不乱码；Python 端统一 utf-8-sig 读取
 function downloadCsv() {
   if (dormmateHistory.length === 0) {
@@ -130,18 +129,32 @@ function downloadCsv() {
     return;
   }
   const csv = "﻿" + buildCsv(dormmateHistory);
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "dormmate.csv");
+}
+
+// 最近一次成功分析记录（M3 TTS 朗读的数据源；analyze() 成功时写入）
+let lastRecord = null;
+
+// 统一提示（评审修复）：text 为空即隐藏；isError 时加 .error 红色类（errorMsg/camera/tts/voice 共用）
+function showMsg(el, text, isError) {
+  if (!el) return;
+  el.textContent = text;
+  el.hidden = text === "";
+  el.classList.toggle("error", !!isError && text !== "");
+}
+
+// Blob -> 临时 <a download> 触发下载（评审修复：M2 CSV 导出与 M3 快照共用同一实现）
+// revoke 延迟 1 秒，避免浏览器还没开始读取 blob 就撤销导致下载失败
+function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "dormmate.csv";
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
 }
-
-// 直接暴露到全局：test.html 回归测试与 M3 语音指令都依赖
 // 历史数组不叫 window.history（浏览器自带同名 API），用 dormmateHistory 避免覆盖
 if (typeof window !== "undefined") {
   window.computeStatus = computeStatus;
@@ -172,27 +185,31 @@ if (typeof document !== "undefined") {
     const cameraMsg = document.getElementById("cameraMsg");
     let cameraStream = null;
 
-    function showCameraMsg(text) {
-      if (!cameraMsg) return;
-      cameraMsg.textContent = text;
-      cameraMsg.hidden = text === "";
+    // 三个按钮状态恒等于 cameraStream：集中同步，避免多处硬编码漂移
+    function syncCameraButtons() {
+      const running = !!cameraStream;
+      if (startCameraBtn) startCameraBtn.disabled = running;
+      if (snapshotBtn) snapshotBtn.disabled = !running;
+      if (stopCameraBtn) stopCameraBtn.disabled = !running;
     }
 
     async function startCamera() {
+      if (cameraStream) return;  // 防重复请求（按钮也已同步禁用）
+      startCameraBtn.disabled = true;  // await 之前同步禁用：权限弹窗期间双击不会发起两次请求
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showCameraMsg("当前环境不支持摄像头（请通过 localhost / Live Server 打开页面）");
+        showMsg(cameraMsg, "当前环境不支持摄像头（请通过 localhost / Live Server 打开页面）", true);
+        syncCameraButtons();
         return;
       }
       try {
         cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         cameraVideo.srcObject = cameraStream;
-        startCameraBtn.disabled = true;
-        snapshotBtn.disabled = false;
-        stopCameraBtn.disabled = false;
-        showCameraMsg("");
+        syncCameraButtons();
+        showMsg(cameraMsg, "", false);
       } catch (err) {
-        showCameraMsg("无法打开摄像头：" + (err.name || "未知错误") +
-          "（请允许摄像头权限，并确认未被其他软件占用）");
+        showMsg(cameraMsg, "无法打开摄像头：" + (err.name || "未知错误") +
+          "（请允许摄像头权限，并确认未被其他软件占用）", true);
+        syncCameraButtons();
       }
     }
 
@@ -202,126 +219,148 @@ if (typeof document !== "undefined") {
         cameraStream = null;
       }
       cameraVideo.srcObject = null;
-      startCameraBtn.disabled = false;
-      snapshotBtn.disabled = true;
-      stopCameraBtn.disabled = true;
+      syncCameraButtons();
+      showMsg(cameraMsg, "", false);  // 清掉"快照已保存"等旧提示
     }
 
     function saveSnapshot() {
-      if (!cameraStream || !cameraVideo.videoWidth) {
-        showCameraMsg("请先打开摄像头");
-        return;
+      if (!cameraStream) {
+        showMsg(cameraMsg, "请先打开摄像头", true);
+        return false;
+      }
+      // 区分"帧未就绪"与"没开摄像头"：videoWidth=0 / readyState<2 说明首帧还没渲染
+      if (!cameraVideo.videoWidth || cameraVideo.readyState < 2) {
+        showMsg(cameraMsg, "视频画面加载中，请稍后再试", true);
+        return false;
       }
       const canvas = document.createElement("canvas");
       canvas.width = cameraVideo.videoWidth;
       canvas.height = cameraVideo.videoHeight;
-      canvas.getContext("2d").drawImage(cameraVideo, 0, 0);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        showMsg(cameraMsg, "快照生成失败，请重试", true);
+        return false;
+      }
+      ctx.drawImage(cameraVideo, 0, 0);
       canvas.toBlob(function (blob) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "dormmate-snapshot-" + formatTime(new Date()).replace(/[ :]/g, "-") + ".png";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        showCameraMsg("快照已保存（下载目录）");
+        if (!blob) {
+          showMsg(cameraMsg, "快照生成失败，请重试", true);
+          return;
+        }
+        downloadBlob(blob, "dormmate-snapshot-" + formatTime(new Date()).replace(/[ :]/g, "-") + ".png");
+        showMsg(cameraMsg, "快照已保存（下载目录）", false);
       }, "image/png");
+      return true;
     }
 
     if (startCameraBtn) startCameraBtn.addEventListener("click", startCamera);
     if (snapshotBtn) snapshotBtn.addEventListener("click", saveSnapshot);
     if (stopCameraBtn) stopCameraBtn.addEventListener("click", stopCamera);
+    syncCameraButtons();  // 初始按钮状态由这里统一设置（HTML 不再预写 disabled）
 
-    // M3 S2：TTS（任务书第 12 条后半）——朗读内容取当前状态与建议，随状态动态变化
+    // M3 S2：TTS（任务书第 12 条后半）——朗读内容取最近一次 analyze() 的记录（lastRecord），随状态动态变化
     const speakBtn = document.getElementById("speakBtn");
     const ttsMsg = document.getElementById("ttsMsg");
     let ttsVoices = [];
+    let ttsZhVoice = null;
+    let voicesLoaded = false;  // Chrome/Edge 的 voices 异步加载：voiceschanged 触发前 getVoices() 是空数组
 
     function loadVoices() {
       ttsVoices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-    }
-
-    function showTtsMsg(text) {
-      if (!ttsMsg) return;
-      ttsMsg.textContent = text;
-      ttsMsg.hidden = text === "";
+      ttsZhVoice = ttsVoices.find(function (v) {
+        return v.lang && v.lang.toLowerCase().indexOf("zh") === 0;
+      }) || null;
     }
 
     function speakStatus() {
       if (!window.speechSynthesis) {
-        showTtsMsg("当前浏览器不支持语音合成");
-        return;
+        showMsg(ttsMsg, "当前浏览器不支持语音合成", true);
+        return false;
       }
-      const status = document.getElementById("statusText").textContent;
-      const advice = document.getElementById("adviceText").textContent;
-      if (!status || status === "—") {
+      if (!lastRecord) {
         window.speechSynthesis.speak(new SpeechSynthesisUtterance("请先分析环境，再朗读状态"));
-        return;
+        return false;
       }
-      const utterance = new SpeechSynthesisUtterance("当前状态：" + status + "，" + advice);
+      const utterance = new SpeechSynthesisUtterance(
+        "当前状态：" + lastRecord.status + "，" + ADVICE[lastRecord.status]
+      );
       utterance.lang = "zh-CN";
-      const zhVoice = ttsVoices.find(function (v) {
-        return v.lang && v.lang.toLowerCase().indexOf("zh") === 0;
-      });
-      if (zhVoice) {
-        utterance.voice = zhVoice;
-        showTtsMsg("");
-      } else {
-        // Windows 未装中文语音包时页面提示，并建议 Edge（自带较稳定的中文语音）
-        showTtsMsg("未检测到系统中文语音包，朗读可能异常；建议换 Edge 浏览器测试");
+      if (ttsZhVoice) {
+        utterance.voice = ttsZhVoice;
+        showMsg(ttsMsg, "", false);
+      } else if (voicesLoaded) {
+        // 仅在 voices 已加载且确实没有中文语音时提示，避免把"还没加载"误报成"没有"
+        showMsg(ttsMsg, "未检测到系统中文语音包，朗读可能异常；建议换 Edge 浏览器测试", false);
       }
       window.speechSynthesis.speak(utterance);
+      return true;
     }
 
     if (window.speechSynthesis) {
       loadVoices();
-      window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+      window.speechSynthesis.addEventListener("voiceschanged", function () {
+        voicesLoaded = true;
+        loadVoices();
+      });
     }
     if (speakBtn) speakBtn.addEventListener("click", speakStatus);
 
     // M3 S3：等价 ASR（任务书第 12 条前半）——原生 SpeechRecognition 依赖 Google 在线服务、
     // 国内网络不可用（README 已知限制记录），改用系统语音输入法（Win+H）等价方案：
-    // 识别文字打进输入框 → 程序捕获 → 匹配固定指令 → 真实触发已有功能（speakStatus / saveSnapshot）
+    // 识别文字打进输入框 → Enter / 失焦提交 → 精确匹配固定指令 → 真实触发已有功能
     const voiceInput = document.getElementById("voiceCommand");
     const voiceResult = document.getElementById("voiceResult");
-    let voiceTimer = null;
+    let lastAttemptText = "";  // 未匹配时保留的文本：失焦不重复处理同一句
 
-    function showVoiceResult(text, ok) {
-      if (!voiceResult) return;
-      voiceResult.textContent = text;
-      voiceResult.className = ok ? "hint" : "hint error";
-      voiceResult.hidden = text === "";
-    }
-
-    function handleVoiceCommand(text) {
-      if (text.indexOf("朗读状态") !== -1) {
-        speakStatus();  // 朗读内容随当前状态（TTS 链路）
-        showVoiceResult("识别结果：" + text + " → 已触发：朗读当前状态", true);
-      } else if (text.indexOf("拍照") !== -1) {
-        saveSnapshot();  // Camera 快照链路
-        showVoiceResult("识别结果：" + text + " → 已触发：拍照保存快照", true);
-      } else {
-        showVoiceResult("识别结果：" + text + " → 未匹配任何指令（可用指令：朗读状态 / 拍照）", false);
+    // 指令表：去掉首尾标点后精确匹配（子串匹配会让"不要拍照"误触发）；run 返回是否真正执行成功
+    const VOICE_COMMANDS = [
+      {
+        keyword: "朗读状态",
+        done: "朗读当前状态",
+        run: function () {
+          // 按 M1 预留契约调用 analyze()：用输入框当前值重新分析（失败时错误已显示），再朗读最新结果
+          if (!analyze()) return false;
+          return speakStatus();
+        }
+      },
+      {
+        keyword: "拍照",
+        done: "拍照保存快照",
+        run: function () { return saveSnapshot(); }
       }
+    ];
+
+    function handleVoiceCommand(rawText) {
+      const text = rawText.replace(/^[\s。.，,！!？?、]+|[\s。.，,！!？?、]+$/g, "").trim();
+      const matched = VOICE_COMMANDS.find(function (cmd) { return cmd.keyword === text; });
+      if (!matched) {
+        // 未匹配：保留文本并全选，供修正后重新提交（不清空销毁）
+        voiceInput.select();
+        lastAttemptText = text;
+        showMsg(voiceResult,
+          "识别结果：" + text + " → 未匹配任何指令（可用指令：朗读状态 / 拍照）", true);
+        return;
+      }
+      const ok = matched.run();
+      voiceInput.value = "";
+      lastAttemptText = "";
+      showMsg(voiceResult, "识别结果：" + text + " → " +
+        (ok ? "已触发：" + matched.done : "未执行：" + matched.done), !ok);
     }
 
     function processVoiceInput() {
-      clearTimeout(voiceTimer);
       const text = voiceInput.value.trim();
-      voiceInput.value = "";
-      if (text) handleVoiceCommand(text);
+      if (!text || text === lastAttemptText) return;  // 空文本 / 未匹配保留的文本不重复处理
+      handleVoiceCommand(text);
     }
 
     if (voiceInput) {
-      // 系统语音输入逐字打进输入框：停止输入 1.2 秒视为一句说完，自动处理；回车立即处理
-      voiceInput.addEventListener("input", function () {
-        clearTimeout(voiceTimer);
-        voiceTimer = setTimeout(processVoiceInput, 1200);
-      });
+      // 提交时机只用确定性事件：Enter（IME 选字回车不触发）或失焦（Win+H 说完点击别处）
+      // 不再用防抖——语音停顿会被误当成句末，把一句话切两半
       voiceInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") processVoiceInput();
+        if (e.key === "Enter" && !e.isComposing) processVoiceInput();
       });
+      voiceInput.addEventListener("blur", processVoiceInput);
     }
     // 输入框按 Enter 同样触发分析（页面无 form 提交路径）
     ["temperature", "humidity"].forEach(function (id) {

@@ -11,6 +11,7 @@
 - **顺序红线**：S1-S3 全流程在 localhost 走通、浏览器无报错、用户确认后才执行 S5/S6（避免提交未完成代码）
 - **push 兜底**：任何报错先停下给用户看，不强行 push；备选：临时分支验证 / git bundle 本地打包
 - **安全红线**：绝不提交或在对话中输入 API Key / 密码 / Token
+- **Commit 风格豁免**：M3 三次提交消息为中文且无 scope（b2b293a / 88aabc2 / 9fa9e37），均由用户明确指定（现场答辩口径），豁免 CLAUDE.md 的英文 type(scope) 风格要求
 
 ## 2. 范围红线（M3 不做）
 
@@ -42,8 +43,8 @@
 ### S3 ASR（任务书第 12 条前半，等价方案）✅ 已完成（用户实测通过：Win+H 说"朗读状态"/"拍照"闭环、未定义指令提示、打字回车同样匹配）
 
 - 先实测原生 SpeechRecognition（webkitSpeechRecognition，Chrome/Edge + localhost）；可用则用原生，不可用走既定等价方案
-- 等价方案：页面加"语音指令"输入框，监听 input 事件捕获系统输入法（Win+H）打进的文字 → 匹配固定指令："朗读状态" → 调用 M1 的 `analyze()` → `speakStatus()`；"拍照" → 触发 `saveSnapshot()`
-- **识别结果显示在页面**（指令结果区显示捕获文字与匹配结果），不只打印控制台；未匹配提示可用指令
+- 等价方案：页面加"语音指令"输入框，系统输入法（Win+H）把识别文字打进输入框 → **Enter / 失焦提交**（不用防抖，避免语音停顿切半句；IME 选字回车不触发）→ 去首尾标点后**精确匹配**固定指令（避免"不要拍照"误触发）："朗读状态" → 调用 M1 的 `analyze()` → `speakStatus()`；"拍照" → 触发 `saveSnapshot()`；**未匹配保留文本并全选供修正**
+- **识别结果显示在页面**（指令结果区显示捕获文字与匹配结果），不只打印控制台；指令结果与真实执行结果一致（执行失败会如实显示"未执行"）
 - **Win+H 测试步骤（测试前先给用户）**：① 先打开记事本按 Win+H 说话，确认系统能把文字打出来；② 再在浏览器页面输入框测；③ 若完全无反应：设置→辅助功能→键盘 检查语音输入开关；仍不行 → 备用方案（搜狗等输入法语音输入，或用户录制一段含指令的音频由程序导入）
 - README 记录原因 / 替代方案 / 测试结果（成功识别指令并触发 TTS / analyze）
 
@@ -64,6 +65,15 @@
 ### S7 验收 + 交接 ✅ 已完成（看板更新 + 交接摘要输出；git log / GitHub 提交记录已留档 docs/evidence/m3/；Camera/ASR/TTS 截图证据由用户现场演示时补拍）
 
 - 现场演示剧本完整跑一遍；证据 docs/evidence/m3/（快照、识别结果、TTS、git log、GitHub 记录）；PLAN 看板更新；按 PLAN §6 输出交接摘要
+
+### S8 评审修复（code-review 16 条确认发现）✅ 代码完成（待用户浏览器复测）
+
+- 语音指令：防抖自动提交改为 Enter / 失焦提交（+isComposing 检查）；去首尾标点精确匹配（"不要拍照"不再误触发）；未匹配保留文本全选；"朗读状态"接入 analyze()（兑现 M1 预留契约）；指令结果与真实执行结果一致
+- TTS：数据源改为 analyze() 的 lastRecord（不再读 DOM 文本与"—"哨兵）；voicesLoaded 判定后再报缺中文语音（修 getVoices 空窗误报）；zh 语音在 loadVoices 缓存
+- Camera：startCamera 同步禁用按钮 + cameraStream 防重入（修双击流泄漏）；按钮状态集中 syncCameraButtons()；快照区分"没开摄像头/帧未就绪/生成失败"并判 blob 空；stopCamera 清理旧提示
+- 复用：提取 downloadBlob（CSV 与快照共用，revoke 延迟 1 秒）、showMsg（四类提示共用，classList.toggle 不再整体覆盖 className）；CSS 卡片/输入框规则合并
+- 文档：PLAN 看板修正（M1 提交补 f8eaa47、M3 S0-S7 与三次提交、最近Commit）；README 补回校验范围与"历史仅存内存"说明、test.html 可 file:// 打开
+- 提交：待用户复测通过后提交（fix(nova-dormmate-final-2026): M3 review fixes...），GitHub 同步需用户确认
 
 ## 4. 关键设计 — 与后续阶段衔接
 
@@ -95,7 +105,7 @@
 
 1. **输入判断（M1）**：输入 31/60 → 点"分析环境" → 状态"偏热"、建议"注意通风"，历史多一条
 2. **动态 TTS（M3）**：点"朗读状态" → 听到"当前状态：偏热，注意通风"
-3. **等价 ASR（M3）**：点击"语音指令"输入框聚焦 → 按 Win+H → 说"朗读状态" → 输入框出现识别文字 → 页面显示"识别结果：朗读状态 → 已触发：朗读当前状态" → 再次听到朗读
+3. **等价 ASR（M3）**：点击"语音指令"输入框聚焦 → 按 Win+H → 说"朗读状态" → 输入框出现识别文字 → **按 Enter（或点击别处）** → 指令调用 analyze() 按输入框当前值重新分析（追加一条历史）→ 页面显示"识别结果：朗读状态 → 已触发：朗读当前状态" → 再次听到朗读
 4. **Camera（M3）**：点"打开摄像头" → 允许权限 → 视频预览 → 点"保存快照" → 下载目录出现 `dormmate-snapshot-时间.png` → 点"关闭摄像头"
 5. **CSV 导出 + 离线分析（M1/M2）**：点"导出 CSV" → 下载 dormmate.csv 放进 data/ → 终端运行 `python analysis/analyze.py` → 控制台统计 + `data/trend.png` + `data/report.html`
 6. **版本记录（M3）**：修改一处固定指令或提示文字 → VS Code 终端 `git status`（只列 DormMate 目录）→ `git add` → `git commit` → `git log --oneline`（指出 M1 提交、Camera 提交、ASR/TTS 提交）→ GitHub 网页展示 Private 仓库 `nova-dormmate-final-2026` 的提交记录
@@ -103,7 +113,7 @@
 **现场问答口径**：
 
 - 哪个功能调用了 Camera/ASR/TTS：第 3 步输入框捕获系统语音识别文字（等价 ASR）触发 speakStatus()（TTS）；第 4 步按钮走 getUserMedia（Camera）
-- 指令实际触发了什么："朗读状态" → speakStatus() 朗读当前状态与建议（读 analyze() 的结果）；"拍照" → saveSnapshot() canvas 抓帧下载
+- 指令实际触发了什么："朗读状态" → 先调 analyze()（用输入框当前值重新分析、追加历史）再 speakStatus() 朗读最新结果；"拍照" → saveSnapshot() canvas 抓帧下载
 - 本地 Git 有哪些真实提交：`git log --oneline`（M1/M2/M3 各阶段提交）
 - 两次修改分别改了什么：Commit A（Camera）加了视频预览与快照保存；Commit B（ASR/TTS）加了语音指令输入框匹配与动态朗读
 

@@ -31,10 +31,12 @@ h2 {
   margin: 0 0 0.75rem;
 }
 
-/* ① 卡片式三区块布局 */
+/* ① 卡片式区块布局（M3 起 camera/voice 并入同一份卡片规则，不再复制粘贴） */
 .input-area,
 .result-area,
-.history-area {
+.history-area,
+.camera-area,
+.voice-area {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -60,7 +62,8 @@ h2 {
   color: var(--muted);
 }
 
-.field input {
+.field input,
+.voice-area input {
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -131,15 +134,7 @@ h2 {
   }
 }
 
-/* ④ Camera 区（M3 S1）：卡片风格与三区块一致，video 固定宽度预览 */
-.camera-area {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 1.1rem 1.25rem;
-  margin-bottom: 1.25rem;
-}
-
+/* ④ Camera 区（M3 S1）：卡片规则已并入 ①；video 固定宽度预览 */
 .camera-area video {
   width: 100%;
   max-width: 360px;
@@ -176,22 +171,10 @@ h2 {
   margin: 0.5rem 0 0;
 }
 
-/* ⑤ 语音指令区（M3 S3）：与三区块同风格；识别失败时结果行转红 */
-.voice-area {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 1.1rem 1.25rem;
-  margin-bottom: 1.25rem;
-}
-
+/* ⑤ 语音指令区（M3 S3）：卡片与输入框规则已并入 ① 与 .field input；保留 .hint.error
+   （.hint 与 .error 同优先级，靠双类选择器确保红色加粗在灰色提示上生效） */
 .voice-area input {
   width: 100%;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 1rem;
-  background: var(--card-bg);
   box-sizing: border-box;
 }
 

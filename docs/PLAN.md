@@ -168,11 +168,11 @@
 ## 4. 当前阶段看板
 
 - **当前阶段**：M4（移动端小程序）——待用户启动；进入前先建 docs/M4_PLAN.md（同 M1/M2/M3 模式）
-- **当前只做**：无进行中任务；M3 已收口（S1-S3 用户实测通过，两次提交 + GitHub Private 仓库推送完成）
-- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 S0-S4（文档对齐 / Camera / TTS / 等价 ASR / README，S1-S3 用户实测通过，详细见 docs/M3_PLAN.md）
+- **当前只做**：无进行中任务；M3 已收口（S1-S3 用户实测通过，三次提交 b2b293a / 88aabc2 / 9fa9e37 + GitHub Private 仓库推送 a745f96；评审修复随最近Commit 完成）
+- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）
 - **阻塞**：无
 - **下一步**：用户说"继续 M4"即建 docs/M4_PLAN.md 启动 M4（微信小程序核心页面，复用 M1 的 computeStatus 纯函数）
-- **最近Commit**：88aabc2 feat: 加入ASR语音指令与动态TTS，更新README（M3 S2-S4）；GitHub Private 仓库 nova-dormmate-final-2026 已推送（33b6afe 对应当前运行项目）
+- **最近Commit**：fix(nova-dormmate-final-2026): M3 review fixes for voice commands camera and TTS（本看板随该提交更新；GitHub 待同步此提交，用户确认后补推）
 - **下一阶段接口**：M3 复用 M1 的 analyze() 入口与 web/ 页面（详细步骤见 docs/M3_PLAN.md）；M4 复用 M1 的 computeStatus() 纯函数与统一规则，不复制 Web DOM 代码；M5 起三节点
 
 ## 5. 给 Claude Code 的调用模板
