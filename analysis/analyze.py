@@ -4,13 +4,15 @@
 对全部记录重跑统一规则（SPEC §3）→ 基础统计 → matplotlib trend.png → report.html
 
 用法：
-  python analysis/analyze.py [csv路径] [--out 输出目录]    # 默认 data/dormmate.csv，产物输出 data/
+  python analysis/analyze.py [csv路径] [--out 输出目录]    # 不指定 CSV 时自动选择输出目录中最新的 CSV；产物输出 data/
+  python analysis/analyze.py --watch [--out 输出目录]      # 监控目录：放入 / 更换 CSV 后自动重新生成
   python analysis/analyze.py --selftest                    # SPEC §6 四组回归自测
 换一份新 CSV 后重跑即全量重新生成统计、trend.png、report.html（禁止手工修改结果）。
 """
 import argparse
 import html
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -278,6 +280,44 @@ def print_stats(stats, csv_path, trend_path, report_path):
     print(f"  {report_path}")
 
 
+def pick_csv(data_dir):
+    """不指定 CSV 时自动选择目录中最新的 .csv（"更换 CSV"语义：新文件即当前数据源，旧文件保留）。"""
+    data_dir = Path(data_dir)
+    csv_files = list(data_dir.glob("*.csv")) if data_dir.exists() else []
+    if not csv_files:
+        raise FileNotFoundError(
+            f"目录 {data_dir} 中没有 CSV 文件，请把 Web 导出的 CSV 放进 data/ 目录"
+        )
+    return max(csv_files, key=lambda p: p.stat().st_mtime)
+
+
+def watch(out_dir):
+    """监控输出目录：放入或更换 CSV 后自动重新生成统计、trend.png、report.html（Ctrl+C 停止）。"""
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    print(f"监控目录: {out_dir}")
+    print("放入或更换 CSV 文件后自动重新生成统计、trend.png、report.html（Ctrl+C 停止）")
+    last_signature = None
+    while True:
+        try:
+            csv_files = list(out_dir.glob("*.csv"))
+            if csv_files:
+                newest = max(csv_files, key=lambda p: p.stat().st_mtime)
+                signature = (str(newest), newest.stat().st_mtime, newest.stat().st_size)
+                if signature != last_signature:
+                    last_signature = signature
+                    print(f"[检测到 CSV] {newest.name}")
+                    try:
+                        run_pipeline(newest, out_dir)
+                    except (FileNotFoundError, ValueError) as e:
+                        print(f"[跳过] {newest.name}: {e}", file=sys.stderr)
+                    sys.stdout.flush()  # 输出重定向到文件时不丢日志
+            time.sleep(2)
+        except KeyboardInterrupt:
+            print("停止监控")
+            break
+
+
 def run_pipeline(csv_path, out_dir):
     """完整管线：读 CSV → 统计 → trend.png → report.html → 控制台输出。"""
     df = load_csv(csv_path)
@@ -296,10 +336,18 @@ def main():
         description="DormMate M2 离线分析：CSV -> 统计 / trend.png / report.html"
     )
     parser.add_argument(
-        "csv", nargs="?", default=str(DEFAULT_CSV), help=f"CSV 文件路径（默认 {DEFAULT_CSV}）"
+        "csv",
+        nargs="?",
+        default=None,
+        help="CSV 文件路径（不指定则自动选择输出目录中最新的 CSV）",
     )
     parser.add_argument(
         "--out", default=str(DEFAULT_OUT), help=f"产物输出目录（默认 {DEFAULT_OUT}）"
+    )
+    parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="监控输出目录：放入 / 更换 CSV 后自动重新生成",
     )
     parser.add_argument("--selftest", action="store_true", help="SPEC §6 四组回归自测")
     args = parser.parse_args()
@@ -308,7 +356,14 @@ def main():
         sys.exit(0 if selftest() else 1)
 
     try:
-        run_pipeline(args.csv, args.out)
+        if args.watch:
+            watch(args.out)
+        else:
+            csv_path = args.csv
+            if csv_path is None:
+                csv_path = pick_csv(args.out)
+                print(f"[自动选择最新 CSV] {csv_path}")
+            run_pipeline(csv_path, args.out)
     except (FileNotFoundError, ValueError) as e:
         print(f"[错误] {e}", file=sys.stderr)
         sys.exit(1)

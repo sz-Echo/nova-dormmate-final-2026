@@ -169,7 +169,7 @@
 
 - **当前阶段**：M3（本机交互 + 版本记录）——待用户启动；进入前先建 docs/M3_PLAN.md（同 M1/M2 模式）
 - **当前只做**：无进行中任务；M2 已收口（S1-S7 全过，用户实测验收通过）
-- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24）；M2 全部（S1-S7：Web 导出 CSV（Blob/download，UTF-8 BOM，4 列）/ Python 规则移植 + 四组回归自测 / pandas 统计 + 关注记录 / matplotlib trend.png / report.html 三要素 + C3 扩展点 / 换 CSV 全量重生成验收 / 收口，证据在 docs/evidence/m2/，提交见最近Commit）
+- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24）；M2 全部（S1-S8：Web 导出 CSV（Blob/download，UTF-8 BOM，4 列）/ Python 规则移植 + 四组回归自测 / pandas 统计 + 关注记录 / matplotlib trend.png / report.html 三要素 + C3 扩展点 / 换 CSV 全量重生成验收 / 收口 / "更换后自动生成"增强（自动选最新 CSV + --watch 监控模式），证据在 docs/evidence/m2/，提交见最近Commit）
 - **阻塞**：无
 - **下一步**：用户说"继续 M3"即建 docs/M3_PLAN.md 启动 M3
 - **最近Commit**：feat(nova-dormmate-final-2026): M2 offline analysis CSV export and python report（本看板随该提交更新）

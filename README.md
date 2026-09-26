@@ -7,8 +7,9 @@
 - **主应用**：Chrome / Edge 打开 `web/index.html`（也可用 VS Code Live Server 起 http://127.0.0.1:5500/web/index.html）
 - **回归测试**：打开 `web/test.html`，四组统一回归数据（SPEC §6）应全部显示通过
 - **离线分析（M2）**：Web 页"导出 CSV"得到 dormmate.csv 放到 `data/` 后，在项目根目录运行（需 Python 3 + pandas + matplotlib）：
-  - `python analysis/analyze.py` —— 读取 `data/dormmate.csv`，输出统计并生成 `data/trend.png`、`data/report.html`
-  - `python analysis/analyze.py 其他CSV路径` —— 换一份新 CSV 后全量重新生成统计与两产物（验收要求，禁止手工修改）
+  - `python analysis/analyze.py` —— 自动选择 `data/` 中**最新的 CSV**（"更换 CSV"即新文件生效，旧文件保留），输出统计并生成 `data/trend.png`、`data/report.html`
+  - `python analysis/analyze.py 其他CSV路径` —— 指定某个 CSV 全量重新生成统计与两产物（验收要求，禁止手工修改）
+  - `python analysis/analyze.py --watch` —— 监控 `data/`：放入或更换 CSV 后**自动重新生成**，无需手动运行（Ctrl+C 停止）
   - `python analysis/analyze.py --selftest` —— SPEC §6 四组回归自测
 
 ## 当前进度（M2 完成；最新看板见 docs/PLAN.md §4）

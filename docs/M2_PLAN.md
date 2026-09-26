@@ -9,6 +9,7 @@
 - **关注记录口径**：任务书未明确定义，按 SPEC §8 注：status 非正常（偏冷 / 偏热 / 偏湿）即关注记录
 - **M5 起 CSV 方案提前锁定**：三节点阶段每节点一个 CSV 文件（data/dorm-a.csv 等），保持 4 列不变（SPEC §5 推荐方案，全项目统一）；analyze.py 路径参数化天然支持每节点文件
 - **数据来源红线（用户提醒）**：CSV 必须是 M1 Web 页面实际运行导出的文件，禁止手工在 Excel 改数据；time 必须全格式 YYYY-MM-DD HH:MM:SS（导出时原样输出，不用 toLocaleString）
+- **"更换 CSV"语义（用户要求）**：analyze.py 不指定文件时自动选择 data/ 目录中最新的 CSV（旧文件保留、新文件生效）；提供 `--watch` 监控模式，放入 / 更换 CSV 后自动重新生成，无需手动指定路径
 
 ## 2. 范围红线（M2 不做）
 
@@ -69,6 +70,12 @@
 - 对照 §5 验收清单逐条走查；证据截图 docs/evidence/m2/（CSV 在 WPS/Excel 打开、控制台统计、trend.png、report.html 渲染、换 CSV 前后对比）
 - README.md 补 M2 运行方式；PLAN.md §4 看板 M2 完成、§2 状态列；按 PLAN §6 模板输出交接摘要
 - 提交（先展示变更摘要）：`feat(nova-dormmate-final-2026): M2 offline analysis CSV export and python report`
+
+### S8 "更换后自动生成"增强 ✅ 已完成（测试1：不指定 CSV 自动选最新 new.csv（9 条）；测试2：--watch 放入两份 CSV 管线自动跑 2 次、最终报告为最新文件数据）
+
+- analyze.py：不指定 CSV 时 `pick_csv()` 自动选输出目录中最新的 .csv；`--watch` 每 2 秒轮询，检测到新 / 更换的 CSV 自动重跑管线（单文件错误跳过不退出）；watch 输出 flush 防日志丢失
+- 检查点：见 §1 决策记录"更换 CSV 语义"；README 运行方式已同步
+- 提交：待用户确认后提交
 
 ## 4. 关键设计 — 与后续阶段衔接
 
