@@ -162,6 +162,76 @@ if (typeof document !== "undefined") {
     // M2 S1：导出 CSV 按钮（历史为空时 downloadCsv 内提示，不导出空文件）
     const exportBtn = document.getElementById("exportBtn");
     if (exportBtn) exportBtn.addEventListener("click", downloadCsv);
+
+    // M3 S1：Camera（任务书第 11 条）——点击才请求权限，不连续采集、不自动开启
+    // 注意：getUserMedia 要求 localhost 或 https，file:// 下不可用
+    const cameraVideo = document.getElementById("cameraVideo");
+    const startCameraBtn = document.getElementById("startCameraBtn");
+    const snapshotBtn = document.getElementById("snapshotBtn");
+    const stopCameraBtn = document.getElementById("stopCameraBtn");
+    const cameraMsg = document.getElementById("cameraMsg");
+    let cameraStream = null;
+
+    function showCameraMsg(text) {
+      if (!cameraMsg) return;
+      cameraMsg.textContent = text;
+      cameraMsg.hidden = text === "";
+    }
+
+    async function startCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showCameraMsg("当前环境不支持摄像头（请通过 localhost / Live Server 打开页面）");
+        return;
+      }
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        cameraVideo.srcObject = cameraStream;
+        startCameraBtn.disabled = true;
+        snapshotBtn.disabled = false;
+        stopCameraBtn.disabled = false;
+        showCameraMsg("");
+      } catch (err) {
+        showCameraMsg("无法打开摄像头：" + (err.name || "未知错误") +
+          "（请允许摄像头权限，并确认未被其他软件占用）");
+      }
+    }
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(function (track) { track.stop(); });
+        cameraStream = null;
+      }
+      cameraVideo.srcObject = null;
+      startCameraBtn.disabled = false;
+      snapshotBtn.disabled = true;
+      stopCameraBtn.disabled = true;
+    }
+
+    function saveSnapshot() {
+      if (!cameraStream || !cameraVideo.videoWidth) {
+        showCameraMsg("请先打开摄像头");
+        return;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = cameraVideo.videoWidth;
+      canvas.height = cameraVideo.videoHeight;
+      canvas.getContext("2d").drawImage(cameraVideo, 0, 0);
+      canvas.toBlob(function (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "dormmate-snapshot-" + formatTime(new Date()).replace(/[ :]/g, "-") + ".png";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showCameraMsg("快照已保存（下载目录）");
+      }, "image/png");
+    }
+
+    if (startCameraBtn) startCameraBtn.addEventListener("click", startCamera);
+    if (snapshotBtn) snapshotBtn.addEventListener("click", saveSnapshot);
+    if (stopCameraBtn) stopCameraBtn.addEventListener("click", stopCamera);
     // 输入框按 Enter 同样触发分析（页面无 form 提交路径）
     ["temperature", "humidity"].forEach(function (id) {
       const input = document.getElementById(id);

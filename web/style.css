@@ -130,3 +130,48 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+
+/* ④ Camera 区（M3 S1）：卡片风格与三区块一致，video 固定宽度预览 */
+.camera-area {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.camera-area video {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  display: block;
+  background: #000;
+  border-radius: 8px;
+  margin-bottom: 0.6rem;
+}
+
+.camera-buttons button {
+  margin-right: 0.5rem;
+  padding: 0.45rem 0.8rem;
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.camera-buttons button:hover {
+  background: var(--brand-dark);
+}
+
+.camera-buttons button:disabled {
+  background: var(--border);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}

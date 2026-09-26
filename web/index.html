@@ -38,6 +38,17 @@
     <button id="exportBtn" type="button">导出 CSV</button>
   </section>
 
+  <section class="camera-area">
+    <h2>现场快照（Camera）</h2>
+    <video id="cameraVideo" autoplay playsinline muted></video>
+    <div class="camera-buttons">
+      <button id="startCameraBtn" type="button">打开摄像头</button>
+      <button id="snapshotBtn" type="button" disabled>保存快照</button>
+      <button id="stopCameraBtn" type="button" disabled>关闭摄像头</button>
+    </div>
+    <p id="cameraMsg" class="hint" hidden></p>
+  </section>
+
   <script src="script.js"></script>
 </body>
 </html>
