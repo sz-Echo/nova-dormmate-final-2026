@@ -38,24 +38,24 @@ SPEC/PLAN 按任务书原文修正（M1 合并口径、§3.1 校验范围、M2/M
 - **检查点**：test.html 四组全过
 - **提交**：Commit 1 `feat(nova-dormmate-final-2026): M1 skeleton and status rule with regression tests`（先展示变更摘要，用户确认后提交）
 
-### S3 接入输入 + 建议（任务书②）✅ 已完成（代码落地，node 桩测通过，待用户浏览器确认）
+### S3 接入输入 + 建议（任务书②）✅ 已完成（node 桩测 + 用户浏览器确认）
 
 - `analyze()`：读取输入 → Number() 转换 → computeStatus → 显示状态与建议（ADVICE 映射表）
 - analyze() 为命名函数、可外部调用——M3 语音指令直接调它，不另写流程
 - **检查点**：输入 31/78 得偏热+注意通风；25/55 得正常+环境舒适
 
-### S4 输入校验（任务书③）✅ 已完成（代码落地，node 桩测通过，待用户浏览器确认）
+### S4 输入校验（任务书③）✅ 已完成（node 桩测 + 用户浏览器确认）
 
 - 空值 / 非数字（Number() 后 isNaN）/ 明显异常值（SPEC §3.1：温度 −50~50、湿度 0~100 之外）→ 错误提示区显示具体原因；不分析、不追加历史
 - **检查点**：三类非法输入均被拦截且有提示
 
-### S5 历史记录（任务书⑤）✅ 已完成（代码落地，node 桩测通过，待用户浏览器确认）
+### S5 历史记录（任务书⑤）✅ 已完成（node 桩测 + 用户浏览器确认）
 
 - 成功分析后追加历史，连续 ≥5 条，追加不覆盖；仅存内存，刷新后可消失
 - 历史记录内部结构 = SPEC §4 统一 JSON：`{nodeId:"dorm-a", temperature, humidity, status, time, action:""}`（action 预留空字符串，A2 起按节点追加；time 用 YYYY-MM-DD HH:MM:SS 全格式）
 - **检查点**：连续 5 次分析后历史 5 条，顺序与内容正确
 
-### S6 样式收尾（任务书⑥）✅ 已完成（待用户浏览器确认）
+### S6 样式收尾（任务书⑥）✅ 已完成（用户浏览器确认）
 
 - 整理 CSS；保留至少一处明确自定义的布局/样式（验收第 5 条），在本文档记录它来自哪段 CSS
 - **自定义样式记录（验收第 5 条）**，全部在 web/style.css，未使用任何第三方样式库：
@@ -72,6 +72,21 @@ SPEC/PLAN 按任务书原文修正（M1 合并口径、§3.1 校验范围、M2/M
 - 截图留存 docs/evidence/m1/
 - 更新 PLAN.md §4 看板（M1 完成）与 §2 状态列；按 PLAN §6 模板输出交接摘要
 - **提交**：Commit 2 `feat(nova-dormmate-final-2026): M1 web input judge history acceptance`（先展示变更摘要，用户确认后提交）
+
+### S8 评审修复（code-review 10 finder）✅ 已完成（待用户浏览器复核）
+
+- PLAN.md §4 看板整体重写：删除重复的"最近Commit/下一阶段接口"旧行与过期的"待提交 Commit 2"表述；接口行修正为"M2 复用 computeStatus 规则 + CSV 落盘在 M2 内建；M3 复用 analyze()（支持传数值、返回记录 JSON）"
+- M1_PLAN S3-S6 标注清理（"待用户浏览器确认"→ 已确认）；README 增加看板指引与 iOS 键盘已知限制
+- script.js 健壮性与契约修复：
+  - `analyze(rawTemperature, rawHumidity)` 参数化（不传则读输入框），成功返回本次记录 JSON、校验失败返回 null——兑现"M3 直接调用"契约
+  - 元素缺失时显式抛错（替代 null TypeError）
+  - `validateField(value, min, max, label)` 提取单字段校验（消除温度/湿度复制粘贴）；`validateInputs` 返回 `{messages, temperature, humidity}`（消除 analyze 内二次 Number()）
+  - 参数先 `String()` 转换（修复非字符串入参 `.trim()` 崩溃）；十进制正则 `/^-?\d+(\.\d+)?$/`（拦截 `0x1A`/`1e2` 等非十进制书写）
+  - `pad2()` 提升模块级并用 `padStart`；文案/条目改模板字符串；输入框 Enter 键触发分析；dormmateHistory 加"只读消费、勿重赋值"注释
+- style.css：`.field input` 改 `var(--card-bg)` 令牌、0.2rem 间距归档 0.35rem、头部注释压缩（验收记录以本文件 S6 为准）
+- **遗留记录（M1 不修）**：范围常量跨语言统一（M2 建 config.json）；iOS 数字键盘无负号键（README 已知限制）；双加载双绑定与 dormmateHistory 重赋值分叉（M3/M2 阶段注意）
+- **检查点**：node 桩测全过 + 用户浏览器复核（非法输入含 0x1A/1e2、Enter 触发、参数化 analyze）
+- **提交**：Commit 3（待用户确认后提交）
 
 ## 4. 关键设计 — 与后续阶段衔接
 

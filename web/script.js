@@ -1,4 +1,5 @@
-// DormMate 统一状态规则（SPEC §3）——全项目唯一实现，其他模块（M4/M5/Python）禁止重写
+// DormMate 统一状态规则（SPEC §3）——全项目唯一 JS 实现
+// Python 侧（M2）按同一规则移植，须通过 SPEC §6 同一四组回归（见 docs/M1_PLAN.md）
 // 本文件被 index.html 与 test.html 共用：顶层不得有任何 DOM 操作（test.html 无页面元素）
 
 // SPEC §3：status 判断顺序不可改（① <18 偏冷 ② >=30 偏热 ③ >=75 偏湿 ④ 其余 正常），命中即返回
@@ -21,61 +22,83 @@ const ADVICE = {
 const TEMP_MIN = -50, TEMP_MAX = 50;
 const HUMIDITY_MIN = 0, HUMIDITY_MAX = 100;
 
-// 校验输入（S4）：空值 / 非数字（Number() 后 isNaN）/ 明显异常值（超出 §3.1 范围）
-// 返回错误文案数组，空数组 = 合法；逐字段给出具体原因
+// 单字段校验（S4）：空值 / 非数字（只接受十进制书写，拦截 0x/0b/1e 等） / 超出范围
+// 返回错误文案，空字符串 = 合法
+function validateField(rawValue, min, max, label) {
+  const text = String(rawValue).trim();
+  if (text === "") return `${label}不能为空`;
+  if (!/^-?\d+(\.\d+)?$/.test(text)) return `${label}必须是数字`;
+  const value = Number(text);
+  if (value < min || value > max) return `${label}须在 ${min}~${max} 之间`;
+  return "";
+}
+
+// 校验并解析两字段（S4）：返回 { messages, temperature, humidity }
+// messages 为空 = 合法，此时 temperature/humidity 可直接使用（调用方无需二次 Number()）
 function validateInputs(rawTemperature, rawHumidity) {
+  const temperatureText = String(rawTemperature).trim();
+  const humidityText = String(rawHumidity).trim();
   const messages = [];
-  const temperature = Number(rawTemperature);
-  const humidity = Number(rawHumidity);
-
-  if (rawTemperature.trim() === "") messages.push("温度不能为空");
-  else if (isNaN(temperature)) messages.push("温度必须是数字");
-  else if (temperature < TEMP_MIN || temperature > TEMP_MAX) messages.push("温度须在 " + TEMP_MIN + "~" + TEMP_MAX + " 之间");
-
-  if (rawHumidity.trim() === "") messages.push("湿度不能为空");
-  else if (isNaN(humidity)) messages.push("湿度必须是数字");
-  else if (humidity < HUMIDITY_MIN || humidity > HUMIDITY_MAX) messages.push("湿度须在 " + HUMIDITY_MIN + "~" + HUMIDITY_MAX + " 之间");
-
-  return messages;
+  const temperatureError = validateField(temperatureText, TEMP_MIN, TEMP_MAX, "温度");
+  if (temperatureError) messages.push(temperatureError);
+  const humidityError = validateField(humidityText, HUMIDITY_MIN, HUMIDITY_MAX, "湿度");
+  if (humidityError) messages.push(humidityError);
+  return {
+    messages: messages,
+    temperature: Number(temperatureText),
+    humidity: Number(humidityText)
+  };
 }
 
 // 历史记录（S5）：仅存内存，刷新后可消失；内部结构 = SPEC §4 统一 JSON，action 预留空字符串
+// 消费方（M2 导出 CSV 等）只读该数组、勿整体重赋值——analyze() 始终写入此模块级数组
 const dormmateHistory = [];
+
+function pad2(n) { return String(n).padStart(2, "0"); }
 
 // time 格式：YYYY-MM-DD HH:MM:SS（SPEC §4）
 function formatTime(d) {
-  function pad(n) { return n < 10 ? "0" + n : "" + n; }
-  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
-    " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ` +
+    `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
-// analyze：校验 → 读取输入 → 判断 → 显示状态与建议 → 追加历史（M3 语音指令直接调用此入口）
-// 校验不通过时：错误提示区显示具体原因，不分析、不追加历史
-function analyze() {
+// analyze：校验 → 判断 → 显示状态与建议 → 追加历史（M3 语音指令直接调用此入口）
+// 参数可选：analyze("16", "60") 或 analyze(16, 60) 直接传值；不传则读取页面输入框
+// 校验不通过：错误提示区显示具体原因，不分析、不追加历史，返回 null
+// 成功：返回本次记录（统一 JSON），供 M3 语音播报等复用
+function analyze(rawTemperature, rawHumidity) {
   const temperatureInput = document.getElementById("temperature");
   const humidityInput = document.getElementById("humidity");
   const errorMsg = document.getElementById("errorMsg");
+  const statusText = document.getElementById("statusText");
+  const adviceText = document.getElementById("adviceText");
+  const historyList = document.getElementById("historyList");
 
-  const errors = validateInputs(temperatureInput.value, humidityInput.value);
-  if (errors.length > 0) {
-    errorMsg.textContent = errors.join("；");
+  // 元素缺失（如 test.html 无表单）时显式报错，不静默失败
+  if (!temperatureInput || !humidityInput || !errorMsg || !statusText || !adviceText || !historyList) {
+    throw new Error("analyze() 需要 M1 表单元素（#temperature/#humidity/#errorMsg/#statusText/#adviceText/#historyList），当前页面缺少部分元素");
+  }
+
+  const rawTemperatureValue = rawTemperature === undefined ? temperatureInput.value : rawTemperature;
+  const rawHumidityValue = rawHumidity === undefined ? humidityInput.value : rawHumidity;
+
+  const result = validateInputs(rawTemperatureValue, rawHumidityValue);
+  if (result.messages.length > 0) {
+    errorMsg.textContent = result.messages.join("；");
     errorMsg.hidden = false;
-    return;
+    return null;
   }
   errorMsg.textContent = "";
   errorMsg.hidden = true;
 
-  const temperature = Number(temperatureInput.value);
-  const humidity = Number(humidityInput.value);
-  const status = computeStatus(temperature, humidity);
-
-  document.getElementById("statusText").textContent = status;
-  document.getElementById("adviceText").textContent = ADVICE[status];
+  const status = computeStatus(result.temperature, result.humidity);
+  statusText.textContent = status;
+  adviceText.textContent = ADVICE[status];
 
   const record = {
     nodeId: "dorm-a",
-    temperature: temperature,
-    humidity: humidity,
+    temperature: result.temperature,
+    humidity: result.humidity,
     status: status,
     time: formatTime(new Date()),
     action: ""
@@ -83,9 +106,10 @@ function analyze() {
   dormmateHistory.push(record);
 
   const li = document.createElement("li");
-  li.textContent = record.time + " · " + record.nodeId + " · " +
-    record.temperature + "℃ / " + record.humidity + "% · " + record.status;
-  document.getElementById("historyList").appendChild(li);
+  li.textContent = `${record.time} · ${record.nodeId} · ${record.temperature}℃ / ${record.humidity}% · ${record.status}`;
+  historyList.appendChild(li);
+
+  return record;
 }
 
 // 直接暴露到全局：test.html 回归测试与 M3 语音指令都依赖
@@ -93,6 +117,7 @@ function analyze() {
 if (typeof window !== "undefined") {
   window.computeStatus = computeStatus;
   window.ADVICE = ADVICE;
+  window.validateField = validateField;
   window.validateInputs = validateInputs;
   window.analyze = analyze;
   window.dormmateHistory = dormmateHistory;
@@ -102,6 +127,13 @@ if (typeof window !== "undefined") {
 if (typeof document !== "undefined") {
   document.addEventListener("DOMContentLoaded", function () {
     const analyzeBtn = document.getElementById("analyzeBtn");
-    if (analyzeBtn) analyzeBtn.addEventListener("click", analyze);
+    if (analyzeBtn) analyzeBtn.addEventListener("click", function () { analyze(); });
+    // 输入框按 Enter 同样触发分析（页面无 form 提交路径）
+    ["temperature", "humidity"].forEach(function (id) {
+      const input = document.getElementById(id);
+      if (input) input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") analyze();
+      });
+    });
   });
 }

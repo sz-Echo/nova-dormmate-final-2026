@@ -168,14 +168,12 @@
 ## 4. 当前阶段看板
 
 - **当前阶段**：M2（离线数据分析与报告）——待用户启动；进入前先建 docs/M2_PLAN.md（同 M1 模式）
-- **当前只做**：M1 已收口（S1-S7 全过、现场验证完成），待提交 Commit 2 后转入 M2
-- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7：静态骨架 / 统一规则 + 四组回归 / 输入建议 / 校验 / 历史 / 样式 / 验收，证据在 docs/evidence/m1/）
+- **当前只做**：无进行中任务；M1 已收口（S1-S7 全过、现场验证完成、Commit 1/2 已提交）
+- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7：静态骨架 / 统一规则 + 四组回归 / 输入建议 / 校验 / 历史 / 样式 / 验收，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24）
 - **阻塞**：无
-- **下一步**：用户确认后提交 Commit 2（M1 收口提交）；随后建 docs/M2_PLAN.md 启动 M2
-- **最近Commit**：64e2aa0 feat(nova-dormmate-final-2026): M1 skeleton and status rule with regression tests
-- **下一阶段接口**：M2 依赖 M1 的 computeStatus() 与历史 JSON（window.dormmateHistory）；M3 依赖 M1 的 analyze() 入口
-- **最近Commit**：e1b01a7 docs(nova-dommate-final-2026): add spec, plan and claude.md
-- **下一阶段接口**：M2 依赖 M1 的 computeStatus() 与历史 JSON；M3 依赖 M1 的 analyze() 入口
+- **下一步**：用户说"继续 M2"即建 docs/M2_PLAN.md 启动 M2
+- **最近Commit**：f9bcd24 feat(nova-dormmate-final-2026): M1 web input judge history acceptance
+- **下一阶段接口**：M2 复用 M1 的 computeStatus() 规则（Python 移植须过 SPEC §6 同一四组回归）与统一 JSON 结构，CSV 落盘与导出步骤在 M2 内建；M3 复用 M1 的 analyze() 入口（支持直接传数值，成功返回本次记录 JSON）
 
 ## 5. 给 Claude Code 的调用模板
 
