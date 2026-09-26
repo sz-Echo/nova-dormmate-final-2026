@@ -232,6 +232,97 @@ if (typeof document !== "undefined") {
     if (startCameraBtn) startCameraBtn.addEventListener("click", startCamera);
     if (snapshotBtn) snapshotBtn.addEventListener("click", saveSnapshot);
     if (stopCameraBtn) stopCameraBtn.addEventListener("click", stopCamera);
+
+    // M3 S2：TTS（任务书第 12 条后半）——朗读内容取当前状态与建议，随状态动态变化
+    const speakBtn = document.getElementById("speakBtn");
+    const ttsMsg = document.getElementById("ttsMsg");
+    let ttsVoices = [];
+
+    function loadVoices() {
+      ttsVoices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    }
+
+    function showTtsMsg(text) {
+      if (!ttsMsg) return;
+      ttsMsg.textContent = text;
+      ttsMsg.hidden = text === "";
+    }
+
+    function speakStatus() {
+      if (!window.speechSynthesis) {
+        showTtsMsg("当前浏览器不支持语音合成");
+        return;
+      }
+      const status = document.getElementById("statusText").textContent;
+      const advice = document.getElementById("adviceText").textContent;
+      if (!status || status === "—") {
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance("请先分析环境，再朗读状态"));
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance("当前状态：" + status + "，" + advice);
+      utterance.lang = "zh-CN";
+      const zhVoice = ttsVoices.find(function (v) {
+        return v.lang && v.lang.toLowerCase().indexOf("zh") === 0;
+      });
+      if (zhVoice) {
+        utterance.voice = zhVoice;
+        showTtsMsg("");
+      } else {
+        // Windows 未装中文语音包时页面提示，并建议 Edge（自带较稳定的中文语音）
+        showTtsMsg("未检测到系统中文语音包，朗读可能异常；建议换 Edge 浏览器测试");
+      }
+      window.speechSynthesis.speak(utterance);
+    }
+
+    if (window.speechSynthesis) {
+      loadVoices();
+      window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+    }
+    if (speakBtn) speakBtn.addEventListener("click", speakStatus);
+
+    // M3 S3：等价 ASR（任务书第 12 条前半）——原生 SpeechRecognition 依赖 Google 在线服务、
+    // 国内网络不可用（README 已知限制记录），改用系统语音输入法（Win+H）等价方案：
+    // 识别文字打进输入框 → 程序捕获 → 匹配固定指令 → 真实触发已有功能（speakStatus / saveSnapshot）
+    const voiceInput = document.getElementById("voiceCommand");
+    const voiceResult = document.getElementById("voiceResult");
+    let voiceTimer = null;
+
+    function showVoiceResult(text, ok) {
+      if (!voiceResult) return;
+      voiceResult.textContent = text;
+      voiceResult.className = ok ? "hint" : "hint error";
+      voiceResult.hidden = text === "";
+    }
+
+    function handleVoiceCommand(text) {
+      if (text.indexOf("朗读状态") !== -1) {
+        speakStatus();  // 朗读内容随当前状态（TTS 链路）
+        showVoiceResult("识别结果：" + text + " → 已触发：朗读当前状态", true);
+      } else if (text.indexOf("拍照") !== -1) {
+        saveSnapshot();  // Camera 快照链路
+        showVoiceResult("识别结果：" + text + " → 已触发：拍照保存快照", true);
+      } else {
+        showVoiceResult("识别结果：" + text + " → 未匹配任何指令（可用指令：朗读状态 / 拍照）", false);
+      }
+    }
+
+    function processVoiceInput() {
+      clearTimeout(voiceTimer);
+      const text = voiceInput.value.trim();
+      voiceInput.value = "";
+      if (text) handleVoiceCommand(text);
+    }
+
+    if (voiceInput) {
+      // 系统语音输入逐字打进输入框：停止输入 1.2 秒视为一句说完，自动处理；回车立即处理
+      voiceInput.addEventListener("input", function () {
+        clearTimeout(voiceTimer);
+        voiceTimer = setTimeout(processVoiceInput, 1200);
+      });
+      voiceInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") processVoiceInput();
+      });
+    }
     // 输入框按 Enter 同样触发分析（页面无 form 提交路径）
     ["temperature", "humidity"].forEach(function (id) {
       const input = document.getElementById(id);

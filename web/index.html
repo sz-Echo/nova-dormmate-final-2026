@@ -30,12 +30,21 @@
     <h2>当前状态</h2>
     <p id="statusText">—</p>
     <p id="adviceText">—</p>
+    <button id="speakBtn" type="button">朗读状态</button>
+    <p id="ttsMsg" class="hint" hidden></p>
   </section>
 
   <section class="history-area">
     <h2>历史记录</h2>
     <ul id="historyList"></ul>
     <button id="exportBtn" type="button">导出 CSV</button>
+  </section>
+
+  <section class="voice-area">
+    <h2>语音指令（等价 ASR）</h2>
+    <p class="hint">点击下方输入框聚焦后按 Win+H 说话，系统语音输入会把识别文字打进输入框，程序自动匹配指令（也可直接打字测试）</p>
+    <input type="text" id="voiceCommand" placeholder="如：朗读状态 / 拍照" autocomplete="off">
+    <p id="voiceResult" class="hint" hidden></p>
   </section>
 
   <section class="camera-area">
