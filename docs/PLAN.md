@@ -21,7 +21,7 @@
 | 阶段0 | 建立 docs/ 两份唯一事实源文档 | 无 | 文档通过自检 | docs/ 两文件 | 已完成 |
 | M1 | Web 主应用（输入 / 判断 / 记录）+ 统一规则 | 阶段0 | 四组回归全对 + 任务书 5 条验收 | 页面 + test.html + 历史截图 | 已完成 |
 | M2 | 离线数据分析与报告（CSV -> Python -> trend.png / report.html） | M1 | 任务书 6-10 条；换 CSV 全量重生成 | CSV + 脚本 + 两产物 | 已完成 |
-| M3 | Camera / ASR / TTS + Git / GitHub | M1 | 任务书 11-15 条；≥3 次有意义 Commit | 快照 / 识别 / 提交记录 / README | 进行中 |
+| M3 | Camera / ASR / TTS + Git / GitHub | M1 | 任务书 11-15 条；≥3 次有意义 Commit | 快照 / 识别 / 提交记录 / README | 已完成 |
 | M4 | 移动端小程序核心页面（单宿舍） | M1 | 微信开发者工具稳定运行 | 开发者工具截图 | 未开始 |
 | M5 | 本机 Broker + 模拟节点三宿舍 + Dashboard | M1（M4 可交叉） | 三节点同屏不串线 | 运行截图 | 未开始 |
 | M6 | Three.js 3D 三节点联动 | M5 | 3D 实时更新 | 截图 / 录屏 | 未开始 |
@@ -167,12 +167,12 @@
 
 ## 4. 当前阶段看板
 
-- **当前阶段**：M3（本机交互 + 版本记录）——进行中（S0-S4 完成，S1-S3 用户实测通过；待进入 S5/S6 Git 与 GitHub）
-- **当前只做**：M3 S5/S6（Git 提交与 GitHub 推送）待用户确认启动
+- **当前阶段**：M4（移动端小程序）——待用户启动；进入前先建 docs/M4_PLAN.md（同 M1/M2/M3 模式）
+- **当前只做**：无进行中任务；M3 已收口（S1-S3 用户实测通过，两次提交 + GitHub Private 仓库推送完成）
 - **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 S0-S4（文档对齐 / Camera / TTS / 等价 ASR / README，S1-S3 用户实测通过，详细见 docs/M3_PLAN.md）
 - **阻塞**：无
-- **下一步**：S5 提交拆分（Commit A `feat: 加入Camera预览与快照` / Commit B `feat: 加入ASR语音指令与动态TTS`，每次 add 前先展示 git status 经用户确认）；S6 GitHub Private 仓库 + subtree push（命令先经用户确认）
-- **最近Commit**：5909f1c feat(nova-dormmate-final-2026): M2 auto-pick newest CSV and watch mode
+- **下一步**：用户说"继续 M4"即建 docs/M4_PLAN.md 启动 M4（微信小程序核心页面，复用 M1 的 computeStatus 纯函数）
+- **最近Commit**：88aabc2 feat: 加入ASR语音指令与动态TTS，更新README（M3 S2-S4）；GitHub Private 仓库 nova-dormmate-final-2026 已推送（33b6afe 对应当前运行项目）
 - **下一阶段接口**：M3 复用 M1 的 analyze() 入口与 web/ 页面（详细步骤见 docs/M3_PLAN.md）；M4 复用 M1 的 computeStatus() 纯函数与统一规则，不复制 Web DOM 代码；M5 起三节点
 
 ## 5. 给 Claude Code 的调用模板

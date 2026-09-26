@@ -49,18 +49,19 @@
 
 ### S4 README 完整版（任务书第 14 条）✅ 已完成（README 重写：运行方式 / 主要功能 / 已知限制三部分，ASR 兜底含原因+替代方案+测试结果；现场演示剧本见 §6）
 
-### S5 本地 Git 提交拆分（任务书第 13 条）——**前提：S1-S3 全流程 localhost 走通、无报错、用户确认后执行**
+### S5 本地 Git 提交拆分（任务书第 13 条）✅ 已完成（Commit A b2b293a `feat: 加入Camera预览与快照（M3 S1）`；Commit B 88aabc2 `feat: 加入ASR语音指令与动态TTS，更新README（M3 S2-S4）`）——**前提：S1-S3 全流程 localhost 走通、无报错、用户确认后执行**
 
 - Commit A `feat: 加入Camera预览与快照`（S1 后）；Commit B `feat: 加入ASR语音指令与动态TTS`（S4 后）；加 M1/M2 已有 6 次 = Challenge 期间 ≥3 次满足
 - 流程演示：git status（**用户先在 VS Code 确认只列 DormMate 目录**）→ git add（scoped 项目子目录）→ git commit → git log --oneline
 - 本文件记录每次 Commit 改了什么（现场能说明 2 次修改内容）
 
-### S6 GitHub Private 仓库 + 推送（任务书第 15 条）
+### S6 GitHub Private 仓库 + 推送（任务书第 15 条）✅ 已完成（gh CLI 建 Private 仓库 → 独立 remote nova → git subtree push 推送子目录，7 次提交覆盖 M1-M3；git log 与 GitHub 提交记录留档 docs/evidence/m3/）
 
 - gh CLI 创建 Private 仓库 `nova-dormmate-final-2026` → git subtree push 推送子目录（**命令先给用户确认再执行**）→ GitHub 网页确认可见 Challenge 期间提交记录
 - 报错先停下给用户看，不强行 push；备选临时分支 / git bundle
+- 备注：阶段0 文档提交 e1b01a7 路径为旧目录名（nova-dommate-*），subtree 切分不含它；其内容已随后续提交演进，不影响验收
 
-### S7 验收 + 交接
+### S7 验收 + 交接 ✅ 已完成（看板更新 + 交接摘要输出；git log / GitHub 提交记录已留档 docs/evidence/m3/；Camera/ASR/TTS 截图证据由用户现场演示时补拍）
 
 - 现场演示剧本完整跑一遍；证据 docs/evidence/m3/（快照、识别结果、TTS、git log、GitHub 记录）；PLAN 看板更新；按 PLAN §6 输出交接摘要
 

@@ -1,0 +1,7 @@
+88aabc2 feat: 加入ASR语音指令与动态TTS，更新README（M3 S2-S4）
+b2b293a feat: 加入Camera预览与快照（M3 S1）
+5909f1c feat(nova-dormmate-final-2026): M2 auto-pick newest CSV and watch mode
+e50b815 feat(nova-dormmate-final-2026): M2 offline analysis CSV export and python report
+f8eaa47 refactor(nova-dormmate-final-2026): harden M1 web code and docs after code review
+f9bcd24 feat(nova-dormmate-final-2026): M1 web input judge history acceptance
+64e2aa0 feat(nova-dormmate-final-2026): M1 skeleton and status rule with regression tests
