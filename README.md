@@ -11,6 +11,7 @@
   - `python analysis/analyze.py 其他CSV路径` —— 指定某个 CSV 全量重新生成统计与两产物（验收要求，禁止手工修改）
   - `python analysis/analyze.py --watch` —— 监控 `data/`：放入或更换 CSV 后**自动重新生成**，无需手动运行（Ctrl+C 停止）
   - `python analysis/analyze.py --selftest` —— SPEC §6 四组回归自测
+- **微信小程序（M4）**：微信开发者工具 → "导入项目"选择 `mobile/` 目录 → AppID 选"测试号"（无需注册、无需真机）→ 编译运行。核心页面：输入温湿度 → 状态 / 建议 + 带时间历史（含"载入演示数据"按钮）；打开项目时 Console 自动打印四组回归自测结果（4 行 PASS）
 
 ## 主要功能
 
@@ -31,4 +32,4 @@
 ## 文档
 
 - 项目规格：`docs/DORMMATE_SPEC.md`
-- 执行计划：`docs/PLAN.md`（M1 见 `docs/M1_PLAN.md`，M2 见 `docs/M2_PLAN.md`，M3 详细步骤与现场演示剧本见 `docs/M3_PLAN.md`）
+- 执行计划：`docs/PLAN.md`（M1 见 `docs/M1_PLAN.md`，M2 见 `docs/M2_PLAN.md`，M3 详细步骤与现场演示剧本见 `docs/M3_PLAN.md`，M4 见 `docs/M4_PLAN.md`）

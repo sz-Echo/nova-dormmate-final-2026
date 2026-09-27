@@ -22,7 +22,7 @@
 | M1 | Web 主应用（输入 / 判断 / 记录）+ 统一规则 | 阶段0 | 四组回归全对 + 任务书 5 条验收 | 页面 + test.html + 历史截图 | 已完成 |
 | M2 | 离线数据分析与报告（CSV -> Python -> trend.png / report.html） | M1 | 任务书 6-10 条；换 CSV 全量重生成 | CSV + 脚本 + 两产物 | 已完成 |
 | M3 | Camera / ASR / TTS + Git / GitHub | M1 | 任务书 11-15 条；≥3 次有意义 Commit | 快照 / 识别 / 提交记录 / README | 已完成 |
-| M4 | 移动端小程序核心页面（单宿舍） | M1 | 微信开发者工具稳定运行 | 开发者工具截图 | 未开始 |
+| M4 | 移动端小程序核心页面（单宿舍） | M1 | 微信开发者工具稳定运行 | 开发者工具截图 | 已完成 |
 | M5 | 本机 Broker + 模拟节点三宿舍 + Dashboard | M1（M4 可交叉） | 三节点同屏不串线 | 运行截图 | 未开始 |
 | M6 | Three.js 3D 三节点联动 | M5 | 3D 实时更新 | 截图 / 录屏 | 未开始 |
 | A | 优先关注 / 处理动作 / 恢复判断（A1-A3） | M5 / M6 | A1-A3 全过 | 逐项证据 | 未开始 |
@@ -167,13 +167,13 @@
 
 ## 4. 当前阶段看板
 
-- **当前阶段**：M4（移动端小程序）——待用户启动；进入前先建 docs/M4_PLAN.md（同 M1/M2/M3 模式）
-- **当前只做**：无进行中任务；M3 已收口（S1-S3 用户实测通过，三次提交 b2b293a / 88aabc2 / 9fa9e37 + GitHub Private 仓库推送 a745f96；评审修复随最近Commit 完成）
-- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）
+- **当前阶段**：M5（MQTT 实时系统）——待用户启动；M4 已收口，进入 M5 前先建 docs/M5_PLAN.md（同 M1-M4 模式）
+- **当前只做**：无进行中任务；M4 已收口（S1-S5 用户实测通过，提交 feat: M4 微信小程序复用DormMate统一规则）
+- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）；M4 S0（docs/M4_PLAN.md 创建 + 看板更新，4 项决策经用户确认：原生小程序测试号 / 规则移植口径 / 载入演示数据 / 按第 16-19 条验收）；M4 全部（S0-S5：文档对齐 / 小程序骨架 / 规则移植 / 页面交互 / 冷启动验收 / 交接，用户实测通过，提交 feat: M4 微信小程序复用DormMate统一规则，证据截图待用户补拍 docs/evidence/m4/，详细见 docs/M4_PLAN.md）
 - **阻塞**：无
-- **下一步**：用户说"继续 M4"即建 docs/M4_PLAN.md 启动 M4（微信小程序核心页面，复用 M1 的 computeStatus 纯函数）
-- **最近Commit**：fix(nova-dormmate-final-2026): M3 review fixes for voice commands camera and TTS（本看板随该提交更新；GitHub 待同步此提交，用户确认后补推）
-- **下一阶段接口**：M3 复用 M1 的 analyze() 入口与 web/ 页面（详细步骤见 docs/M3_PLAN.md）；M4 复用 M1 的 computeStatus() 纯函数与统一规则，不复制 Web DOM 代码；M5 起三节点
+- **下一步**：用户说"继续 M5"即建 docs/M5_PLAN.md 启动 M5（本机 Broker + 模拟节点三宿舍 + Dashboard 同屏不串线）
+- **最近Commit**：feat: M4 微信小程序复用DormMate统一规则（本看板随该提交更新）
+- **下一阶段接口**：M5 复用 M1 规则与 SPEC §4 统一 JSON；三节点 dorm-a / dorm-b / dorm-c 独立 topic（dormmate/{nodeId}/env）不串线；M4 小程序 M5 起可选订阅 MQTT；M6 消费同一 MQTT 数据流
 
 ## 5. 给 Claude Code 的调用模板
 

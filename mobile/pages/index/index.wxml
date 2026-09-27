@@ -1,0 +1,37 @@
+<!-- M4 S1/S3：WXML 页面结构（任务书第 17 条）
+     bindinput：输入即写入 Page data；bindtap：按钮点击；bindconfirm：键盘确认键触发分析
+     界面所有数据来自 Page data，渲染由 setData 驱动 -->
+<view class="container">
+  <view class="card">
+    <view class="title">DormMate</view>
+    <view class="field">
+      <view class="label">温度（℃）</view>
+      <input class="input" type="text" placeholder="如 25" value="{{temperature}}"
+        bindinput="onTempInput" bindconfirm="onAnalyze" />
+    </view>
+    <view class="field">
+      <view class="label">湿度（%）</view>
+      <input class="input" type="text" placeholder="如 55" value="{{humidity}}"
+        bindinput="onHumidityInput" bindconfirm="onAnalyze" />
+    </view>
+    <view class="buttons">
+      <button class="btn primary" bindtap="onAnalyze">分析环境</button>
+      <button class="btn" bindtap="onLoadDemo">载入演示数据</button>
+    </view>
+    <view class="error" wx:if="{{errorMsg}}">{{errorMsg}}</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">当前状态</view>
+    <view class="status">{{status}}</view>
+    <view class="advice">{{advice}}</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">历史记录</view>
+    <view class="empty" wx:if="{{history.length === 0}}">暂无记录</view>
+    <view class="history-item" wx:for="{{history}}" wx:key="time">
+      {{item.time}} · {{item.nodeId}} · {{item.temperature}}℃ / {{item.humidity}}% · {{item.status}}
+    </view>
+  </view>
+</view>

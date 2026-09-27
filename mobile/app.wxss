@@ -1,0 +1,6 @@
+/* 全局样式（M4 S1）：页面底色与基础字体；卡片 / 输入区 / 状态大字样式见 pages/index/index.wxss */
+page {
+  background-color: #f5f6f8;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #333;
+}
