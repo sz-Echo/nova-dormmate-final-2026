@@ -9,6 +9,7 @@
 - **规则移植口径**：小程序无法直接 require web/script.js（含 window/document DOM 代码、无 module.exports，且小程序项目根为 mobile/）→ 按 M2 Python 同模式"移植纯函数 + 过 SPEC §6 同一四组回归"，逐行同语义，**不复制 Web DOM 代码**；web/ 保持不动（M1 已收口，避免回归）
 - **演示数据**："载入演示数据"按钮预置 4 条模拟历史 = SPEC §6 四组回归数据（25/60 正常、16/60 偏冷、31/60 偏热、25/80 偏湿），时间取当前往前推几分钟，同时演示规则与"查看数据"
 - **验收口径**：验收清单严格按任务书第 16-19 条组织，S5 时逐条对照走查
+- **提交风格豁免**：M4 提交 `feat: M4 微信小程序复用DormMate统一规则` 为中文且无 scope，系用户指定（现场答辩口径），豁免 CLAUDE.md 的英文 type(scope) 风格要求（同 M3 三次提交先例）
 
 ## 2. 范围红线（M4 不做）
 
@@ -40,7 +41,7 @@
   - `TEMP_MIN/-50、TEMP_MAX/50、HUMIDITY_MIN/0、HUMIDITY_MAX/100`、`validateField`、`validateInputs`
   - `pad2`、`formatTime`（YYYY-MM-DD HH:MM:SS）、`runRulesSelfTest()`（跑四组比对，逐行打印 PASS/FAIL）
   - 全部 `module.exports` 导出
-- **检查点**：页面 onLoad 自动执行 runRulesSelfTest()，Console 输出 4 行 PASS；截图（对应 web/test.html 的角色）
+- **检查点**：页面 onLoad 自动执行 runRulesSelfTest()，Console 输出 4 行回归 PASS + ADVICE / 校验 / formatTime 附加校验行全 PASS；截图（对应 web/test.html 的角色）
 - **备注（2026-09-27 实测修复）**：开发者工具 Console 直接敲 require 报 "require is not defined"，自测改为 onLoad 自动执行，无需手动命令
 
 ### S3 页面交互（Page data / setData / bindinput / bindtap） ✅ 已完成（2026-09-27 用户实测：输入 / 拦截 / 历史 / 演示数据全部通过）
@@ -53,7 +54,7 @@
   - 输入框 `bindconfirm="onAnalyze"`（对应 M1 的 Enter 体验）；温度 input 用 `type="text"`（小程序数字键盘无负号，温度范围 −50~50 含负数，与 M1 README 已知限制一致；text 也便于演示非数字校验拦截）
 - `index.wxss`：状态大字高亮、卡片式三区块、错误红色提示（对应 M1 自定义样式，能指出位置）
 - **检查点**：模拟器输入 31/60 → 偏热+注意通风；25/80 → 偏湿+注意除湿；非法输入（空 / 非数字 / 60℃ / 120%）被拦截且提示原因
-- **提交（用户确认后）**：Commit `feat(nova-dormmate-final-2026): M4 mini program core page`（先展示变更摘要）
+- **提交（用户确认后）**：实际提交 `feat: M4 微信小程序复用DormMate统一规则`（用户指定消息，cb947ff；替代本行原计划的英文消息）
 
 ### S4 冷启动 + 新数据验收（任务书第 18-19 条） ✅ 已完成（2026-09-27 用户实测：冷启动正常 / 31-60 偏热+注意通风 / 演示数据 4 条 / 拦截提示 / Console 4 行 PASS；证据截图待用户现场演示时补拍 docs/evidence/m4/，同 M3 模式）
 
@@ -65,7 +66,18 @@
 
 - 对照验收清单逐条走查；README 补 M4 运行方式（开发者工具导入 mobile/、测试号、Console 回归自测命令）与已知限制（数字键盘无负号）
 - 更新 PLAN.md §4 看板（M4 完成）与 §2 状态列；按 PLAN §6 模板输出交接摘要
-- **提交（用户确认后）**：证据 + README + 看板收口提交
+- **提交（用户确认后）**：实际随 cb947ff 一次提交（用户指定消息）
+
+### S6 评审修复（code-review 10 finder） ✅ 代码完成（待用户开发者工具复测）
+
+- 配置（用户确认）：appid 按开发者工具"测试号"自动写入的值提交（wxd7c27e7d8b4c53e1），文档口径统一为"测试号（工具自动填入测试 AppID）"；project.private.config.json 入 .gitignore 并取消跟踪（本地文件保留）
+- 行为：载入演示数据改 concat 追加（不再覆盖真实记录）；demo 时间改 4/3/2/1 分钟前（不再等于点击时刻）
+- 复用：rules.js 导出 REGRESSION_CASES / buildRecord，自测与演示数据共用同一份回归数据与同一记录构造；onAnalyze 删除 bindtap 用不到的返回值；validateInputs 补"失败返回值不可用"调用契约注释
+- 自测加固（用户确认）：四组回归 4 行 PASS 保持在前，其后追加 ADVICE 映射 / validateField 边界与拦截 / formatTime 补零校验行
+- 文档：§8 工具风险行改已解决；S3/S5 提交信息更正为实际消息；§1 补提交风格豁免；README 已知限制补小程序 type="text" 与 wx:key 条目；PLAN 看板去重 + GitHub 同步跟踪；index.js 补 MQTT 预留注释
+- 接受不改：wx:key 同秒重复（SPEC §4 禁止额外字段，无干净修复）→ README 记为已知限制；其余不采纳项与理由见评审修复计划
+- **检查点（用户）**：清缓存编译 → 冷启动（touristappid）→ Console 四组回归 + 附加校验全 PASS → 演示数据追加不覆盖真实记录
+- **提交**：待用户复测通过后 `fix(nova-dormmate-final-2026): M4 code review fixes`（先展示变更摘要）
 
 ## 4. 关键设计 — 与 M1-M6 / A / B / C 联系
 
@@ -97,18 +109,18 @@
 1. **冷启动（第 18 条）**：关闭开发者工具 → 重新打开 → 打开项目 → 页面正常
 2. **输入新数据（第 19 条）**：输入 31/60 → 偏热、注意通风；25/80 → 偏湿、注意除湿；16/60 → 偏冷、注意保暖；再试一组非法输入（如 60℃ / 120%）→ 拦截提示
 3. **技术关键词（第 17 条）**：打开 index.wxml 指出 bindinput/bindtap 位置、index.js 指出 Page data 与 setData、WXSS 指出样式
-4. **规则迁移（第 16 条）**：打开项目时 Console 自动输出四组回归 PASS（onLoad 自动执行 runRulesSelfTest）；对照 web/script.js 的 computeStatus 说明同一套规则（顺序不可改）
+4. **规则迁移（第 16 条）**：打开项目时 Console 自动输出四组回归 PASS 与 ADVICE / 校验 / formatTime 附加校验行（onLoad 自动执行 runRulesSelfTest）；对照 web/script.js 的 computeStatus 说明同一套规则（顺序不可改）
 5. **查看数据**：点"载入演示数据" → 4 条历史（四个状态各一）→ 再手动分析几条，历史逐条追加、带时间与 nodeId
 
 ## 7. 验证方式
 
-- Console：页面 onLoad 自动执行 runRulesSelfTest()，输出四组 PASS
+- Console：页面 onLoad 自动执行 runRulesSelfTest()，输出四组回归 PASS + 附加校验行全 PASS
 - 冷启动（关闭重开）+ 现场 3 组新数据，按演示剧本走查
 - 证据截图 → docs/evidence/m4/，随 M4 提交
 
 ## 8. 风险
 
-- **工具未安装（当前阻塞）** → 用户安装后开工；安装遇问题按 SPEC §13 约定 5 检索排查
+- ~~工具未安装~~ ✅ 已解决（2026-09-27 安装稳定版 2.02.2608070）；后续工具问题按 SPEC §13 约定 5 检索排查
 - 基础库版本差异 → 用开发者工具默认基础库，不用新特性
 - 测试号无法真机预览 → 完成线不要求真机（SPEC §13 约定 2）
 - 小程序数字键盘无负号 → 温度输入框 type="text"（与 M1 已知限制一致）

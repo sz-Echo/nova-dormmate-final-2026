@@ -169,10 +169,10 @@
 
 - **当前阶段**：M5（MQTT 实时系统）——待用户启动；M4 已收口，进入 M5 前先建 docs/M5_PLAN.md（同 M1-M4 模式）
 - **当前只做**：无进行中任务；M4 已收口（S1-S5 用户实测通过，提交 feat: M4 微信小程序复用DormMate统一规则）
-- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）；M4 S0（docs/M4_PLAN.md 创建 + 看板更新，4 项决策经用户确认：原生小程序测试号 / 规则移植口径 / 载入演示数据 / 按第 16-19 条验收）；M4 全部（S0-S5：文档对齐 / 小程序骨架 / 规则移植 / 页面交互 / 冷启动验收 / 交接，用户实测通过，提交 feat: M4 微信小程序复用DormMate统一规则，证据截图待用户补拍 docs/evidence/m4/，详细见 docs/M4_PLAN.md）
+- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）；M4 全部（S0-S5：文档对齐 / 小程序骨架 / 规则移植 / 页面交互 / 冷启动验收 / 交接，用户实测通过，提交 feat: M4 微信小程序复用DormMate统一规则，证据截图待用户补拍 docs/evidence/m4/，详细见 docs/M4_PLAN.md；S6 评审修复随 fix 提交）
 - **阻塞**：无
 - **下一步**：用户说"继续 M5"即建 docs/M5_PLAN.md 启动 M5（本机 Broker + 模拟节点三宿舍 + Dashboard 同屏不串线）
-- **最近Commit**：feat: M4 微信小程序复用DormMate统一规则（本看板随该提交更新）
+- **最近Commit**：fix(nova-dormmate-final-2026): M4 code review fixes（本看板随该提交更新；GitHub 待同步 a716950 / cb947ff / 本提交，用户确认后补推）
 - **下一阶段接口**：M5 复用 M1 规则与 SPEC §4 统一 JSON；三节点 dorm-a / dorm-b / dorm-c 独立 topic（dormmate/{nodeId}/env）不串线；M4 小程序 M5 起可选订阅 MQTT；M6 消费同一 MQTT 数据流
 
 ## 5. 给 Claude Code 的调用模板

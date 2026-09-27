@@ -2,6 +2,8 @@
 // 业务规则统一来自 utils/rules.js（移植 M1 web/script.js 纯函数，见该文件头注释）
 const rules = require("../../utils/rules.js");
 
+// M5 预留：本页可选订阅 MQTT（topic dormmate/{nodeId}/env），实时记录追加进 history；
+// M4 不实现订阅，仅预留接入点（见 docs/M4_PLAN.md §4）
 Page({
   // Page data：页面数据的唯一来源；界面渲染与更新全部走 setData
   data: {
@@ -13,9 +15,9 @@ Page({
     history: []
   },
 
-  // onLoad：页面加载即自动跑四组回归自测（SPEC §6），Console 直接输出 4 行 PASS
-  // 说明：开发者工具 Console 不支持直接 require('utils/rules.js')（实测报 require is not defined），
-  // 故自测入口放在这里，随页面加载自动执行，无需手动命令
+  // onLoad：页面加载即自动跑自测（SPEC §6 四组回归 + ADVICE / 校验 / formatTime 一致性校验），
+  // Console 直接输出 PASS/FAIL。说明：开发者工具 Console 不支持直接 require('utils/rules.js')
+  // （实测报 require is not defined），故自测入口放在这里，随页面加载自动执行，无需手动命令
   onLoad: function () {
     rules.runRulesSelfTest();
   },
@@ -34,47 +36,25 @@ Page({
     const result = rules.validateInputs(this.data.temperature, this.data.humidity);
     if (result.messages.length > 0) {
       this.setData({ errorMsg: result.messages.join("；") });
-      return null;
+      return;
     }
-    const status = rules.computeStatus(result.temperature, result.humidity);
-    // 记录结构 = SPEC §4 统一 JSON（nodeId / temperature / humidity / status / time / action；
-    // action 为预留字段，M1-M4 恒为空字符串）
-    const record = {
-      nodeId: "dorm-a",
-      temperature: result.temperature,
-      humidity: result.humidity,
-      status: status,
-      time: rules.formatTime(new Date()),
-      action: ""
-    };
+    // 记录 = SPEC §4 统一 JSON（buildRecord 构造；status 由规则计算，action 预留空字符串）
+    const record = rules.buildRecord(result.temperature, result.humidity, rules.formatTime(new Date()));
     this.setData({
-      status: status,
-      advice: rules.ADVICE[status],
+      status: record.status,
+      advice: rules.ADVICE[record.status],
       errorMsg: "",
       history: this.data.history.concat(record)
     });
-    return record;
   },
 
-  // bindtap="onLoadDemo"：预置 4 条演示历史 = SPEC §6 四组回归数据（四个状态各一），
-  // time 取当前往前推 1-4 分钟；不改变当前状态/建议区（只演示"查看数据"）
+  // bindtap="onLoadDemo"：追加 4 条演示历史 = SPEC §6 四组回归数据（四个状态各一），
+  // 与 onAnalyze 一致用 concat 追加，不清空已有记录；time 依次往前推 4/3/2/1 分钟
   onLoadDemo: function () {
     const now = Date.now();
-    const demo = [
-      { temperature: 25, humidity: 60 },
-      { temperature: 16, humidity: 60 },
-      { temperature: 31, humidity: 60 },
-      { temperature: 25, humidity: 80 }
-    ].map(function (item, index) {
-      return {
-        nodeId: "dorm-a",
-        temperature: item.temperature,
-        humidity: item.humidity,
-        status: rules.computeStatus(item.temperature, item.humidity),
-        time: rules.formatTime(new Date(now - (3 - index) * 60000)),
-        action: ""
-      };
+    const demo = rules.REGRESSION_CASES.map(function (c, index) {
+      return rules.buildRecord(c.temperature, c.humidity, rules.formatTime(new Date(now - (4 - index) * 60000)));
     });
-    this.setData({ history: demo });
+    this.setData({ history: this.data.history.concat(demo) });
   }
 });
