@@ -5,6 +5,10 @@
 status 由 analysis/analyze.py 的 compute_status 计算（M2 已实现，零重写）；
 四组回归自测复用 analysis.selftest（SPEC §6）。
 
+A 组动作通道（SPEC §9 A2）：同时订阅 dormmate/+/action——收到 fan_on 后该节点温湿度
+每步额外下降（模拟风扇/通风降温，期望 温度 −0.4 / 湿度 −0.5），fan_off 恢复随机游走；
+温度降至 FAN_OFF_TEMP 自动 fan_off（模拟温控停机，避免过度降温产生"偏冷"假异常）。
+
 用法：
   python simulator/simulate.py [--host 127.0.0.1] [--port 1883] [--interval 2.5]
   python simulator/simulate.py --selftest    # 四组回归自测后退出
@@ -32,6 +36,15 @@ NODE_IDS = ["dorm-a", "dorm-b", "dorm-c"]
 # 模拟数据取值范围（SPEC §3.1 合法范围 −50~50 / 0~100 的宿舍环境子集）
 TEMP_RANGE = (15, 35)
 HUMIDITY_RANGE = (40, 90)
+
+# ---- A 组动作通道（SPEC §9 A2，MASTER_PLAN §7.3 S1）----
+ACTION_TOPIC = "dormmate/+/action"
+VALID_ACTIONS = ("fan_on", "fan_off")
+# fan_on 降温参数：每步在随机游走基础上额外下降的区间（期望 温度 −0.4 / 湿度 −0.5）
+FAN_TEMP_DROP = (-0.7, -0.1)
+FAN_HUMIDITY_DROP = (-1.0, 0.0)
+# 温度降到该值自动 fan_off（模拟温控停机，避免过度降温产生"偏冷"假异常）
+FAN_OFF_TEMP = 26.0
 
 # 注：paho-mqtt 2.x 已移除消息队列——断连时 publish 直接返回失败并丢弃，不排队；
 # 故无需（也无法）设置队列上限，消息丢失情况由 publish_node 如实打印提示
@@ -63,14 +76,59 @@ def next_value(current, low, high, step_max):
     return min(max(current + random.uniform(-step_max, step_max), low), high)
 
 
+# fan_state 由 on_message 网络线程写入、发布线程读取；用锁保证一致
+FAN_LOCK = threading.Lock()
+fan_state = {node_id: False for node_id in NODE_IDS}
+
+
+def handle_action_message(client, userdata, msg):
+    """动作消息校验（与 Dashboard 校验链同款思路的 Python 版）：topic 格式 → JSON 容错 →
+    nodeId 与 topic 第二段一致（串线防线）→ 节点/动作值合法；非法消息丢弃并打印原因。"""
+    topic = msg.topic
+    parts = topic.split("/")
+    if len(parts) != 3 or parts[0] != "dormmate" or parts[2] != "action":
+        print(f"[动作] 非法 topic 丢弃：{topic}", flush=True)
+        return
+    topic_node = parts[1]
+    try:
+        payload = json.loads(msg.payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        print(f"[动作] 非法 JSON 丢弃：{msg.payload[:80]!r}（{exc}）", flush=True)
+        return
+    if not isinstance(payload, dict) or payload.get("nodeId") != topic_node:
+        print(f"[动作] nodeId 与 topic 不符或缺失，丢弃：{topic} {payload}", flush=True)
+        return
+    action = payload.get("action")
+    if topic_node not in NODE_IDS or action not in VALID_ACTIONS:
+        print(f"[动作] 节点/动作值非法，丢弃：{payload}", flush=True)
+        return
+    with FAN_LOCK:
+        fan_state[topic_node] = action == "fan_on"
+    if action == "fan_on":
+        print(f"[{format_time(datetime.now())}] 动作生效：{topic_node} 开启风扇/通风（降温趋势）", flush=True)
+    else:
+        print(f"[{format_time(datetime.now())}] 动作生效：{topic_node} 关闭风扇（恢复随机游走）", flush=True)
+
+
 def publish_node(client, node_id, interval):
-    """单节点发布循环（独立线程）：随机游走 -> 统一 JSON -> 发布到本节点 topic。"""
+    """单节点发布循环（独立线程）：随机游走 -> 风扇降温偏置（fan_on 时）-> 统一 JSON -> 发布。"""
     topic = f"dormmate/{node_id}/env"
     temperature = random.uniform(*TEMP_RANGE)
     humidity = random.uniform(*HUMIDITY_RANGE)
     while True:
         temperature = next_value(temperature, *TEMP_RANGE, 1.5)
         humidity = next_value(humidity, *HUMIDITY_RANGE, 4.0)
+        with FAN_LOCK:
+            is_fan_on = fan_state[node_id]
+        if is_fan_on:
+            # 模拟风扇/通风降温：随机游走后额外下降（夹回合法范围）
+            temperature = max(temperature + random.uniform(*FAN_TEMP_DROP), TEMP_RANGE[0])
+            humidity = max(humidity + random.uniform(*FAN_HUMIDITY_DROP), HUMIDITY_RANGE[0])
+            if temperature <= FAN_OFF_TEMP:
+                # 模拟温控停机：避免过度降温产生"偏冷"假异常（MASTER_PLAN §7.3 S1）
+                with FAN_LOCK:
+                    fan_state[node_id] = False
+                print(f"[{format_time(datetime.now())}] {node_id} 温度降至 {temperature:.1f}℃，自动关闭风扇", flush=True)
         message = build_message(node_id, temperature, humidity)
         payload = json.dumps(message, ensure_ascii=False)
         result = client.publish(topic, payload, qos=0)
@@ -102,6 +160,7 @@ def main():
     # connect_async + loop_start：首次连接也由后台线程持续重试（评审修复：此前同步 connect
     # 在 Broker 未启动时直接抛 ConnectionRefusedError 崩溃退出，与"自动重连"注释不符）
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    client.on_message = handle_action_message  # A 组：动作通道订阅回调
     client.connect_async(args.host, args.port, keepalive=60)
     client.loop_start()
     print(f"连接 Broker {args.host}:{args.port}（未启动时自动重试，Ctrl+C 停止）…", flush=True)
@@ -117,6 +176,13 @@ def main():
         print("\n已停止。", flush=True)
         sys.exit(0)
     print(f"已连接，三节点开始发布（间隔 {args.interval}s）", flush=True)
+
+    # A 组：订阅动作通道（订阅失败只提示，不阻塞发布）
+    result, _ = client.subscribe(ACTION_TOPIC, qos=0)
+    if result != mqtt.MQTT_ERR_SUCCESS:
+        print(f"[动作] 订阅失败 {ACTION_TOPIC}（rc={result}），风扇动作将不生效", flush=True)
+    else:
+        print(f"已订阅动作通道 {ACTION_TOPIC}（fan_on 降温 / fan_off 恢复）", flush=True)
 
     threads = [
         threading.Thread(target=publish_node, args=(client, node_id, args.interval), daemon=True)
