@@ -1,0 +1,115 @@
+/* DormMate M6 3D 场景样式（three3d/style.css）
+   ① 全屏 WebGL 画布 + 顶部覆盖状态栏（连接/收到/丢弃，与 dashboard 同款 UX）
+   ② 警示横幅：坏 JSON / 串线等丢弃提示（点击可关闭）
+   ③ 右侧详情侧栏：选中宿舍的状态/温湿度/建议/最近记录（A1 预留）
+   配色沿用 dashboard :root 色值（与 M1 卡片色一致） */
+:root {
+  --bg: #f5f6f8;
+  --card: #fff;
+  --text: #333;
+  --muted: #888;
+  --blue: #4a90d9;
+  --green: #27ae60;
+  --orange: #e67e22;
+  --red: #d0021b;
+  --teal: #16a085;
+}
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #dfe8f2;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--text);
+}
+
+#canvasContainer { position: fixed; inset: 0; }
+#canvasContainer canvas { display: block; }
+
+.status-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+
+.status-bar h1 { font-size: 20px; margin: 0; }
+
+.status-info span { margin-left: 14px; font-size: 14px; }
+
+.conn.online { color: var(--green); font-weight: bold; }
+.conn.offline { color: var(--red); font-weight: bold; }
+.drop { color: var(--red); }
+
+.warn {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 80%;
+  margin: 0;
+  padding: 10px 16px;
+  background: #fdecea;
+  color: var(--red);
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.sidebar {
+  position: fixed;
+  top: 70px;
+  right: 16px;
+  width: 240px;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+
+.sidebar h2 { font-size: 16px; margin: 0 0 10px; }
+.sidebar h3 { font-size: 13px; margin: 12px 0 6px; color: #555; }
+
+.side-node { font-weight: bold; font-size: 15px; }
+
+.side-status { font-size: 34px; font-weight: bold; margin: 4px 0; }
+.side-status.正常 { color: var(--green); }
+.side-status.偏冷 { color: var(--blue); }
+.side-status.偏热 { color: var(--orange); }
+.side-status.偏湿 { color: var(--teal); }
+
+.side-metrics { font-size: 14px; color: #555; }
+.side-advice { color: var(--muted); margin-top: 4px; font-size: 13px; }
+.side-time { color: #aaa; font-size: 12px; margin-top: 6px; }
+
+#sideHistory { margin: 0; padding-left: 18px; font-size: 12px; color: #666; }
+
+.demo-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.demo-buttons button {
+  border: 1px solid #ddd;
+  background: var(--card);
+  padding: 6px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.demo-buttons button:hover { border-color: var(--blue); color: var(--blue); }
+
+.hint { color: #aaa; font-size: 12px; margin-top: 12px; }

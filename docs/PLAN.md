@@ -24,7 +24,7 @@
 | M3 | Camera / ASR / TTS + Git / GitHub | M1 | 任务书 11-15 条；≥3 次有意义 Commit | 快照 / 识别 / 提交记录 / README | 已完成 |
 | M4 | 移动端小程序核心页面（单宿舍） | M1 | 微信开发者工具稳定运行 | 开发者工具截图 | 已完成 |
 | M5 | 本机 Broker + 模拟节点三宿舍 + Dashboard | M1（M4 可交叉） | 三节点同屏不串线 | 运行截图 | 已完成 |
-| M6 | Three.js 3D 三节点联动 | M5 | 3D 实时更新 | 截图 / 录屏 | 未开始 |
+| M6 | Three.js 3D 三节点联动 | M5 | 3D 实时更新 | 截图 / 录屏 | 进行中（S5 证据完成，待提交） |
 | A | 优先关注 / 处理动作 / 恢复判断（A1-A3） | M5 / M6 | A1-A3 全过 | 逐项证据 | 未开始 |
 | B | 程序化说明：事实 / 重点 / 依据 / 摘要（不手写） | M1-M6 / A | 内容全部由程序生成 | 程序输出截图 | 未开始 |
 | C | IsolationForest 轻量闭环 C1-C4 | A、B 之后（最后做） | C1-C4 全过；结果接回 report.html | 模型 / 展示 / 说明 | 未开始 |
@@ -167,12 +167,12 @@
 
 ## 4. 当前阶段看板
 
-- **当前阶段**：M6（Three.js 3D 三节点联动）——待用户启动；M5 已收口（S1-S4 用户实测通过，S5 待提交），进入 M6 前先建 docs/M6_PLAN.md（同 M1-M5 模式）
-- **当前只做**：M5 S5 收口（README / 看板 / 证据已更新，待用户确认提交与 GitHub 同步）
-- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）；M4 全部（S0-S6：文档对齐 / 小程序骨架 / 规则移植 / 页面交互 / 冷启动验收 / 交接 / 评审修复，用户实测通过，提交 cb947ff、6b0e91b，GitHub 同步至 f1885a4，证据截图待用户补拍 docs/evidence/m4/，详细见 docs/M4_PLAN.md）；M5 S0（docs/M5_PLAN.md 创建 + 看板更新，3 项决策经用户确认：程序发布+MQTTX 演示 / Python paho-mqtt / Dashboard 本地 vendor；评审修正 4 项：端口冲突检查 / 断线重连 / JSON 容错 / 历史上限裁剪）；M5 全部（S0-S5：文档对齐 / 环境 / simulator 三节点发布 / Dashboard 骨架 / 趋势与切换 / 验收交接，S1-S4 用户实测通过——Broker 冷启动、MQTTX 互测、三卡片同屏、串线与坏消息拦截，证据 docs/evidence/m5/ 6 张，详细见 docs/M5_PLAN.md）
+- **当前阶段**：M6（Three.js 3D 三节点联动）——S0-S4 已完成（S1-S4 用户实测确认），S5 证据自动化验证完成（8 张截图 + 1 录屏，程序化断言全过），待用户确认提交与 GitHub 同步
+- **当前只做**：M6 S5 提交确认（变更摘要已备，用户确认后提交；GitHub 同步命令同步确认）→ S6 评审修复
+- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）；M4 全部（S0-S6：文档对齐 / 小程序骨架 / 规则移植 / 页面交互 / 冷启动验收 / 交接 / 评审修复，用户实测通过，提交 cb947ff、6b0e91b，GitHub 同步至 f1885a4，证据截图待用户补拍 docs/evidence/m4/，详细见 docs/M4_PLAN.md）；M5 S0（docs/M5_PLAN.md 创建 + 看板更新，3 项决策经用户确认：程序发布+MQTTX 演示 / Python paho-mqtt / Dashboard 本地 vendor；评审修正 4 项：端口冲突检查 / 断线重连 / JSON 容错 / 历史上限裁剪）；M5 全部（S0-S5：文档对齐 / 环境 / simulator 三节点发布 / Dashboard 骨架 / 趋势与切换 / 验收交接，S1-S4 用户实测通过——Broker 冷启动、MQTTX 互测、三卡片同屏、串线与坏消息拦截，证据 docs/evidence/m5/ 6 张，详细见 docs/M5_PLAN.md）；M6 S0-S4（S0 文档对齐 / S1 vendor r128 三文件 / S2 静态场景 / S3 状态映射+演示按钮 / S4 MQTT 实时驱动，S1-S4 用户实测确认，详细见 docs/M6_PLAN.md）
 - **阻塞**：无
-- **下一步**：用户说"继续 M6"即建 docs/M6_PLAN.md 启动 M6（Three.js 3D 三节点联动，消费同一 MQTT 数据流）
-- **最近Commit**：feat(nova-dormmate-final-2026): M5 mqtt realtime system with simulator and dashboard（本看板随该提交更新；GitHub 同步待用户确认）
+- **下一步**：M6 提交（先展示变更摘要，用户确认）→ S6 评审修复
+- **最近Commit**：feat(nova-dormmate-final-2026): M5 mqtt realtime system with simulator and dashboard（本看板随该提交更新；GitHub 已同步至 0283170，2026-09-28 subtree push 重试成功）
 - **下一阶段接口**：M6 消费同一 MQTT 数据流（订阅 dormmate/+/env，ws://localhost:8083，mqtt.js 样板见 dashboard/app.js）；A 组依赖 M5 三节点数据与 Dashboard
 
 ## 5. 给 Claude Code 的调用模板

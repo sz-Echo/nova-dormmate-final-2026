@@ -13,6 +13,7 @@
   - `python analysis/analyze.py --selftest` —— SPEC §6 四组回归自测
 - **微信小程序（M4）**：微信开发者工具 → "导入项目"选择 `mobile/` 目录 → AppID 选"测试号"（工具会自动填入测试 AppID，无需注册、无需真机）→ 编译运行。核心页面：输入温湿度 → 状态 / 建议 + 带时间历史（含"载入演示数据"按钮）；打开项目时 Console 自动打印四组回归自测结果（4 行 PASS）与 ADVICE / 校验 / formatTime 附加校验行
 - **实时看板（M5）**：① 启动 Broker：`<Mosquitto安装目录>\mosquitto.exe -c <同目录>\mosquitto.conf -v`（本机为 `D:\Mosquitto\`；conf 需含 listener 1883 / listener 8083 + protocol websockets / allow_anonymous true，见 `docs/M5_PLAN.md` S1）② 启动模拟节点：`python simulator/simulate.py`（三节点 dorm-a/b/c 定时发布）③ Live Server 打开 `dashboard/index.html` → 三卡片同屏 + Chart.js 趋势（浏览器经 `ws://localhost:8083` 连 Broker）④ MQTTX 连接 `127.0.0.1:1883`、订阅 `dormmate/#` 验证
+- **3D 可视化（M6）**：① 启动 Broker ② `python simulator/simulate.py` ③ Live Server 打开 `three3d/index.html` → Three.js 3D 宿舍场景（三栋楼：状态色 / 指示球 / 粒子 / 标牌四类可见变化）由 MQTT 实时驱动；鼠标拖拽旋转 / 滚轮缩放 / 右键平移，点击楼查看详情；侧栏"演示"按钮可在无 Broker 时用 SPEC §6 四组回归数据打出四状态。Three.js r128 为本地 vendor（three3d/vendor/，防 CDN 网络不稳），必须用 Live Server 以项目根为工作区打开
 
 ## 主要功能
 
@@ -23,6 +24,7 @@
 - **ASR 语音指令（M3）**：系统语音输入（Win+H）识别文字进入"语音指令"输入框 → 程序匹配固定指令并触发已有功能："朗读状态" → TTS 朗读当前状态；"拍照" → 保存快照（原因与替代方案见"已知限制"）
 - **动态 TTS（M3）**：朗读内容随当前状态变化（如偏热 → "当前状态：偏热，注意通风"）
 - **MQTT 实时系统（M5）**：本机 Mosquitto Broker（1883 TCP + 8083 WebSocket）→ simulator/ 三节点按 `dormmate/{nodeId}/env` 发布统一 JSON（status 复用 M2 Python 规则计算）→ dashboard/（mqtt.js + Chart.js）三卡片同屏实时刷新 + tab 切换各节点趋势图；topic/nodeId 双校验防串线，坏 JSON / 缺字段拦截告警，Broker 重启后自动重连
+- **Three.js 3D 可视化（M6）**：three3d/ 简化 3D 宿舍场景（scene/camera/renderer + 三栋楼 mesh/material）——四状态映射为 4 类可见变化（建筑主色 / 发光指示球颜色+高度 / 楼顶粒子（偏冷飘雪·偏湿下雨·偏热热气·正常平静）/ CanvasTexture 中文标牌）；订阅与 dashboard 同一 MQTT 数据流（dormmate/+/env、ws://localhost:8083），消息经同款校验链（JSON.parse 容错 / 对象守卫 / 六字段 / 范围 / topic↔nodeId 串线防线）后由 updateScene 唯一入口驱动 3D，status 一律本地规则重算（不信任消息值）；点击选中楼 + 详情侧栏（A1 预留），屋顶风扇 mesh 预留（A2 挂点）
 
 ## 已知限制
 
@@ -36,4 +38,4 @@
 ## 文档
 
 - 项目规格：`docs/DORMMATE_SPEC.md`
-- 执行计划：`docs/PLAN.md`（M1 见 `docs/M1_PLAN.md`，M2 见 `docs/M2_PLAN.md`，M3 详细步骤与现场演示剧本见 `docs/M3_PLAN.md`，M4 见 `docs/M4_PLAN.md`，M5 见 `docs/M5_PLAN.md`）
+- 执行计划：`docs/PLAN.md`（M1 见 `docs/M1_PLAN.md`，M2 见 `docs/M2_PLAN.md`，M3 详细步骤与现场演示剧本见 `docs/M3_PLAN.md`，M4 见 `docs/M4_PLAN.md`，M5 见 `docs/M5_PLAN.md`，M6 见 `docs/M6_PLAN.md`）

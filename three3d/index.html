@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DormMate 3D 宿舍（M6 Three.js）</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="status-bar">
+    <h1>DormMate 3D 宿舍</h1>
+    <div class="status-info">
+      <span id="connStatus" class="conn offline">未连接</span>
+      <span id="msgCount">收到 0 条</span>
+      <span id="dropCount" class="drop" hidden>丢弃 0 条</span>
+    </div>
+  </header>
+
+  <p id="warnBanner" class="warn" hidden></p>
+
+  <div id="canvasContainer"><!-- WebGL 画布由 app.js 挂载 --></div>
+
+  <aside id="sidebar" class="sidebar">
+    <h2>宿舍详情</h2>
+    <div id="sideNodeId" class="side-node">未选中</div>
+    <div id="sideStatus" class="side-status">—</div>
+    <div id="sideMetrics" class="side-metrics">点击一栋楼查看详情</div>
+    <div id="sideAdvice" class="side-advice"></div>
+    <div id="sideTime" class="side-time"></div>
+    <h3>最近记录</h3>
+    <ul id="sideHistory"></ul>
+    <h3>演示（SPEC §6 四组回归，作用于选中楼）</h3>
+    <div id="demoButtons" class="demo-buttons">
+      <button data-temp="25" data-hum="60">25/60 正常</button>
+      <button data-temp="16" data-hum="60">16/60 偏冷</button>
+      <button data-temp="31" data-hum="60">31/60 偏热</button>
+      <button data-temp="25" data-hum="80">25/80 偏湿</button>
+    </div>
+    <p class="hint">拖拽旋转 / 滚轮缩放 / 右键平移；点击楼选中</p>
+  </aside>
+
+  <!-- 规则复用：M1 同一实现（window.computeStatus / ADVICE / validateInputs），零重写（SPEC §6） -->
+  <script src="../web/script.js"></script>
+  <!-- Three.js r128 UMD 本地 vendor（防 CDN 网络不稳）；OrbitControls 依赖 THREE 全局 -->
+  <script src="vendor/three.min.js"></script>
+  <script src="vendor/OrbitControls.js"></script>
+  <!-- MQTT WebSocket 客户端（mqtt.js，拷贝自 dashboard/vendor）：S4 接入实时数据流 -->
+  <script src="vendor/mqtt.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
