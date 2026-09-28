@@ -198,7 +198,7 @@ C 只做轻量 ML 应用闭环：小数据、简单模型，跑通"数据 → �
 
 - **代码目录**：web/、analysis/、mobile/、simulator/、dashboard/、three3d/（及 M1 规则实现所在位置）
 - **数据与产物**：data/ 下的 CSV、trend.png、report.html
-- **文档**：docs/DORMMATE_SPEC.md、docs/PLAN.md、README.md（含 M3 ASR 兜底记录：原因 / 替代方案 / 测试结果）
+- **文档**：docs/DORMMATE_SPEC.md、docs/PLAN.md、docs/MASTER_PLAN.md、README.md（含 M3 ASR 兜底记录：原因 / 替代方案 / 测试结果）
 - **证据**：各阶段完成线对应的截图 / 录屏 / 日志
 - **Git**：每阶段至少一次有意义提交；Final 稳定版同步到用户 GitHub 账号的 `nova-dormmate-final-2026` 仓库
 

@@ -4,11 +4,12 @@
 
 - `docs/DORMMATE_SPEC.md`：项目规格（状态规则、统一 JSON、CSV 格式、回归测试数据、M1-M6 / A / B / C 要求、统一约定），稳定契约
 - `docs/PLAN.md`：阶段计划与当前看板，活文档
-- 两者冲突以 SPEC 为准；SPEC 变更须用户确认
+- `docs/MASTER_PLAN.md`：M1-M6 与 A/B/C 联系矩阵 + 剩余阶段（A/B/C/Final）详细执行步骤与契约，活文档
+- 三者冲突以 SPEC 为准；SPEC 变更须用户确认
 
 ## 每次工作的步骤
 
-1. 先读 `docs/DORMMATE_SPEC.md`、`docs/PLAN.md` 与当前阶段详细计划（`docs/M1_PLAN.md`，后续阶段同名换号）
+1. 先读 `docs/DORMMATE_SPEC.md`、`docs/PLAN.md`、`docs/MASTER_PLAN.md` 与当前阶段详细计划（`docs/M1_PLAN.md`，后续阶段同名换号；A/B/C/Final 详细步骤在 MASTER_PLAN）
 2. 只做 PLAN 看板里的当前阶段，不做未解锁阶段（依赖未完成/未过门禁）
 3. 完成后按 PLAN 第 6 节模板输出交接摘要
 
