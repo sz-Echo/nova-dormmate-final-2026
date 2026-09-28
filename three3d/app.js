@@ -7,7 +7,8 @@
 // 校验链（与 dashboard/app.js 同序同款）：JSON.parse 容错 -> 对象守卫 -> 六字段 -> time 格式 ->
 //   validateInputs §3.1 范围 -> 串线防线 -> 未知节点 -> status 本地重算（不信任消息值）
 // A1 预留：selectedNodeId = "3D 明确知道当前查看的是谁"；nodes[nodeId].history（上限 60 条，按 time 分组）供 A1 程序计算连续异常时长
-// A2 预留：每楼屋顶 fanGroup 风扇 mesh（M6 静止；A2 写 fan_on 后让 fanBlades 绕 y 轴转动）
+// A2 已实现：每楼屋顶 fanGroup 风扇 mesh 由动作通道驱动（fan_on 叶片绕 y 轴转动 + 窗开通风；fan_off 停止并关窗）；
+//   动作经 setDormAction 只改场景表达，状态色仍由 env 数据经 updateScene 驱动（与 A3 解耦）
 // WebGL 预检：不可用时显示降级横幅，页面其余部分不白屏
 
 const NODE_IDS = ["dorm-a", "dorm-b", "dorm-c"];
@@ -25,8 +26,8 @@ const STATUS_STYLE = {
 let scene, camera, renderer, controls;   // 任务书关键词：scene / camera / renderer
 let selectedNodeId = null;               // A1 预留：当前查看的是谁
 const dormVisuals = {};                  // { nodeId: { group, status, sphereTargetY, bodyMat, sphere, sphereMat, pointLight, sign, signCtx, signTexture, particles, fanBlades, ring } }
-const nodes = {};                        // { nodeId: { latest, history[] } }，history 上限 HISTORY_LIMIT（统一 JSON 六字段）
-NODE_IDS.forEach(function (id) { nodes[id] = { latest: null, history: [] }; });
+const nodes = {};                        // { nodeId: { latest, history[], actionState } }，history 上限 HISTORY_LIMIT（统一 JSON 六字段）
+NODE_IDS.forEach(function (id) { nodes[id] = { latest: null, history: [], actionState: null }; });
 // vendor 缺失防御：three.min.js 加载失败时顶层不抛 ReferenceError（降级横幅由启动调用处兜底）
 const raycaster = (typeof THREE !== "undefined") ? new THREE.Raycaster() : null;
 const clock = (typeof THREE !== "undefined") ? new THREE.Clock() : null;
@@ -34,6 +35,8 @@ const clock = (typeof THREE !== "undefined") ? new THREE.Clock() : null;
 // MQTT 连接与校验常量（与 dashboard/app.js 同款）
 const WS_URL = "ws://localhost:8083";   // WebSocket 端口（mosquitto.conf listener 8083 + protocol websockets）
 const TOPIC = "dormmate/+/env";         // 三节点订阅（SPEC §8：dormmate/{nodeId}/env）
+const ACTION_TOPIC = "dormmate/+/action";   // A2 动作通道订阅（SPEC §9 A2 / MASTER_PLAN §6.1）
+const VALID_ACTIONS = ["fan_on", "fan_off"];
 const REQUIRED_FIELDS = ["nodeId", "temperature", "humidity", "status", "time", "action"];
 const TIME_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;   // SPEC §4 time 全格式
 const utf8Decoder = new TextDecoder();   // 单例复用：热路径不再每消息新建
@@ -49,6 +52,7 @@ const sideNodeIdEl = document.getElementById("sideNodeId");
 const sideStatusEl = document.getElementById("sideStatus");
 const sideMetricsEl = document.getElementById("sideMetrics");
 const sideAdviceEl = document.getElementById("sideAdvice");
+const sideActionEl = document.getElementById("sideAction");
 const sideTimeEl = document.getElementById("sideTime");
 const sideHistoryEl = document.getElementById("sideHistory");
 
@@ -186,11 +190,13 @@ function buildDorm(nodeId, x) {
   door.position.set(0, 0.8, 1.51);
   tagDorm(door, nodeId);
   group.add(door);
+  const windows = [];   // A2 通风联动：fan_on 时窗开（rotation.y 目标 −0.7），fan_off 关窗
   [-0.9, 0.9].forEach(function (wx) {
     const win = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.1), new THREE.MeshBasicMaterial({ color: 0xaee1f9 }));
     win.position.set(wx, 2.2, 1.51);
     tagDorm(win, nodeId);
     group.add(win);
+    windows.push(win);
   });
 
   // 楼前标牌（CanvasTexture 中文：canvas 2D 系统字体，无网络依赖）
@@ -263,7 +269,10 @@ function buildDorm(nodeId, x) {
     signTexture: sign.texture,
     particles: particles,
     fanBlades: fanBlades,
-    ring: ring
+    ring: ring,
+    windows: windows,        // A2：窗 mesh 引用（通风联动）
+    fanOn: false,            // A2：风扇是否运行（动作通道驱动）
+    windowTarget: 0          // A2：窗开合目标旋转（fan_on −0.7 / fan_off 0）
   };
 }
 
@@ -353,7 +362,7 @@ function updateScene(nodeId, record) {
     humidity: record.humidity,
     status: status,
     time: record.time,
-    action: ""   // M6 恒 ""（SPEC §4 预留字段；A2 起改为按节点写入动作值，评审修复：不透传消息里的任意值）
+    action: nodes[nodeId].actionState ? nodes[nodeId].actionState.action : ""   // A2：按节点最新动作写入（不透传消息里的任意值，评审修复口径）
   };
   if (record.demo === true) { rec.demo = true; }   // 演示记录打标（A S2：A1 计算排除，MQTT 真实记录保持六字段）
   const node = nodes[nodeId];
@@ -367,6 +376,16 @@ function updateScene(nodeId, record) {
     v.lastSignKey = signKey;
     drawSign(nodeId, rec, v.signCtx, v.signTexture);
   }
+  if (selectedNodeId === nodeId) { renderSidebar(); }
+}
+
+function setDormAction(nodeId, action) {
+  // A2 动作联动：fan_on 风扇转动 + 窗开（通风）；fan_off 停止并关窗。
+  // 只表达"用户做了什么、场景因此变成什么"，不直接改状态色（状态由 env 数据经 updateScene 驱动，与 A3 解耦）
+  const v = dormVisuals[nodeId];
+  if (!v) return;
+  v.fanOn = action === "fan_on";
+  v.windowTarget = v.fanOn ? -0.7 : 0;
   if (selectedNodeId === nodeId) { renderSidebar(); }
 }
 
@@ -406,6 +425,12 @@ function updateDormAnimation(nodeId, dt) {
     v.pointLight.position.copy(v.sphere.position);
     v.sphere.scale.setScalar(1 + Math.sin(clock.elapsedTime * 4) * 0.08);
   }
+
+  // A2 动作联动：fan_on 风扇叶片持续转动 + 窗开（通风）；fan_off 停止并关窗（lerp 平滑过渡）
+  if (v.fanOn) { v.fanBlades.rotation.y += 3.5 * dt; }
+  v.windows.forEach(function (win) {
+    win.rotation.y += (v.windowTarget - win.rotation.y) * Math.min(1, dt * 4);
+  });
 }
 
 // ---- 点击选中 vs OrbitControls 拖拽（pointer 位移阈值 <5px，仅左键）----
@@ -467,6 +492,7 @@ function renderSidebar() {
     sideStatusEl.className = "side-status";
     sideMetricsEl.textContent = "点击一栋楼查看详情";
     sideAdviceEl.textContent = "";
+    sideActionEl.textContent = "";
     sideTimeEl.textContent = "";
     sideHistoryEl.innerHTML = "";
     return;
@@ -474,6 +500,9 @@ function renderSidebar() {
   const node = nodes[selectedNodeId];
   const r = node && node.latest;
   sideNodeIdEl.textContent = selectedNodeId;
+  // A2 动作行：显示该节点当前动作状态（fan_on 风扇运行中 / fan_off 已停止），与 Dashboard 动作条同源（MQTT 动作通道）
+  const st = node.actionState;
+  sideActionEl.textContent = st ? (st.action === "fan_on" ? "风扇运行中（" + st.actionTime.slice(11) + "）" : "风扇已停止") : "";
   if (r) {
     sideStatusEl.textContent = r.status;
     sideStatusEl.className = "side-status " + r.status;   // 颜色类随状态切换（与 dashboard 卡片同款）
@@ -494,6 +523,43 @@ function renderSidebar() {
     sideTimeEl.textContent = "";
     sideHistoryEl.innerHTML = "";
   }
+}
+
+// ---- A 组动作通道（SPEC §9 A2）：订阅 dormmate/{nodeId}/action，同款串线防线 ----
+function handleActionMessage(topic, text) {
+  // 校验链：topic 格式 -> JSON 容错 -> 对象守卫 -> nodeId 与 topic 第二段一致（串线防线）
+  // -> 节点合法 -> action ∈ {fan_on, fan_off}；非法一律 drop，不改变场景
+  const parts = topic.split("/");
+  if (parts.length !== 3 || parts[0] !== "dormmate" || parts[2] !== "action") {
+    drop("动作消息 topic 非法：" + topic);
+    return;
+  }
+  const topicNodeId = parts[1];
+  let message;
+  try {
+    message = JSON.parse(text);
+  } catch (err) {
+    drop("动作消息不是合法 JSON：" + text.slice(0, 80));
+    return;
+  }
+  if (typeof message !== "object" || message === null || Array.isArray(message)) {
+    drop("动作消息不是 JSON 对象：" + text.slice(0, 80));
+    return;
+  }
+  if (message.nodeId !== topicNodeId) {
+    drop("动作串线拦截：topic=" + topic + " 但消息 nodeId=" + message.nodeId + "，已丢弃");
+    return;
+  }
+  if (NODE_IDS.indexOf(message.nodeId) < 0 || VALID_ACTIONS.indexOf(message.action) < 0) {
+    drop("动作消息节点/动作值非法：" + text.slice(0, 80));
+    return;
+  }
+  nodes[message.nodeId].actionState = {
+    nodeId: message.nodeId,
+    action: message.action,
+    actionTime: message.actionTime || ""
+  };
+  setDormAction(message.nodeId, message.action);
 }
 
 // ---- MQTT 实时驱动（校验链与 dashboard/app.js 同序同款：容错 -> 守卫 -> 字段 -> 范围 -> 串线 -> 重算）----
@@ -593,11 +659,17 @@ client.on("connect", function () {
     client.subscribe(TOPIC, function (err) {
       if (err) { showWarn("订阅失败：" + err.message); }
     });
+    client.subscribe(ACTION_TOPIC, function (err) {
+      if (err) { showWarn("动作通道订阅失败：" + err.message); }
+    });
     return;
   }
   setConnState(true, "已连接 " + WS_URL);
   client.subscribe(TOPIC, function (err) {
     if (err) { showWarn("订阅失败：" + err.message); }
+  });
+  client.subscribe(ACTION_TOPIC, function (err) {
+    if (err) { showWarn("动作通道订阅失败：" + err.message); }
   });
 });
 client.on("reconnect", function () { setConnState(false, "已断开，重连中…"); });
@@ -605,7 +677,9 @@ client.on("close", function () { setConnState(false, "已断开，重连中…")
 client.on("error", function (err) { setConnState(false, "连接错误：" + err.message); });
 client.on("message", function (topic, payload) {
   // mqtt.js v5 浏览器端 payload 恒为 Uint8Array，单例 TextDecoder 解码
-  handleMessage(topic, utf8Decoder.decode(payload));
+  const text = utf8Decoder.decode(payload);
+  if (topic.split("/")[2] === "action") { handleActionMessage(topic, text); }   // A 组动作通道
+  else { handleMessage(topic, text); }
 });
 }   // typeof mqtt 守卫结束
 
