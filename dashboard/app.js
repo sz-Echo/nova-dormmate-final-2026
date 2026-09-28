@@ -1,0 +1,282 @@
+// DormMate M5 Dashboard（dashboard/app.js）
+// 数据链：模拟节点 -> MQTT Broker（ws://localhost:8083，WebSocket）-> mqtt.js 订阅 -> 三卡片 + Chart.js 趋势
+// 规则复用：window.computeStatus / ADVICE / validateInputs 来自 ../web/script.js（M1 同一实现，零重写）；
+// 本页以本地同一规则重算 status 展示，不信任消息里的 status（防手填/错误值）。
+// 串线防线（SPEC §12）：topic dormmate/{nodeId}/env 的 nodeId 必须与消息 JSON 的 nodeId 一致，不一致丢弃并警告。
+// 容错（评审加固）：JSON.parse try...catch + 解析结果对象类型守卫 + 六字段校验（time 含格式校验）+
+// SPEC §3.1 范围校验（复用 window.validateInputs）；坏消息统一走 drop()：页面警告 + 计数，不抛异常、不白屏。
+// 断线重连：mqtt.js reconnectPeriod 2000ms——冷启动演示（关闭 Broker 再重启）时浏览器自动恢复连接。
+// 内存：每节点历史上限 60 条，超出 shift 裁剪最旧；图表数据增量追加、同策略同步裁剪。
+// 记录结构：保持 SPEC §4 统一 JSON 六字段（含 action，A2 起写入动作值）；advice 渲染时查表，不入记录。
+
+const WS_URL = "ws://localhost:8083";   // WebSocket 端口（mosquitto.conf listener 8083 + protocol websockets）
+const TOPIC = "dormmate/+/env";         // 三节点订阅（SPEC §8：dormmate/{nodeId}/env）
+const NODE_IDS = ["dorm-a", "dorm-b", "dorm-c"];
+const HISTORY_LIMIT = 60;
+const REQUIRED_FIELDS = ["nodeId", "temperature", "humidity", "status", "time", "action"];
+const TIME_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;   // SPEC §4 time 全格式
+const utf8Decoder = new TextDecoder();   // 单例复用：热路径不再每消息新建（评审修复）
+
+// 每节点状态：latest = 最新记录；history = 时间序列（统一 JSON 六字段，上限 HISTORY_LIMIT 条）
+const nodes = {};
+NODE_IDS.forEach(function (id) {
+  nodes[id] = { latest: null, history: [] };
+});
+
+let selectedNode = "dorm-a";
+let receivedCount = 0;
+let droppedCount = 0;   // 坏 JSON + 类型/格式/范围非法 + 串线 的总丢弃数
+
+const cardsEl = document.getElementById("cards");
+const tabsEl = document.getElementById("tabs");
+const connStatusEl = document.getElementById("connStatus");
+const msgCountEl = document.getElementById("msgCount");
+const dropCountEl = document.getElementById("dropCount");
+const warnBannerEl = document.getElementById("warnBanner");
+const chartCanvas = document.getElementById("trendChart");
+
+function setConnState(online, text) {
+  connStatusEl.textContent = text;
+  connStatusEl.className = "conn " + (online ? "online" : "offline");
+}
+
+// 规则模块缺失防御（如 ../web/script.js 因工作区根目录不对而 404）：
+// 存标志供消息处理与连接事件共用，提示不被 connect 事件覆盖
+const rulesMissing = typeof window.computeStatus !== "function" || !window.ADVICE || !window.validateInputs;
+if (rulesMissing) {
+  setConnState(false, "规则模块（web/script.js）加载失败——请以项目根目录为工作区用 Live Server 打开本页");
+}
+
+// ---- Chart.js：选中节点的温度 + 湿度双线（双 Y 轴）----
+const chart = new Chart(chartCanvas, {
+  type: "line",
+  data: {
+    labels: [],
+    datasets: [
+      { label: "温度（℃）", data: [], borderColor: "#e67e22", yAxisID: "y", tension: 0.3, pointRadius: 0 },
+      { label: "湿度（%）", data: [], borderColor: "#16a085", yAxisID: "y1", tension: 0.3, pointRadius: 0 }
+    ]
+  },
+  options: {
+    responsive: true,
+    animation: false,   // 实时高频更新关闭动画，避免曲线抖动
+    scales: {
+      y: { title: { display: true, text: "温度（℃）" }, min: 0, max: 50 },
+      y1: {
+        position: "right",
+        title: { display: true, text: "湿度（%）" },
+        min: 0, max: 100,
+        grid: { drawOnChartArea: false }
+      }
+    }
+  }
+});
+
+function rebuildChart() {
+  // tab 切换 / 初始渲染：按 history 全量重建
+  const history = nodes[selectedNode].history;
+  chart.data.labels = history.map(function (r) { return r.time.slice(11); });  // HH:MM:SS
+  chart.data.datasets[0].data = history.map(function (r) { return r.temperature; });
+  chart.data.datasets[1].data = history.map(function (r) { return r.humidity; });
+  chart.update();
+}
+
+function appendChartPoint(record) {
+  // 消息到达：只追加一个点；超上限与 history 同策略裁剪（评审修复：不再全量重建）
+  chart.data.labels.push(record.time.slice(11));
+  chart.data.datasets[0].data.push(record.temperature);
+  chart.data.datasets[1].data.push(record.humidity);
+  if (chart.data.labels.length > HISTORY_LIMIT) {
+    chart.data.labels.shift();
+    chart.data.datasets[0].data.shift();
+    chart.data.datasets[1].data.shift();
+  }
+  chart.update();
+}
+
+// ---- 消息处理：JSON 容错 -> 对象守卫 -> 字段/类型/格式校验 -> 串线防线 -> 范围校验 -> 规则重算 ----
+function handleMessage(topic, text) {
+  receivedCount++;
+  msgCountEl.textContent = "收到 " + receivedCount + " 条";
+
+  // 兜底 try（评审硬化）：以下所有校验与处理之外，任何未预期异常也统一走 drop，
+  // 保证"任何问题必有横幅 + 丢弃计数"，不白屏不静默（内部各 drop 分支正常 return）
+  try {
+  if (rulesMissing) {
+    drop("规则模块（web/script.js）加载失败，无法处理消息");
+    return;
+  }
+  let message;
+  try {
+    message = JSON.parse(text);
+  } catch (err) {
+    drop("消息不是合法 JSON：" + text.slice(0, 80));
+    return;
+  }
+  // 对象类型守卫（评审修复）：null / 数字 / 字符串等合法 JSON 一律走 drop，不再抛 TypeError
+  if (typeof message !== "object" || message === null || Array.isArray(message)) {
+    drop("消息不是 JSON 对象：" + text.slice(0, 80));
+    return;
+  }
+  for (let i = 0; i < REQUIRED_FIELDS.length; i++) {
+    if (!(REQUIRED_FIELDS[i] in message)) {
+      drop("消息缺少字段 " + REQUIRED_FIELDS[i] + "：" + text.slice(0, 80));
+      return;
+    }
+  }
+  if (typeof message.nodeId !== "string") {
+    drop("nodeId 字段不是字符串：" + text.slice(0, 80));
+    return;
+  }
+  // time 类型 + 格式校验（评审修复）：非字符串或格式不符会令趋势图 X 轴标签乱码/图表冻结
+  if (typeof message.time !== "string" || !TIME_PATTERN.test(message.time)) {
+    drop("time 字段非法（SPEC §4 要求 YYYY-MM-DD HH:MM:SS）：" + text.slice(0, 80));
+    return;
+  }
+
+  // SPEC §3.1 范围校验（评审修复）：复用 M1 的 window.validateInputs——
+  // 覆盖范围（温度 −50~50、湿度 0~100）、非数字、NaN / Infinity，与全项目口径统一
+  const validation = window.validateInputs(message.temperature, message.humidity);
+  if (validation.messages.length > 0) {
+    drop("数据非法（" + validation.messages.join("；") + "）：" + text.slice(0, 80));
+    return;
+  }
+
+  // 串线防线（SPEC §12）：topic 里的 nodeId 必须等于消息 JSON 里的 nodeId
+  const topicNodeId = topic.split("/")[1];
+  if (message.nodeId !== topicNodeId) {
+    drop("串线拦截：topic=" + topic + " 但消息 nodeId=" + message.nodeId + "，已丢弃");
+    return;
+  }
+  if (NODE_IDS.indexOf(message.nodeId) < 0) {
+    drop("未知节点 " + message.nodeId);
+    return;
+  }
+
+  // status 用本地同一规则重算；记录保持 SPEC §4 统一 JSON 六字段（action 保留，A2 起写入动作值）
+  const status = window.computeStatus(validation.temperature, validation.humidity);
+  const record = {
+    nodeId: message.nodeId,
+    temperature: validation.temperature,
+    humidity: validation.humidity,
+    status: status,
+    time: message.time,
+    action: message.action
+  };
+
+  const node = nodes[message.nodeId];
+  node.latest = record;
+  node.history.push(record);
+  if (node.history.length > HISTORY_LIMIT) {
+    node.history.shift();   // 裁剪最旧，防内存增长
+  }
+
+  updateCard(message.nodeId);
+  if (message.nodeId === selectedNode) appendChartPoint(record);
+  // 注意：成功路径不清空警告横幅——丢弃原因持续显示（点击横幅可关闭），
+  // 避免"警告被下一条正常消息冲掉"导致验收时看不到拦截提示
+  } catch (err) {
+    drop("处理异常：" + err.message + "（" + text.slice(0, 60) + "）");
+  }
+}
+
+function drop(reason) {
+  droppedCount++;
+  dropCountEl.hidden = false;
+  dropCountEl.textContent = "丢弃 " + droppedCount + " 条";
+  const stamp = new Date().toLocaleTimeString("zh-CN", { hour12: false });
+  showWarn("[" + stamp + "] " + reason);   // 带时间戳，可区分新旧证据
+  console.warn("[DormMate] " + reason);
+}
+
+function showWarn(text) {
+  warnBannerEl.textContent = text;
+  warnBannerEl.hidden = text === "";
+}
+
+// 点击横幅关闭（下次丢弃消息时重新显示）
+warnBannerEl.addEventListener("click", function () {
+  showWarn("");
+});
+
+// ---- MQTT 连接（mqtt.js，WebSocket；reconnectPeriod 断线自动重连）----
+const client = mqtt.connect(WS_URL, { reconnectPeriod: 2000 });
+
+client.on("connect", function () {
+  if (rulesMissing) {
+    setConnState(false, "规则模块（web/script.js）加载失败——请以项目根目录为工作区打开本页");
+    client.subscribe(TOPIC, function (err) {
+      if (err) showWarn("订阅失败：" + err.message);
+    });
+    return;
+  }
+  setConnState(true, "已连接 " + WS_URL);
+  client.subscribe(TOPIC, function (err) {
+    if (err) showWarn("订阅失败：" + err.message);
+  });
+});
+client.on("reconnect", function () { setConnState(false, "已断开，重连中…"); });
+client.on("close", function () { setConnState(false, "已断开，重连中…"); });
+client.on("error", function (err) { setConnState(false, "连接错误：" + err.message); });
+client.on("message", function (topic, payload) {
+  // mqtt.js v5 浏览器端 payload 恒为 Uint8Array，单例 TextDecoder 解码
+  handleMessage(topic, utf8Decoder.decode(payload));
+});
+
+// ---- 渲染：三卡片与 tab 均建一次、增量更新（评审修复：不再每条消息全量重建 DOM）----
+const cardEls = {};
+
+function buildCards() {
+  NODE_IDS.forEach(function (id) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML =
+      '<div class="node">' + id + "</div>" +
+      '<div class="status">—</div>' +
+      '<div class="metrics">等待数据…</div>' +
+      '<div class="advice"></div>' +
+      '<div class="time"></div>';
+    cardsEl.appendChild(card);
+    cardEls[id] = {
+      status: card.querySelector(".status"),
+      metrics: card.querySelector(".metrics"),
+      advice: card.querySelector(".advice"),
+      time: card.querySelector(".time")
+    };
+  });
+}
+
+function updateCard(nodeId) {
+  const refs = cardEls[nodeId];
+  const r = nodes[nodeId].latest;
+  if (!r) return;
+  refs.status.textContent = r.status;
+  refs.status.className = "status " + r.status;   // 颜色类随状态切换
+  refs.metrics.textContent = r.temperature + "℃ / " + r.humidity + "%";
+  refs.advice.textContent = window.ADVICE[r.status];   // 建议查表渲染，不入记录（保持统一 JSON 六字段）
+  refs.time.textContent = r.time;   // textContent 注入安全（与 web/script.js 同款惯例）
+}
+
+const tabEls = {};
+
+function buildTabs() {
+  NODE_IDS.forEach(function (id) {
+    const btn = document.createElement("button");
+    btn.textContent = id;
+    btn.addEventListener("click", function () {
+      selectedNode = id;
+      Object.keys(tabEls).forEach(function (key) {
+        tabEls[key].className = key === id ? "active" : "";
+      });
+      rebuildChart();
+    });
+    tabsEl.appendChild(btn);
+    tabEls[id] = btn;
+  });
+  tabEls[selectedNode].className = "active";
+}
+
+// 初始渲染
+buildCards();
+buildTabs();
+rebuildChart();

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DormMate Dashboard（M5 实时看板）</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="status-bar">
+    <h1>DormMate 实时看板</h1>
+    <div class="status-info">
+      <span id="connStatus" class="conn offline">未连接</span>
+      <span id="msgCount">收到 0 条</span>
+      <span id="dropCount" class="drop" hidden>丢弃 0 条</span>
+    </div>
+  </header>
+
+  <p id="warnBanner" class="warn" hidden></p>
+
+  <section class="cards" id="cards"><!-- 三节点卡片由 app.js 渲染 --></section>
+
+  <section class="chart-area">
+    <div class="chart-head">
+      <h2>趋势（Chart.js）</h2>
+      <div class="tabs" id="tabs"><!-- 节点切换 tab 由 app.js 渲染 --></div>
+    </div>
+    <canvas id="trendChart"></canvas>
+  </section>
+
+  <!-- 规则复用：M1 同一实现（window.computeStatus / ADVICE / validateInputs），零重写（SPEC §6） -->
+  <script src="../web/script.js"></script>
+  <!-- MQTT WebSocket 客户端（mqtt.js）与图表（Chart.js）：本地 vendor 文件，防 CDN 网络不稳 -->
+  <script src="vendor/mqtt.min.js"></script>
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
