@@ -81,7 +81,8 @@ function applyDemoRecord(nodeId, temperature, humidity) {
     return;
   }
   // 构造 SPEC §4 统一 JSON 六字段（action M6 恒 ""，A2 起写入动作值）→ 唯一入口 updateScene
-  updateScene(nodeId, { nodeId: nodeId, temperature: temperature, humidity: humidity, status: "", time: formatNow(), action: "" });
+  // demo 标记（M6 遗留修复，A S2）：演示记录不参与 A1 连续异常时长/次数计算（priority.js 排除 demo）
+  updateScene(nodeId, { nodeId: nodeId, temperature: temperature, humidity: humidity, status: "", time: formatNow(), action: "", demo: true });
 }
 
 function formatNow() {
@@ -354,6 +355,7 @@ function updateScene(nodeId, record) {
     time: record.time,
     action: ""   // M6 恒 ""（SPEC §4 预留字段；A2 起改为按节点写入动作值，评审修复：不透传消息里的任意值）
   };
+  if (record.demo === true) { rec.demo = true; }   // 演示记录打标（A S2：A1 计算排除，MQTT 真实记录保持六字段）
   const node = nodes[nodeId];
   node.latest = rec;
   node.history.push(rec);

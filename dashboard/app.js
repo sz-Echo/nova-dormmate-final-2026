@@ -33,6 +33,7 @@ const connStatusEl = document.getElementById("connStatus");
 const msgCountEl = document.getElementById("msgCount");
 const dropCountEl = document.getElementById("dropCount");
 const warnBannerEl = document.getElementById("warnBanner");
+const priorityBannerEl = document.getElementById("priorityBanner");
 const chartCanvas = document.getElementById("trendChart");
 
 function setConnState(online, text) {
@@ -173,6 +174,7 @@ function handleMessage(topic, text) {
 
   updateCard(message.nodeId);
   if (message.nodeId === selectedNode) appendChartPoint(record);
+  refreshPriority();
   // 注意：成功路径不清空警告横幅——丢弃原因持续显示（点击横幅可关闭），
   // 避免"警告被下一条正常消息冲掉"导致验收时看不到拦截提示
   } catch (err) {
@@ -192,6 +194,17 @@ function drop(reason) {
 function showWarn(text) {
   warnBannerEl.textContent = text;
   warnBannerEl.hidden = text === "";
+}
+
+function refreshPriority() {
+  // A1 优先关注：每条成功消息后重算横幅（priority.js computePriority，程序计算禁人工）
+  if (typeof window.computePriority !== "function") return;   // priority.js 缺失防御
+  const hasData = NODE_IDS.some(function (id) { return nodes[id].history.length > 0; });
+  if (!hasData) { priorityBannerEl.hidden = true; return; }   // 尚无真实数据时不显示
+  const result = window.computePriority(nodes);
+  priorityBannerEl.textContent = result.reason;
+  priorityBannerEl.className = "priority " + (result.nodeId ? "has" : "none");
+  priorityBannerEl.hidden = false;
 }
 
 // 点击横幅关闭（下次丢弃消息时重新显示）

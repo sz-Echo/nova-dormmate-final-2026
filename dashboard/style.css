@@ -53,6 +53,25 @@ body {
   font-size: 14px;
 }
 
+/* A1 优先关注横幅：有异常橙底强调 / 全正常绿底平静（程序实时重算） */
+.priority {
+  margin: 12px 24px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 15px;
+}
+.priority.has {
+  background: #fff4e5;
+  color: var(--orange);
+  border: 1px solid var(--orange);
+  font-weight: bold;
+}
+.priority.none {
+  background: #eafaf1;
+  color: var(--green);
+  border: 1px solid var(--green);
+}
+
 .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

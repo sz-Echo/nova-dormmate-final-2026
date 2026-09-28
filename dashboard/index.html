@@ -18,6 +18,9 @@
 
   <p id="warnBanner" class="warn" hidden></p>
 
+  <!-- A1 优先关注横幅：程序根据三节点历史实时计算（priority.js computePriority），每条消息后自动刷新 -->
+  <p id="priorityBanner" class="priority" hidden></p>
+
   <section class="cards" id="cards"><!-- 三节点卡片由 app.js 渲染 --></section>
 
   <section class="chart-area">
@@ -33,6 +36,8 @@
   <!-- MQTT WebSocket 客户端（mqtt.js）与图表（Chart.js）：本地 vendor 文件，防 CDN 网络不稳 -->
   <script src="vendor/mqtt.min.js"></script>
   <script src="vendor/chart.umd.min.js"></script>
+  <!-- A1 优先关注纯函数（computeStreak / computePriority，零 DOM） -->
+  <script src="priority.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

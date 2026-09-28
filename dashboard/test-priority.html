@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DormMate A1 优先规则测试页（SPEC §9 A1 三组三节点数据）</title>
+  <style>
+    body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 24px; color: #333; }
+    h1 { font-size: 20px; }
+    .rule { color: #888; font-size: 14px; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 4px 0; font-size: 14px; }
+    .pass { color: #27ae60; }
+    .fail { color: #d0021b; font-weight: bold; }
+    #summary { margin-top: 12px; font-size: 18px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>A1 优先关注规则测试（computeStreak / computePriority）</h1>
+  <p class="rule">规则（顺序不可改）：① 连续异常时长降序 ② 异常次数降序 ③ nodeId 固定顺序 dorm-a → dorm-b → dorm-c；demo 记录不参与（M6 遗留修复）；status 一律由 window.computeStatus 按温度/湿度计算。</p>
+  <ul id="results"></ul>
+  <div id="summary"></div>
+
+  <!-- 规则复用：M1 同一实现（SPEC §6）；A1 纯函数（本目录 priority.js，零 DOM） -->
+  <script src="../web/script.js"></script>
+  <script src="priority.js"></script>
+  <script>
+    var resultsEl = document.getElementById("results");
+    var summaryEl = document.getElementById("summary");
+    var passCount = 0;
+    var failCount = 0;
+
+    function check(name, cond, extra) {
+      var li = document.createElement("li");
+      if (cond) {
+        passCount++;
+        li.className = "pass";
+        li.textContent = "PASS | " + name;
+      } else {
+        failCount++;
+        li.className = "fail";
+        li.textContent = "FAIL | " + name + (extra ? "（实际：" + extra + "）" : "");
+      }
+      resultsEl.appendChild(li);
+      return cond;
+    }
+
+    // 构造记录：status 由同一规则计算（不手填）
+    function rec(nodeId, hhmmss, temp, hum, demo) {
+      var r = {
+        nodeId: nodeId, temperature: temp, humidity: hum,
+        status: window.computeStatus(temp, hum),
+        time: "2026-09-28 " + hhmmss, action: ""
+      };
+      if (demo) { r.demo = true; }
+      return r;
+    }
+    function norm(nodeId, times) { return times.map(function (t) { return rec(nodeId, t, 25, 60); }); }
+    function nodesWith(histories) {
+      return {
+        "dorm-a": { history: histories[0] || [] },
+        "dorm-b": { history: histories[1] || [] },
+        "dorm-c": { history: histories[2] || [] }
+      };
+    }
+    function hot(nodeId, times) { return times.map(function (t) { return rec(nodeId, t, 31, 60); }); }
+    function wet(nodeId, times) { return times.map(function (t) { return rec(nodeId, t, 25, 80); }); }
+    function cold(nodeId, times) { return times.map(function (t) { return rec(nodeId, t, 16, 60); }); }
+
+    // ---- 组 ①：只有 dorm-b 异常（偏热 20 分钟）----
+    (function () {
+      var nodes = nodesWith([
+        norm("dorm-a", ["20:20:00", "20:25:00", "20:30:00"]),
+        hot("dorm-b", ["20:10:00", "20:15:00", "20:20:00", "20:25:00", "20:30:00"]),
+        norm("dorm-c", ["20:20:00", "20:25:00", "20:30:00"])
+      ]);
+      var r = window.computePriority(nodes);
+      check("组① 只有 dorm-b 异常 → 优先 dorm-b", r.nodeId === "dorm-b", r.nodeId + " | " + r.reason);
+      check("组① 原因含时长与状态", r.reason.indexOf("偏热") >= 0 && r.reason.indexOf("20 分钟") >= 0, r.reason);
+      check("组① 时长程序计算 = 20 分钟", window.computeStreak(nodes["dorm-b"].history).durationMinutes === 20,
+        window.computeStreak(nodes["dorm-b"].history).durationMinutes);
+    })();
+
+    // ---- 组 ②：dorm-b 偏热 20 分钟、dorm-c 偏湿 5 分钟 → dorm-b----
+    (function () {
+      var nodes = nodesWith([
+        norm("dorm-a", ["20:20:00", "20:25:00", "20:30:00"]),
+        hot("dorm-b", ["20:10:00", "20:15:00", "20:20:00", "20:25:00", "20:30:00"]),
+        wet("dorm-c", ["20:25:00", "20:30:00"])
+      ]);
+      var r = window.computePriority(nodes);
+      check("组② dorm-b 持续更久 → 优先 dorm-b", r.nodeId === "dorm-b", r.nodeId + " | " + r.reason);
+      check("组② 原因含 dorm-c 只持续 5 分钟", r.reason.indexOf("dorm-c 虽然偏湿") >= 0 && r.reason.indexOf("5 分钟") >= 0, r.reason);
+    })();
+
+    // ---- 组 ③a：三节点都异常、时长相同（5 分钟）→ 次数兜底（dorm-b 历史异常更多）----
+    (function () {
+      var nodes = nodesWith([
+        cold("dorm-a", ["20:00:00"]).concat(norm("dorm-a", ["20:05:00"]), cold("dorm-a", ["20:25:00", "20:30:00"])),
+        hot("dorm-b", ["19:58:00", "20:00:00"]).concat(norm("dorm-b", ["20:05:00"]), hot("dorm-b", ["20:25:00", "20:30:00"])),
+        wet("dorm-c", ["20:00:00"]).concat(norm("dorm-c", ["20:05:00"]), wet("dorm-c", ["20:25:00", "20:30:00"]))
+      ]);
+      var r = window.computePriority(nodes);
+      check("组③a 时长相同 → 次数兜底优先 dorm-b（异常 4 条）", r.nodeId === "dorm-b", r.nodeId + " | " + r.reason);
+    })();
+
+    // ---- 组 ③b：三节点都异常、时长/次数全相同 → nodeId 顺序兜底 dorm-a----
+    (function () {
+      function same(nodeId, maker) {
+        return maker(nodeId, ["20:00:00"]).concat(norm(nodeId, ["20:05:00"]), maker(nodeId, ["20:25:00", "20:30:00"]));
+      }
+      var nodes = nodesWith([
+        same("dorm-a", cold), same("dorm-b", hot), same("dorm-c", wet)
+      ]);
+      var r = window.computePriority(nodes);
+      check("组③b 全相同 → nodeId 顺序兜底 dorm-a", r.nodeId === "dorm-a", r.nodeId + " | " + r.reason);
+    })();
+
+    // ---- 组 ⑤（M6 遗留修复）：demo 记录不参与 A1 计算----
+    (function () {
+      var nodes = nodesWith([
+        norm("dorm-a", ["20:25:00", "20:30:00"]),
+        hot("dorm-b", ["20:25:00", "20:30:00"]).concat(rec("dorm-b", "20:31:00", 31, 60, true), rec("dorm-b", "20:32:00", 31, 60, true)),
+        norm("dorm-c", ["20:25:00", "20:30:00"])
+      ]);
+      var streak = window.computeStreak(nodes["dorm-b"].history);
+      check("组⑤ demo 记录不延长异常链（时长仍 5 分钟）", streak.durationMinutes === 5, streak.durationMinutes);
+      check("组⑤ demo 记录不计入异常次数", streak.abnormalCount === 2, streak.abnormalCount);
+    })();
+
+    // ---- 组 ⑥：最新一条为正常 → streak 为 null；全正常 → 无优先对象----
+    (function () {
+      var nodes = nodesWith([
+        norm("dorm-a", ["20:25:00", "20:30:00"]),
+        hot("dorm-b", ["20:10:00"]).concat(norm("dorm-b", ["20:30:00"])),
+        norm("dorm-c", ["20:25:00", "20:30:00"])
+      ]);
+      check("组⑥ 最新为正常 → computeStreak 返回 null", window.computeStreak(nodes["dorm-b"].history) === null,
+        JSON.stringify(window.computeStreak(nodes["dorm-b"].history)));
+      var allNormal = nodesWith([
+        norm("dorm-a", ["20:30:00"]), norm("dorm-b", ["20:30:00"]), norm("dorm-c", ["20:30:00"])
+      ]);
+      var r = window.computePriority(allNormal);
+      check("组⑥ 全正常 → nodeId=null 且原因含均正常", r.nodeId === null && r.reason.indexOf("均正常") >= 0, r.reason);
+    })();
+
+    summaryEl.textContent = "结果：" + passCount + " 通过 / " + failCount + " 失败";
+    summaryEl.className = failCount === 0 ? "pass" : "fail";
+  </script>
+</body>
+</html>
