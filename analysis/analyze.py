@@ -11,6 +11,7 @@
 """
 import argparse
 import html
+import json
 import sys
 import time
 from datetime import datetime
@@ -175,8 +176,51 @@ def plot_trend(df, out_path):
     plt.close(fig)
 
 
-def render_report(stats, csv_path, out_dir):
-    """生成 data/report.html：摘要、关注记录、趋势图三要素（内容全部由程序生成）。"""
+def load_events(data_dir):
+    """读取 data/events.json（A4 事件记录，Dashboard"今日事件"导出）。
+    文件缺失/损坏时返回空列表并提示，不阻塞报告生成（事件复盘是可叠加区块）。"""
+    data_dir = Path(data_dir)
+    events_path = data_dir / "events.json"
+    if not events_path.exists():
+        return []
+    try:
+        data = json.loads(events_path.read_text(encoding="utf-8-sig"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        print(f"[事件] events.json 解析失败（忽略）：{exc}", file=sys.stderr)
+        return []
+    if not isinstance(data, list):
+        print("[事件] events.json 不是数组（忽略）", file=sys.stderr)
+        return []
+    return [e for e in data if isinstance(e, dict)]
+
+
+def build_events_block(events):
+    """A4 事件复盘区 HTML（全部由程序生成）：事件表格 + 程序拼接的复盘叙事。"""
+    if not events:
+        return "<p>暂无事件记录（在 Dashboard 完成一次 A 组处理流程并导出 data/events.json 后重新生成）</p>"
+    rows = "".join(
+        f"<tr><td>{html.escape(str(e.get('nodeId') or ''))}</td>"
+        f"<td>{html.escape(str(e.get('startTime') or ''))}</td>"
+        f"<td class='status'>{html.escape(str(e.get('problem') or ''))}</td>"
+        f"<td>{html.escape(str(e.get('priorityReason') or ''))}</td>"
+        f"<td>{html.escape(str(e.get('action') or ''))}（{html.escape(str(e.get('actionTime') or ''))}）</td>"
+        f"<td>{html.escape(str(e.get('recoverTime') or ''))}</td>"
+        f"<td class='status'>{html.escape(str(e.get('result') or ''))}</td></tr>"
+        for e in events
+    )
+    table = (
+        "<table><tr><th>宿舍</th><th>开始时间</th><th>问题</th><th>优先原因</th>"
+        "<th>处理动作</th><th>恢复时间</th><th>结果</th></tr>" + rows + "</table>"
+    )
+    stories = "".join(
+        f"<li>{html.escape(str(e.get('summary', '')))}</li>" for e in events if e.get("summary")
+    )
+    stories_block = "<h3>复盘</h3><ul>" + stories + "</ul>" if stories else ""
+    return table + stories_block
+
+
+def render_report(stats, csv_path, out_dir, events=None):
+    """生成 data/report.html：摘要、关注记录、事件复盘（A4）、趋势图（内容全部由程序生成）。"""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def fmt_num(v):
@@ -206,6 +250,8 @@ def render_report(stats, csv_path, out_dir):
         )
     else:
         attention_block = "<p>无关注记录（全部正常）</p>"
+
+    events_block = build_events_block(events if events is not None else [])
 
     html_text = f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -241,6 +287,10 @@ img {{ max-width: 100%; border: 1px solid #e3e8ee; border-radius: 4px; }}
 {attention_block}
 </section>
 <section>
+<h2>事件复盘（A4）</h2>
+{events_block}
+</section>
+<section>
 <h2>趋势图</h2>
 <img src="trend.png" alt="温度 / 湿度随时间趋势图">
 </section>
@@ -250,7 +300,7 @@ img {{ max-width: 100%; border: 1px solid #e3e8ee; border-radius: 4px; }}
     (out_dir / "report.html").write_text(html_text, encoding="utf-8")
 
 
-def print_stats(stats, csv_path, trend_path, report_path):
+def print_stats(stats, csv_path, trend_path, report_path, events=None):
     """控制台统计输出（证据：与 CSV 人工核对一致）。"""
     def fmt_num(v):
         return f"{v:g}"
@@ -275,6 +325,10 @@ def print_stats(stats, csv_path, trend_path, report_path):
             print(f"  {t} · {fmt_num(temp)}℃ / {fmt_num(hum)}% · {status}")
     else:
         print("关注记录（status 非正常）: 无")
+    print(f"事件复盘（A4，data/events.json）: {len(events or [])} 条")
+    for ev in (events or []):
+        if ev.get("summary"):
+            print(f"  {ev['summary']}")
     print("产物已重新生成:")
     print(f"  {trend_path}")
     print(f"  {report_path}")
@@ -319,16 +373,17 @@ def watch(out_dir):
 
 
 def run_pipeline(csv_path, out_dir):
-    """完整管线：读 CSV → 统计 → trend.png → report.html → 控制台输出。"""
+    """完整管线：读 CSV → 统计 → trend.png → report.html（含 A4 事件复盘）→ 控制台输出。"""
     df = load_csv(csv_path)
     stats = compute_stats(df)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     trend_path = out_dir / "trend.png"
     report_path = out_dir / "report.html"
+    events = load_events(out_dir)   # A4：data/events.json 缺失时不阻塞（区块显示"暂无事件记录"）
     plot_trend(df, trend_path)
-    render_report(stats, Path(csv_path), out_dir)
-    print_stats(stats, csv_path, trend_path, report_path)
+    render_report(stats, Path(csv_path), out_dir, events)
+    print_stats(stats, csv_path, trend_path, report_path, events)
 
 
 def main():

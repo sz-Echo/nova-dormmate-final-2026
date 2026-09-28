@@ -29,6 +29,7 @@
   - **A1 优先关注**：dashboard/priority.js 按"连续异常时长 → 异常次数 → nodeId 顺序"程序计算，顶部横幅实时显示"优先关注 X：已连续… 分钟"及原因；测试页 dashboard/test-priority.html（3 组三节点数据断言）；现场演示脚本 simulator/test_a1.py（--group 1|2|3|4|all）
   - **A2 处理动作**：Dashboard"开启风扇/通风"经 MQTT 动作通道（dormmate/{nodeId}/action）发布 actionState；three3d 风扇转动 + 窗开，simulator 对该节点模拟降温趋势；动作成为系统状态的一部分（env 记录 action 字段写入动作值），不直接改状态
   - **A3 恢复判断**：恢复必须由新数据触发（点击按钮不算）；恢复状态机见"已知限制"第 1 条
+  - **A4 事件复盘**：完整处理流程（异常开始 → 优先原因 → 处理动作 → 恢复）由程序组装成事件记录，Dashboard"今日事件"面板展示并可导出 `events.json` → 存入 data/ → `python analysis/analyze.py` 后 report.html 出现"事件复盘"区（事件表格 + 复盘叙事，全部程序生成）
 
 ## 已知限制
 

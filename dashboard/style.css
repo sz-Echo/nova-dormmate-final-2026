@@ -139,6 +139,46 @@ body {
   font-weight: bold;
 }
 
+/* A4 今日事件面板（事件由程序组装，导出 events.json 进入 report.html 事件复盘） */
+.event-area {
+  background: var(--card);
+  margin: 0 24px 16px;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.event-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.event-head h2 { font-size: 16px; margin: 0; }
+
+.event-head button {
+  border: 1px solid var(--blue);
+  background: #fff;
+  color: var(--blue);
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.event-head button:hover { background: var(--blue); color: #fff; }
+
+.event-area ul { list-style: none; margin: 0; padding: 0; }
+
+.event-area li {
+  padding: 6px 0;
+  font-size: 14px;
+  border-top: 1px dashed #eee;
+}
+
+.event-area li.event-empty { color: var(--muted); border-top: none; }
+
 .chart-area {
   background: var(--card);
   margin: 0 24px 24px;

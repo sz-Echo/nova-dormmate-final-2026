@@ -24,8 +24,11 @@ const utf8Decoder = new TextDecoder();   // 单例复用：热路径不再每消
 //   null | {state:"processing", actionTime, normalStreak} | {state:"recovered", recoverTime}
 const nodes = {};
 NODE_IDS.forEach(function (id) {
-  nodes[id] = { latest: null, history: [], actionState: null, recovery: null };
+  nodes[id] = { latest: null, history: [], actionState: null, recovery: null, event: null };
 });
+
+// A4 事件列表（已定稿的完整事件，可导出 events.json；事件、动作和结果均由程序真实产生）
+const events = [];
 
 let selectedNode = "dorm-a";
 let receivedCount = 0;
@@ -43,6 +46,8 @@ const actionNodeEl = document.getElementById("actionNode");
 const fanOnBtn = document.getElementById("fanOnBtn");
 const fanOffBtn = document.getElementById("fanOffBtn");
 const actionStateTextEl = document.getElementById("actionStateText");
+const eventListEl = document.getElementById("eventList");
+const exportEventsBtn = document.getElementById("exportEventsBtn");
 
 function setConnState(online, text) {
   connStatusEl.textContent = text;
@@ -190,6 +195,7 @@ function handleMessage(topic, text) {
         if (node.recovery.normalStreak >= 2) {
           node.recovery = { state: "recovered", recoverTime: record.time };
           publishFanOffAuto(message.nodeId, record.time);   // 自动关扇：simulator 恢复随机游走、3D 风扇停止
+          finalizeEvent(message.nodeId, record.time);       // A4：事件定稿进"今日事件"面板
         }
       } else {
         node.recovery.normalStreak = 0;
@@ -197,6 +203,21 @@ function handleMessage(topic, text) {
     } else if (record.status !== "正常") {
       node.recovery = null;
     }
+  }
+
+  // A4 事件草稿：异常出现时开草稿（开始时间/问题）；动作与优先原因由 A1/A2 路径回填
+  if (record.status !== "正常" && !node.event) {
+    node.event = {
+      nodeId: message.nodeId,
+      startTime: record.time,
+      problem: record.status,
+      priorityReason: null,
+      action: null,
+      actionTime: null,
+      recoverTime: null,
+      result: null,
+      summary: null
+    };
   }
 
   updateCard(message.nodeId);
@@ -251,9 +272,15 @@ function publishAction(action) {
     if (action === "fan_on") {
       // A3 状态机进入 processing：恢复只能由后续新数据触发（连续 ≥2 条正常），点击不算恢复
       nodes[nodeId].recovery = { state: "processing", actionTime: actionState.actionTime, normalStreak: 0 };
+      // A4 草稿回填动作（若异常草稿已存在；正常节点点风扇不产生事件）
+      if (nodes[nodeId].event) {
+        nodes[nodeId].event.action = actionState.action;
+        nodes[nodeId].event.actionTime = actionState.actionTime;
+      }
     } else {
-      // 手动关闭风扇不视为恢复，重置状态机（恢复必须由新数据触发）
+      // 手动关闭风扇不视为恢复，重置状态机（恢复必须由新数据触发）；放弃处理 → 丢弃草稿
       nodes[nodeId].recovery = null;
+      nodes[nodeId].event = null;
     }
     updateCard(nodeId);
     refreshActionBar();
@@ -268,6 +295,58 @@ function publishFanOffAuto(nodeId, recoverTime) {
     if (!err) { nodes[nodeId].actionState = actionState; }
   });
 }
+
+function finalizeEvent(nodeId, recoverTime) {
+  // A4 定稿：填恢复时间/结果，程序拼接复盘叙事（截图 A4 例句口径），进入事件列表（可导出 events.json）
+  const ev = nodes[nodeId].event;
+  if (!ev) return;
+  // 字段规整：未成为过优先对象就恢复的边界（如三节点同异常、用户直接处理非首位节点）→ 空字符串而非 null
+  if (!ev.priorityReason) { ev.priorityReason = ""; }
+  if (!ev.action) { ev.action = ""; }
+  if (!ev.actionTime) { ev.actionTime = ""; }
+  ev.recoverTime = recoverTime;
+  ev.result = "已恢复";
+  ev.summary =
+    ev.startTime.slice(11) + " " + ev.nodeId + " 连续" + ev.problem +
+    (ev.priorityReason ? " → 优先关注 " + ev.nodeId + "（" + ev.priorityReason + "）" : "") +
+    (ev.actionTime ? " → " + ev.actionTime.slice(11) + " 开启风扇并通风" : "") +
+    " → " + recoverTime.slice(11) + " 恢复正常";
+  events.push(ev);
+  nodes[nodeId].event = null;
+  renderEvents();
+}
+
+function renderEvents() {
+  // A4 事件面板：只列已定稿的完整事件（草稿不展示，避免"未恢复"事件冒充完整闭环）
+  if (events.length === 0) {
+    eventListEl.innerHTML = '<li class="event-empty">暂无事件</li>';
+    return;
+  }
+  eventListEl.innerHTML = "";
+  events.forEach(function (ev) {
+    const li = document.createElement("li");
+    li.textContent = ev.summary || (ev.nodeId + " " + ev.startTime + " " + ev.problem);
+    eventListEl.appendChild(li);
+  });
+}
+
+function exportEvents() {
+  // A4 导出 events.json（UTF-8）：存入 data/ 后，python analysis/analyze.py 会生成 report.html"事件复盘"区
+  if (events.length === 0) {
+    showWarn("暂无完整事件可导出——请先完成一次 发现 → 判断 → 处理 → 恢复 流程");
+    return;
+  }
+  const blob = new Blob([JSON.stringify(events, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "events.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+exportEventsBtn.addEventListener("click", exportEvents);
 
 function refreshActionBar() {
   // 动作条随 tab 切换/动作发布/数据到达刷新（A2/A3 三态：仍需关注 / 处理中 / 已恢复）
@@ -303,6 +382,14 @@ function refreshPriority() {
   priorityBannerEl.textContent = result.reason;
   priorityBannerEl.className = "priority " + (result.nodeId ? "has" : "none");
   priorityBannerEl.hidden = false;
+  // A4：优先原因回填到当前优先节点的事件草稿（随横幅每次刷新更新，保持"当下判断"的原因；
+  // 短语取横幅"优先关注 X：已连续…分钟"中的依据部分，与截图 A1 例句口径一致）
+  if (result.nodeId && nodes[result.nodeId].event) {
+    const prefix = "优先关注 " + result.nodeId + "：";
+    if (result.reason.indexOf(prefix) === 0) {
+      nodes[result.nodeId].event.priorityReason = result.reason.slice(prefix.length).split("；")[0];
+    }
+  }
 }
 
 // 点击横幅关闭（下次丢弃消息时重新显示）
