@@ -19,10 +19,12 @@ const utf8Decoder = new TextDecoder();   // 单例复用：热路径不再每消
 
 // 每节点状态：latest = 最新记录；history = 时间序列（统一 JSON 六字段，上限 HISTORY_LIMIT 条）；
 // actionState = A2 用户动作（{nodeId, action, actionTime}，SPEC §9 A2 / MASTER_PLAN §6.1），
-// 只记录"用户做了什么"，不直接改 status（恢复由 A3 新数据触发）
+// 只记录"用户做了什么"，不直接改 status（恢复由 A3 新数据触发）；
+// recovery = A3 恢复状态机（SPEC §9 A3 / MASTER_PLAN §6.3）：
+//   null | {state:"processing", actionTime, normalStreak} | {state:"recovered", recoverTime}
 const nodes = {};
 NODE_IDS.forEach(function (id) {
-  nodes[id] = { latest: null, history: [], actionState: null };
+  nodes[id] = { latest: null, history: [], actionState: null, recovery: null };
 });
 
 let selectedNode = "dorm-a";
@@ -178,9 +180,29 @@ function handleMessage(topic, text) {
     node.history.shift();   // 裁剪最旧，防内存增长
   }
 
+  // A3 恢复状态机（SPEC §9 A3 / MASTER_PLAN §6.3）：恢复必须由新数据触发，
+  // 连续 ≥2 条 status==正常 才判"已恢复"；仍异常则清零计数、保持处理中（继续提示）；
+  // 已恢复后再次出现异常 → 打破"已恢复"，回到仍需关注（截图 A3：后续数据仍异常就继续提示）
+  if (node.recovery) {
+    if (node.recovery.state === "processing") {
+      if (record.status === "正常") {
+        node.recovery.normalStreak += 1;
+        if (node.recovery.normalStreak >= 2) {
+          node.recovery = { state: "recovered", recoverTime: record.time };
+          publishFanOffAuto(message.nodeId, record.time);   // 自动关扇：simulator 恢复随机游走、3D 风扇停止
+        }
+      } else {
+        node.recovery.normalStreak = 0;
+      }
+    } else if (record.status !== "正常") {
+      node.recovery = null;
+    }
+  }
+
   updateCard(message.nodeId);
   if (message.nodeId === selectedNode) appendChartPoint(record);
   refreshPriority();
+  if (message.nodeId === selectedNode) refreshActionBar();   // A3：新数据推进恢复状态机后同步动作条
   // 注意：成功路径不清空警告横幅——丢弃原因持续显示（点击横幅可关闭），
   // 避免"警告被下一条正常消息冲掉"导致验收时看不到拦截提示
   } catch (err) {
@@ -226,19 +248,44 @@ function publishAction(action) {
       return;
     }
     nodes[nodeId].actionState = actionState;
+    if (action === "fan_on") {
+      // A3 状态机进入 processing：恢复只能由后续新数据触发（连续 ≥2 条正常），点击不算恢复
+      nodes[nodeId].recovery = { state: "processing", actionTime: actionState.actionTime, normalStreak: 0 };
+    } else {
+      // 手动关闭风扇不视为恢复，重置状态机（恢复必须由新数据触发）
+      nodes[nodeId].recovery = null;
+    }
     updateCard(nodeId);
     refreshActionBar();
   });
 }
 
+function publishFanOffAuto(nodeId, recoverTime) {
+  // A3 恢复后的自动关扇：发布 fan_off 让 simulator 停止降温、3D 风扇停止；
+  // 不重置 recovery（保持"已恢复"展示）
+  const actionState = { nodeId: nodeId, action: "fan_off", actionTime: recoverTime };
+  client.publish("dormmate/" + nodeId + "/action", JSON.stringify(actionState), { qos: 0 }, function (err) {
+    if (!err) { nodes[nodeId].actionState = actionState; }
+  });
+}
+
 function refreshActionBar() {
-  // 动作条随 tab 切换/动作发布刷新（显示"处理中 | 风扇已开启"等状态，截图 A2 例句口径）
+  // 动作条随 tab 切换/动作发布/数据到达刷新（A2/A3 三态：仍需关注 / 处理中 / 已恢复）
   actionNodeEl.textContent = selectedNode;
-  const st = nodes[selectedNode].actionState;
-  if (st && st.action === "fan_on") {
+  const node = nodes[selectedNode];
+  const st = node.actionState;
+  const rec = node.recovery;
+  if (rec && rec.state === "recovered") {
+    actionStateTextEl.textContent = "已恢复（" + rec.recoverTime.slice(11) + "）";
+  } else if (rec && rec.state === "processing") {
+    actionStateTextEl.textContent = "处理中 | 风扇已开启（连续正常 " + rec.normalStreak + "/2）";
+  } else if (st && st.action === "fan_on") {
     actionStateTextEl.textContent = "处理中 | 风扇已开启（" + st.actionTime.slice(11) + "）";
   } else if (st && st.action === "fan_off") {
-    actionStateTextEl.textContent = "风扇已关闭（" + st.actionTime.slice(11) + "）";
+    const latest = node.latest;
+    actionStateTextEl.textContent = (latest && latest.status !== "正常")
+      ? "风扇已关闭，仍需关注"
+      : "风扇已关闭（" + st.actionTime.slice(11) + "）";
   } else {
     actionStateTextEl.textContent = "尚未处理";
   }
@@ -320,9 +367,20 @@ function updateCard(nodeId) {
   refs.status.className = "status " + r.status;   // 颜色类随状态切换
   refs.metrics.textContent = r.temperature + "℃ / " + r.humidity + "%";
   refs.advice.textContent = window.ADVICE[r.status];   // 建议查表渲染，不入记录（保持统一 JSON 六字段）
-  // A2：卡片动作行显示"处理中 | 风扇已开启"（截图 A2 例句口径；恢复由 A3 新数据触发，这里不判）
+  // A2/A3 三态显示：仍需关注 / 处理中 / 已恢复（恢复必须由新数据触发，按钮只发动作）
   const st = nodes[nodeId].actionState;
-  refs.action.textContent = st ? (st.action === "fan_on" ? "处理中 | 风扇已开启" : "风扇已关闭") : "";
+  const rec = nodes[nodeId].recovery;
+  if (rec && rec.state === "recovered") {
+    refs.action.textContent = "已恢复（" + rec.recoverTime.slice(11) + "）";
+  } else if (rec && rec.state === "processing") {
+    refs.action.textContent = "处理中 | 风扇已开启（连续正常 " + rec.normalStreak + "/2）";
+  } else if (st && st.action === "fan_on") {
+    refs.action.textContent = "处理中 | 风扇已开启";
+  } else if (st && st.action === "fan_off") {
+    refs.action.textContent = (r.status !== "正常") ? "风扇已关闭，仍需关注" : "风扇已关闭";
+  } else {
+    refs.action.textContent = "";
+  }
   refs.time.textContent = r.time;   // textContent 注入安全（与 web/script.js 同款惯例）
 }
 

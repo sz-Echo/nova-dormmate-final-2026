@@ -25,9 +25,14 @@
 - **动态 TTS（M3）**：朗读内容随当前状态变化（如偏热 → "当前状态：偏热，注意通风"）
 - **MQTT 实时系统（M5）**：本机 Mosquitto Broker（1883 TCP + 8083 WebSocket）→ simulator/ 三节点按 `dormmate/{nodeId}/env` 发布统一 JSON（status 复用 M2 Python 规则计算）→ dashboard/（mqtt.js + Chart.js）三卡片同屏实时刷新 + tab 切换各节点趋势图；topic/nodeId 双校验防串线，坏 JSON / 缺字段拦截告警，Broker 重启后自动重连
 - **Three.js 3D 可视化（M6）**：three3d/ 简化 3D 宿舍场景（scene/camera/renderer + 三栋楼 mesh/material）——四状态映射为 4 类可见变化（建筑主色 / 发光指示球颜色+高度 / 楼顶粒子（偏冷飘雪·偏湿下雨·偏热热气·正常平静）/ CanvasTexture 中文标牌）；订阅与 dashboard 同一 MQTT 数据流（dormmate/+/env、ws://localhost:8083），消息经同款校验链（JSON.parse 容错 / 对象守卫 / 六字段 / 范围 / topic↔nodeId 串线防线）后由 updateScene 唯一入口驱动 3D，status 一律本地规则重算（不信任消息值）；点击选中楼 + 详情侧栏（A1 预留），屋顶风扇 mesh 预留（A2 挂点）
+- **A 组业务闭环（A1-A4，进行中）**：
+  - **A1 优先关注**：dashboard/priority.js 按"连续异常时长 → 异常次数 → nodeId 顺序"程序计算，顶部横幅实时显示"优先关注 X：已连续… 分钟"及原因；测试页 dashboard/test-priority.html（3 组三节点数据断言）；现场演示脚本 simulator/test_a1.py（--group 1|2|3|4|all）
+  - **A2 处理动作**：Dashboard"开启风扇/通风"经 MQTT 动作通道（dormmate/{nodeId}/action）发布 actionState；three3d 风扇转动 + 窗开，simulator 对该节点模拟降温趋势；动作成为系统状态的一部分（env 记录 action 字段写入动作值），不直接改状态
+  - **A3 恢复判断**：恢复必须由新数据触发（点击按钮不算）；恢复状态机见"已知限制"第 1 条
 
 ## 已知限制
 
+- **A3 恢复规则（A 组）**：本项目采用比统一规则更严格的恢复判定——动作（fan_on）之后，**连续 ≥2 条新数据 status==正常** 才判"已恢复"并自动发布 fan_off（SPEC §9 A3：更严格规则须在 README 写清）；期间仍异常则保持"处理中"继续提示。Dashboard 内存态（actionState / recovery / 事件 / streak）刷新即失，现场演示请按剧本一气呵成（demo 演示记录带 demo 标记，不参与 A1 计算）
 - **ASR（M3，等价方案）**：原生 SpeechRecognition（webkitSpeechRecognition）依赖 Google 在线识别服务，国内网络无法连接，实测不可用。**替代方案**：改用 Windows 系统语音输入（Win+H）作为等价 ASR——识别文字进入页面"语音指令"输入框，由程序捕获并匹配固定指令（"朗读状态" / "拍照"）触发已有功能。**测试结果**：Win+H 说"朗读状态" → 页面显示识别结果 → TTS 动态朗读"偏热，注意通风"；说"拍照" → 成功触发快照下载；未定义指令正确提示（2026-09-26 实测通过）
 - **TTS 中文语音**：若系统未装中文语音包，朗读可能异常（页面会提示）；建议使用 Edge（自带较稳定的中文语音）
 - **Camera**：需 localhost + 摄像头权限；被其他软件（腾讯会议 / 钉钉 / Zoom 等）占用时无法打开
