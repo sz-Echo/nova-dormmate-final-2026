@@ -27,8 +27,9 @@ let selectedNodeId = null;               // A1 预留：当前查看的是谁
 const dormVisuals = {};                  // { nodeId: { group, status, sphereTargetY, bodyMat, sphere, sphereMat, pointLight, sign, signCtx, signTexture, particles, fanBlades, ring } }
 const nodes = {};                        // { nodeId: { latest, history[] } }，history 上限 HISTORY_LIMIT（统一 JSON 六字段）
 NODE_IDS.forEach(function (id) { nodes[id] = { latest: null, history: [] }; });
-const raycaster = new THREE.Raycaster();
-const clock = new THREE.Clock();
+// vendor 缺失防御：three.min.js 加载失败时顶层不抛 ReferenceError（降级横幅由启动调用处兜底）
+const raycaster = (typeof THREE !== "undefined") ? new THREE.Raycaster() : null;
+const clock = (typeof THREE !== "undefined") ? new THREE.Clock() : null;
 
 // MQTT 连接与校验常量（与 dashboard/app.js 同款）
 const WS_URL = "ws://localhost:8083";   // WebSocket 端口（mosquitto.conf listener 8083 + protocol websockets）
@@ -75,6 +76,10 @@ document.querySelectorAll("#demoButtons button").forEach(function (btn) {
 });
 
 function applyDemoRecord(nodeId, temperature, humidity) {
+  if (rulesMissing) {   // 与 MQTT 路径同款防御：规则模块缺失时提示而非抛 TypeError（评审修复）
+    showWarn("规则模块（web/script.js）加载失败，演示按钮不可用——请以项目根目录为工作区用 Live Server 打开本页");
+    return;
+  }
   // 构造 SPEC §4 统一 JSON 六字段（action M6 恒 ""，A2 起写入动作值）→ 唯一入口 updateScene
   updateScene(nodeId, { nodeId: nodeId, temperature: temperature, humidity: humidity, status: "", time: formatNow(), action: "" });
 }
@@ -116,10 +121,14 @@ function initScene() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.getElementById("canvasContainer").appendChild(renderer.domElement);
 
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.target.set(0, 3, 0);
-  controls.enableDamping = true;                  // 惯性旋转更顺滑
-  controls.maxPolarAngle = Math.PI / 2.1;         // 不钻到地面以下
+  if (typeof THREE.OrbitControls !== "function") {
+    showWarn("OrbitControls.js 加载失败——场景无法旋转（检查 three3d/vendor/OrbitControls.js）");   // 评审修复：vendor 缺失不抛异常
+  } else {
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 3, 0);
+    controls.enableDamping = true;                  // 惯性旋转更顺滑
+    controls.maxPolarAngle = Math.PI / 2.1;         // 不钻到地面以下
+  }
 
   // 灯光：环境光打底 + 方向光塑形
   scene.add(new THREE.AmbientLight(0xffffff, 0.55));
@@ -205,6 +214,7 @@ function buildDorm(nodeId, x) {
 
   // 楼顶粒子（THREE.Points，每楼 250 点；按状态切换 雪/雨/热气/平静）
   const particles = buildParticles();
+  tagDorm(particles.points, nodeId);   // 粒子同打标，防"点中楼顶粒子却取消选中"
   group.add(particles.points);
 
   // 屋顶风扇（A2 预留挂点：A2 写 fan_on 后让 fanBlades 绕 y 轴转动；M6 静止）
@@ -213,6 +223,7 @@ function buildDorm(nodeId, x) {
   tagDorm(fanGroup, nodeId);
   const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.3, 12), new THREE.MeshLambertMaterial({ color: 0x666666 }));
   hub.rotation.x = Math.PI / 2;
+  tagDorm(hub, nodeId);   // 全部 mesh 都打标：r128 raycaster 不跳过任何对象，未打标会导致点击落到该 mesh 时误判为"点空白→取消选中"
   fanGroup.add(hub);
   const fanBlades = new THREE.Group();
   for (let i = 0; i < 3; i++) {
@@ -235,6 +246,7 @@ function buildDorm(nodeId, x) {
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.03;
   ring.visible = false;
+  tagDorm(ring, nodeId);   // 选中环同打标：点击可见的选中环=点自己宿舍，不误取消选中
   group.add(ring);
 
   dormVisuals[nodeId] = {
@@ -260,6 +272,7 @@ function createSign(nodeId) {
   canvas.height = 256;
   const ctx = canvas.getContext("2d");
   const texture = new THREE.CanvasTexture(canvas);
+  texture.encoding = THREE.sRGBEncoding;    // 与 renderer.outputEncoding 一致，避免 canvas sRGB 颜色被双重伽马发白（r128 纹理默认 LinearEncoding）
   texture.minFilter = THREE.LinearFilter;   // 防小字发糊（默认 mipmap 会让文字变糊）
   texture.generateMipmaps = false;
   drawSign(nodeId, null, ctx, texture);
@@ -320,9 +333,17 @@ function setDormStatus(nodeId, status) {
   v.particles.material.color.setHex(style.particleColor);
 }
 
+let sceneUnavailableWarned = false;   // 场景未初始化（无 WebGL）时只提示+计数一次，防每条消息刷屏（评审修复）
+
 function updateScene(nodeId, record) {
   const v = dormVisuals[nodeId];
-  if (!v) { return; }
+  if (!v) {
+    if (!sceneUnavailableWarned) {   // initScene 失败（如 WebGL 不可用）时消息无处可去，按"必有横幅+计数"口径处理一次
+      sceneUnavailableWarned = true;
+      drop("场景未初始化（WebGL 不可用），实时消息无法驱动 3D");
+    }
+    return;
+  }
   // status 由本地同一规则重算，不信任传入值（SPEC §4 禁止手填/直接带入）
   const status = window.computeStatus(record.temperature, record.humidity);
   const rec = {
@@ -331,23 +352,29 @@ function updateScene(nodeId, record) {
     humidity: record.humidity,
     status: status,
     time: record.time,
-    action: record.action || ""   // M6 恒 ""，A2 起写入动作值
+    action: ""   // M6 恒 ""（SPEC §4 预留字段；A2 起改为按节点写入动作值，评审修复：不透传消息里的任意值）
   };
   const node = nodes[nodeId];
   node.latest = rec;
   node.history.push(rec);
   if (node.history.length > HISTORY_LIMIT) { node.history.shift(); }   // 裁剪最旧，防内存增长（A1 复用口径）
   setDormStatus(nodeId, status);
-  drawSign(nodeId, rec, v.signCtx, v.signTexture);
+  // 标牌内容未变时跳过重绘（CanvasTexture 更新会整张重传 GPU，热路径省一次是一次，评审修复）
+  const signKey = status + "|" + record.temperature + "|" + record.humidity + "|" + record.time;
+  if (v.lastSignKey !== signKey) {
+    v.lastSignKey = signKey;
+    drawSign(nodeId, rec, v.signCtx, v.signTexture);
+  }
   if (selectedNodeId === nodeId) { renderSidebar(); }
 }
 
 // ---- 动画循环：只做粒子/球动画与渲染，不做数据（数据统一走 updateScene）----
 function animate() {
   requestAnimationFrame(animate);
+  if (document.hidden) { return; }   // 标签页隐藏时不渲染，省 GPU（dt 有 0.1 上限，恢复无跳变，评审修复）
   const dt = Math.min(clock.getDelta(), 0.1);
   NODE_IDS.forEach(function (id) { updateDormAnimation(id, dt); });
-  controls.update();
+  if (controls) { controls.update(); }   // OrbitControls 缺失（vendor 加载失败）时跳过，页面仍可渲染
   renderer.render(scene, camera);
 }
 
@@ -379,20 +406,30 @@ function updateDormAnimation(nodeId, dt) {
   }
 }
 
-// ---- 点击选中 vs OrbitControls 拖拽（pointer 位移阈值 <5px）----
+// ---- 点击选中 vs OrbitControls 拖拽（pointer 位移阈值 <5px，仅左键）----
 let pointerDownPos = null;
+let pointerDownButton = -1;
 
 function bindPointerSelect() {
   const el = renderer.domElement;
   el.addEventListener("pointerdown", function (e) {
+    if (e.pointerType === "touch" || e.pointerType === "pen") { e.preventDefault(); }   // 触摸手势不交给浏览器默认行为（防边缘滑动=返回，S6 修复）
     pointerDownPos = { x: e.clientX, y: e.clientY };
+    pointerDownButton = e.button;
   });
   el.addEventListener("pointerup", function (e) {
     if (!pointerDownPos) { return; }
     const dx = e.clientX - pointerDownPos.x;
     const dy = e.clientY - pointerDownPos.y;
+    const button = pointerDownButton;
     pointerDownPos = null;
-    if (dx * dx + dy * dy < 25) { handleClick(e); }   // 位移 <5px 才是点击，否则是拖拽旋转
+    pointerDownButton = -1;
+    // 仅左键且位移 <5px 才是点击；右键平移/中键缩放（OrbitControls 绑定）不触发选中（评审修复）
+    if (button === 0 && dx * dx + dy * dy < 25) { handleClick(e); }
+  });
+  el.addEventListener("pointercancel", function () {
+    pointerDownPos = null;   // 触摸手势被系统打断：清状态，防下一次点击被误判（评审修复）
+    pointerDownButton = -1;
   });
 }
 
@@ -543,6 +580,9 @@ function handleMessage(topic, text) {
 }
 
 // ---- MQTT 连接（mqtt.js，WebSocket；reconnectPeriod 断线自动重连，重连后自动重新订阅）----
+if (typeof mqtt === "undefined") {
+  setConnState(false, "MQTT 客户端（mqtt.min.js）加载失败——检查 three3d/vendor/mqtt.min.js");   // 评审修复：vendor 缺失不抛异常
+} else {
 const client = mqtt.connect(WS_URL, { reconnectPeriod: 2000 });
 
 client.on("connect", function () {
@@ -565,6 +605,12 @@ client.on("message", function (topic, payload) {
   // mqtt.js v5 浏览器端 payload 恒为 Uint8Array，单例 TextDecoder 解码
   handleMessage(topic, utf8Decoder.decode(payload));
 });
+}   // typeof mqtt 守卫结束
 
 // ---- 启动 ----
-if (initScene()) { animate(); }
+try {
+  if (initScene()) { animate(); }
+} catch (err) {
+  // vendor（three.min.js）缺失/损坏等加载期异常：降级横幅，不白屏（评审修复）
+  showWarn("Three.js（three.min.js）加载失败：" + err.message);
+}

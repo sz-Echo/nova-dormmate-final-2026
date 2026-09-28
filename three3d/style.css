@@ -15,7 +15,10 @@
   --teal: #16a085;
 }
 
-html, body { height: 100%; }
+html, body {
+  height: 100%;
+  overscroll-behavior: none;   /* 防边缘滑动触发浏览器返回/下拉刷新（S6 修复：滑动只属于 3D，关闭页面只走右上角叉） */
+}
 
 body {
   margin: 0;
@@ -26,7 +29,10 @@ body {
 }
 
 #canvasContainer { position: fixed; inset: 0; }
-#canvasContainer canvas { display: block; }
+#canvasContainer canvas {
+  display: block;
+  touch-action: none;   /* 关键：手势全部交给 OrbitControls，浏览器不把左右滑动接管为"返回"（S6 修复） */
+}
 
 .status-bar {
   position: fixed;

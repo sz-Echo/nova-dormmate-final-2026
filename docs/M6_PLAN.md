@@ -48,10 +48,10 @@ index.html 脚本引入顺序（顺序即依赖，不可调换）：
 ### app.js 函数骨架（函数名即验收指认点）
 
 - 常量（与 dashboard 同款）：`WS_URL = "ws://localhost:8083"`、`TOPIC = "dormmate/+/env"`、`NODE_IDS`、`HISTORY_LIMIT = 60`、`REQUIRED_FIELDS` 六字段、`TIME_PATTERN`、单例 `utf8Decoder`
-- `STATUS_STYLE` 映射表（见 §4）；`dormVisuals = { nodeId: { group, bodyMat, sphere, sphereMat, pointLight, signCtx, signTexture, particles, fanGroup, ring } }`；`nodes = { nodeId: { latest, history[] } }`
+- `STATUS_STYLE` 映射表（见 §4）；`dormVisuals = { nodeId: { group, status, sphereTargetY, bodyMat, sphere, sphereMat, pointLight, sign, signCtx, signTexture, particles, fanBlades, ring } }`；`nodes = { nodeId: { latest, history[] } }`
 - `initScene()`：WebGL 预检（测试 canvas `getContext("webgl")` + `new THREE.WebGLRenderer` 包 try...catch，失败显示降级横幅不白屏）→ **`scene = new THREE.Scene()`** → **`camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 200)`** → **`renderer = new THREE.WebGLRenderer({ antialias: true })`**（`renderer.outputEncoding = THREE.sRGBEncoding`，r128 写法）→ `controls = new THREE.OrbitControls(camera, renderer.domElement)` → 环境光 0.55 + 方向光 0.8（10,20,10）→ 地面 PlaneGeometry(60,60) + GridHelper(60,20) → `NODE_IDS.forEach((id, i) => buildDorm(id, (i - 1) * 8))`（x = -8 / 0 / 8）→ resize 自适应
 - `buildDorm(nodeId, x)`：group（body=Box(3,4,3)+MeshLambertMaterial、roof=Cone(2.3,1.5,4)、door、2 窗、signboard=Plane(2.2,1.1)+CanvasTexture、statusSphere=Sphere(0.35)+PointLight(状态色,0.8,8)、particles=Points、fanGroup、ring=Ring 贴地默认隐藏）；每个 mesh `userData.dormId = nodeId` 供 raycast 反查
-- `createSignTexture()`：canvas 512×256，`ctx.font = 'bold 44px "Microsoft YaHei", sans-serif'`（系统字体，中文免加载）；CanvasTexture `minFilter = LinearFilter`、`generateMipmaps = false`（防糊）；**每次更新标牌必须 `texture.needsUpdate = true`**（最容易漏）
+- `createSign()` / `drawSign()`：canvas 512×256，`ctx.font = 'bold 42px "Microsoft YaHei", sans-serif'`（系统字体，中文免加载）；CanvasTexture `encoding = sRGBEncoding`、`minFilter = LinearFilter`、`generateMipmaps = false`（防糊）；**每次更新标牌必须 `texture.needsUpdate = true`**（最容易漏）
 - `buildParticles()`：THREE.Points + BufferGeometry（r125 起 Geometry 已删，必须 BufferGeometry）+ PointsMaterial({size:0.15, transparent, opacity:0.9})；每楼 250 点；positions Float32Array **原地改值 + attribute.needsUpdate，绝不重建几何**
 - `updateScene(nodeId, record)`：status 用 window.computeStatus 重算 → 落六字段记录 {nodeId, temperature, humidity, status, time, action} → nodes 更新（history 60 条裁剪）→ setDormStatus（`material.color.set()`，不重建 material/mesh）→ drawSign（标牌：节点名/状态/温湿度/建议查 window.ADVICE/时间）→ 选中节点则同步刷新侧栏
 - `animate()` / `updateDormAnimation(nodeId, dt)`：粒子按 mode 下落/上升/漂浮（落地/出区域重置）；球 y 向 targetY lerp + 脉动缩放；`renderer.render(scene, camera)`
@@ -122,12 +122,13 @@ index.html 脚本引入顺序（顺序即依赖，不可调换）：
 - README.md 补 M6 运行方式（vendor 来源、Broker → simulator → Live Server 启动顺序）；PLAN 看板收口
 - 提交（先展示变更摘要，用户确认）；GitHub 同步（先展示命令，用户确认）
 - 检查点：用户确认证据与提交
-- 状态（2026-09-28）：README 已补 M6 运行方式/主要功能/文档索引；PLAN 看板收口；**证据自动化验证完成**（Playwright + paho-mqtt，用户委托）——8 张截图 + 1 录屏落 docs/evidence/m6/，逐项程序化断言全过：① simulator 实时驱动（已连接+收到 12 条）② 物理点击选中/取消 + 四状态演示（bodyMat 颜色逐一 == 期望 hex，截后复核）③ MQTT 单条 16/60（status 故意写错）→ dorm-c 变蓝 4a90d9 + 侧栏"偏冷"（规则重算）④ 坏 JSON/缺字段/串线逐条丢弃计数递增 + 横幅 ⑤ 停 Broker →"已断开，重连中…"→ 重启 →"已连接"+收到 40 条；console 唯一报错为 Broker 停机窗口的 WebSocket ERR_CONNECTION_REFUSED（重连测试预期行为，非应用缺陷）；提交与 GitHub 同步待用户确认
+- 状态（2026-09-28）：README 已补 M6 运行方式/主要功能/文档索引；PLAN 看板收口；**证据自动化验证完成**（Playwright + paho-mqtt，用户委托）——10 张自动化截图 + 1 录屏 + 3 张用户手拍（shot-1/2/3）落 docs/evidence/m6/，逐项程序化断言全过：① simulator 实时驱动（已连接+收到 12 条）② 物理点击选中/取消 + 四状态演示（bodyMat 颜色逐一 == 期望 hex，截后复核）③ MQTT 单条 16/60（status 故意写错）→ dorm-c 变蓝 4a90d9 + 侧栏"偏冷"（规则重算）④ 坏 JSON/缺字段/串线逐条丢弃计数递增 + 横幅 ⑤ 停 Broker →"已断开，重连中…"→ 重启 →"已连接"+收到 40 条；console 唯一报错为 Broker 停机窗口的 WebSocket ERR_CONNECTION_REFUSED（重连测试预期行为，非应用缺陷）；提交完成 415c9db（23 文件）；GitHub 已同步至 aef28b5（2026-09-28 subtree push 一次成功）
 
 ### S6 评审修复
 
 - code-review 走查（对齐 M5 S6 的 10 角度经验），重点：校验链与 dashboard 一致性、updateScene 唯一入口、粒子不重建几何、needsUpdate 无遗漏、error 路径不白屏；修复后用户复测
 - 检查点：用户复测通过；提交修复
+- 状态（2026-09-28）：code-review 完成（14 项确认发现）——修复 9 项：演示路径 rulesMissing 防御 / 选中环·风扇·粒子打标（点击环不再误取消选中）/ pointer 仅左键+pointercancel / CanvasTexture sRGBEncoding / action 强制 ""（M6 恒空）/ vendor 缺失多层防御（顶层常量·OrbitControls·mqtt·启动 try）/ 无 WebGL 时消息一次性 drop 提示 / 标牌内容不变跳过重绘 / document.hidden 暂停渲染；遗留 3 项（共享校验模块抽取需改 dashboard 违反 M6 红线暂缓、色值三处定义已注释说明、演示记录混入 history 留 A 阶段处理）；全量自动化回归复测通过，待用户复测；**追加修复（用户复测发现）**：Edge「鼠标手势」导致右键左划=浏览器返回退出页面——浏览器级手势网页无法拦截，用户侧关闭（Edge 设置→外观→鼠标手势，README 已记录）+ 代码侧防御加固（style.css `touch-action: none`/`overscroll-behavior: none` + pointerdown touch/pen preventDefault，触摸屏同样受益）
 
 ## 7. 现场演示剧本（S5 照着走）
 
@@ -166,7 +167,7 @@ index.html 脚本引入顺序（顺序即依赖，不可调换）：
 | M4 | 无直接接口（小程序预留点不变） |
 | M5 | 订阅同一 MQTT 数据流（dormmate/+/env、ws://localhost:8083）；mqtt.min.js 拷贝复用；校验链与 dashboard/app.js 98-181 行同序同款；simulator 零改动 |
 | M6 | three3d/ 本体（SPEC §7 新目录） |
-| A1 | selectedNodeId + 点击选中高亮 + 详情侧栏 = "3D 明确知道当前查看的是谁"的基础；每节点 60 条历史（按 time 分组）供 A1 程序计算连续异常时长；优先规则本身 A 阶段做 |
+| A1 | selectedNodeId + 点击选中高亮 + 详情侧栏 = "3D 明确知道当前查看的是谁"的基础；每节点 60 条历史（按 time 分组）供 A1 程序计算连续异常时长；优先规则本身 A 阶段做。⚠ 遗留（评审记录）：S3 演示按钮数据也会写入 history，A1 计算连续异常时长前需排除演示记录或清空重采 |
 | A2 | action 字段 M6 恒 ""；fanGroup 风扇 mesh 预留挂点（A2 写 fan_on 后风扇转动，操作后 Dashboard/3D 状态一致）；M6 不做 actionState、不因点击直接改状态 |
 | A3 | 无（依赖 A2；恢复必须由新数据触发） |
 | B | M6 证据（截图/录屏/丢弃日志）为 B 组程序化说明素材 |
