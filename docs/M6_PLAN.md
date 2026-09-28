@@ -128,7 +128,7 @@ index.html 脚本引入顺序（顺序即依赖，不可调换）：
 
 - code-review 走查（对齐 M5 S6 的 10 角度经验），重点：校验链与 dashboard 一致性、updateScene 唯一入口、粒子不重建几何、needsUpdate 无遗漏、error 路径不白屏；修复后用户复测
 - 检查点：用户复测通过；提交修复
-- 状态（2026-09-28）：code-review 完成（14 项确认发现）——修复 9 项：演示路径 rulesMissing 防御 / 选中环·风扇·粒子打标（点击环不再误取消选中）/ pointer 仅左键+pointercancel / CanvasTexture sRGBEncoding / action 强制 ""（M6 恒空）/ vendor 缺失多层防御（顶层常量·OrbitControls·mqtt·启动 try）/ 无 WebGL 时消息一次性 drop 提示 / 标牌内容不变跳过重绘 / document.hidden 暂停渲染；遗留 3 项（共享校验模块抽取需改 dashboard 违反 M6 红线暂缓、色值三处定义已注释说明、演示记录混入 history 留 A 阶段处理）；全量自动化回归复测通过，待用户复测；**追加修复（用户复测发现）**：Edge「鼠标手势」导致右键左划=浏览器返回退出页面——浏览器级手势网页无法拦截，用户侧关闭（Edge 设置→外观→鼠标手势，README 已记录）+ 代码侧防御加固（style.css `touch-action: none`/`overscroll-behavior: none` + pointerdown touch/pen preventDefault，触摸屏同样受益）
+- 状态（2026-09-28）：code-review 完成（14 项确认发现）——修复 9 项：演示路径 rulesMissing 防御 / 选中环·风扇·粒子打标（点击环不再误取消选中）/ pointer 仅左键+pointercancel / CanvasTexture sRGBEncoding / action 强制 ""（M6 恒空）/ vendor 缺失多层防御（顶层常量·OrbitControls·mqtt·启动 try）/ 无 WebGL 时消息一次性 drop 提示 / 标牌内容不变跳过重绘 / document.hidden 暂停渲染；遗留 3 项（共享校验模块抽取需改 dashboard 违反 M6 红线暂缓、色值三处定义已注释说明、演示记录混入 history 留 A 阶段处理）；全量自动化回归复测通过，用户复测确认；提交 7e72183（GitHub 已同步至 44b391c）；**追加修复（用户复测发现）**：Edge「鼠标手势」导致右键左划=浏览器返回退出页面——浏览器级手势网页无法拦截，用户侧关闭（Edge 设置→外观→鼠标手势，README 已记录）+ 代码侧防御加固（style.css `touch-action: none`/`overscroll-behavior: none` + pointerdown touch/pen preventDefault，触摸屏同样受益）
 
 ## 7. 现场演示剧本（S5 照着走）
 
