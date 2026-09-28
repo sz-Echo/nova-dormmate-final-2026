@@ -17,10 +17,12 @@ const REQUIRED_FIELDS = ["nodeId", "temperature", "humidity", "status", "time", 
 const TIME_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;   // SPEC §4 time 全格式
 const utf8Decoder = new TextDecoder();   // 单例复用：热路径不再每消息新建（评审修复）
 
-// 每节点状态：latest = 最新记录；history = 时间序列（统一 JSON 六字段，上限 HISTORY_LIMIT 条）
+// 每节点状态：latest = 最新记录；history = 时间序列（统一 JSON 六字段，上限 HISTORY_LIMIT 条）；
+// actionState = A2 用户动作（{nodeId, action, actionTime}，SPEC §9 A2 / MASTER_PLAN §6.1），
+// 只记录"用户做了什么"，不直接改 status（恢复由 A3 新数据触发）
 const nodes = {};
 NODE_IDS.forEach(function (id) {
-  nodes[id] = { latest: null, history: [] };
+  nodes[id] = { latest: null, history: [], actionState: null };
 });
 
 let selectedNode = "dorm-a";
@@ -35,6 +37,10 @@ const dropCountEl = document.getElementById("dropCount");
 const warnBannerEl = document.getElementById("warnBanner");
 const priorityBannerEl = document.getElementById("priorityBanner");
 const chartCanvas = document.getElementById("trendChart");
+const actionNodeEl = document.getElementById("actionNode");
+const fanOnBtn = document.getElementById("fanOnBtn");
+const fanOffBtn = document.getElementById("fanOffBtn");
+const actionStateTextEl = document.getElementById("actionStateText");
 
 function setConnState(online, text) {
   connStatusEl.textContent = text;
@@ -155,6 +161,7 @@ function handleMessage(topic, text) {
   }
 
   // status 用本地同一规则重算；记录保持 SPEC §4 统一 JSON 六字段（action 保留，A2 起写入动作值）
+  const node = nodes[message.nodeId];
   const status = window.computeStatus(validation.temperature, validation.humidity);
   const record = {
     nodeId: message.nodeId,
@@ -162,10 +169,9 @@ function handleMessage(topic, text) {
     humidity: validation.humidity,
     status: status,
     time: message.time,
-    action: message.action
+    action: node.actionState ? node.actionState.action : (message.action || "")   // A2：动作成为记录的一部分（SPEC §4）
   };
 
-  const node = nodes[message.nodeId];
   node.latest = record;
   node.history.push(record);
   if (node.history.length > HISTORY_LIMIT) {
@@ -195,6 +201,51 @@ function showWarn(text) {
   warnBannerEl.textContent = text;
   warnBannerEl.hidden = text === "";
 }
+
+function formatNowLocal() {
+  // 复用 M1 的 window.formatTime；缺失时本地兜底（YYYY-MM-DD HH:MM:SS，SPEC §4 全格式）
+  if (typeof window.formatTime === "function") { return window.formatTime(new Date()); }
+  function pad2(n) { return String(n).padStart(2, "0"); }
+  const d = new Date();
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + " " +
+    pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
+}
+
+function publishAction(action) {
+  // A2：动作经 MQTT 动作通道发布（dormmate/{nodeId}/action），simulator 与 three3d 同订阅响应；
+  // 本地 actionState 只在发布成功后写入——与 A3 解耦：不因点击直接把状态改为"已恢复"
+  const nodeId = selectedNode;
+  if (!client.connected) {
+    showWarn("MQTT 未连接，动作未发布——请先启动 Broker 并刷新页面连接");
+    return;
+  }
+  const actionState = { nodeId: nodeId, action: action, actionTime: formatNowLocal() };
+  client.publish("dormmate/" + nodeId + "/action", JSON.stringify(actionState), { qos: 0 }, function (err) {
+    if (err) {
+      showWarn("动作发布失败：" + err.message);
+      return;
+    }
+    nodes[nodeId].actionState = actionState;
+    updateCard(nodeId);
+    refreshActionBar();
+  });
+}
+
+function refreshActionBar() {
+  // 动作条随 tab 切换/动作发布刷新（显示"处理中 | 风扇已开启"等状态，截图 A2 例句口径）
+  actionNodeEl.textContent = selectedNode;
+  const st = nodes[selectedNode].actionState;
+  if (st && st.action === "fan_on") {
+    actionStateTextEl.textContent = "处理中 | 风扇已开启（" + st.actionTime.slice(11) + "）";
+  } else if (st && st.action === "fan_off") {
+    actionStateTextEl.textContent = "风扇已关闭（" + st.actionTime.slice(11) + "）";
+  } else {
+    actionStateTextEl.textContent = "尚未处理";
+  }
+}
+
+fanOnBtn.addEventListener("click", function () { publishAction("fan_on"); });
+fanOffBtn.addEventListener("click", function () { publishAction("fan_off"); });
 
 function refreshPriority() {
   // A1 优先关注：每条成功消息后重算横幅（priority.js computePriority，程序计算禁人工）
@@ -248,12 +299,14 @@ function buildCards() {
       '<div class="status">—</div>' +
       '<div class="metrics">等待数据…</div>' +
       '<div class="advice"></div>' +
+      '<div class="action"></div>' +
       '<div class="time"></div>';
     cardsEl.appendChild(card);
     cardEls[id] = {
       status: card.querySelector(".status"),
       metrics: card.querySelector(".metrics"),
       advice: card.querySelector(".advice"),
+      action: card.querySelector(".action"),
       time: card.querySelector(".time")
     };
   });
@@ -267,6 +320,9 @@ function updateCard(nodeId) {
   refs.status.className = "status " + r.status;   // 颜色类随状态切换
   refs.metrics.textContent = r.temperature + "℃ / " + r.humidity + "%";
   refs.advice.textContent = window.ADVICE[r.status];   // 建议查表渲染，不入记录（保持统一 JSON 六字段）
+  // A2：卡片动作行显示"处理中 | 风扇已开启"（截图 A2 例句口径；恢复由 A3 新数据触发，这里不判）
+  const st = nodes[nodeId].actionState;
+  refs.action.textContent = st ? (st.action === "fan_on" ? "处理中 | 风扇已开启" : "风扇已关闭") : "";
   refs.time.textContent = r.time;   // textContent 注入安全（与 web/script.js 同款惯例）
 }
 
@@ -282,6 +338,7 @@ function buildTabs() {
         tabEls[key].className = key === id ? "active" : "";
       });
       rebuildChart();
+      refreshActionBar();   // A2 动作条随 tab 切换刷新到当前节点
     });
     tabsEl.appendChild(btn);
     tabEls[id] = btn;
@@ -293,3 +350,4 @@ function buildTabs() {
 buildCards();
 buildTabs();
 rebuildChart();
+refreshActionBar();

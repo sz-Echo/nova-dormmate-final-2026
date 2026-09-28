@@ -100,6 +100,45 @@ body {
 .card .advice { color: var(--muted); margin-top: 6px; }
 .card .time { color: #aaa; font-size: 12px; margin-top: 8px; }
 
+/* A2 处理动作区（actionState：动作成为系统状态，不直接改 status） */
+.action-area {
+  background: var(--card);
+  margin: 0 24px 16px;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.action-area h2 { font-size: 16px; margin: 0 0 8px; }
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.action-bar button {
+  border: 1px solid var(--orange);
+  background: #fff;
+  color: var(--orange);
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.action-bar button:hover { background: var(--orange); color: #fff; }
+
+.action-state { color: var(--orange); font-weight: bold; }
+
+.card .action {
+  color: var(--orange);
+  font-size: 13px;
+  margin-top: 4px;
+  font-weight: bold;
+}
+
 .chart-area {
   background: var(--card);
   margin: 0 24px 24px;

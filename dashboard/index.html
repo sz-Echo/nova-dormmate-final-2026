@@ -23,6 +23,18 @@
 
   <section class="cards" id="cards"><!-- 三节点卡片由 app.js 渲染 --></section>
 
+  <!-- A2 处理动作：对选中节点发布 actionState（dormmate/{nodeId}/action，SPEC §9 A2 / MASTER_PLAN §6.1）
+       动作成为系统状态的一部分，不直接改 status（恢复由 A3 新数据触发） -->
+  <section class="action-area">
+    <h2>处理动作（A2）</h2>
+    <div class="action-bar">
+      <span>当前节点：<strong id="actionNode">dorm-a</strong></span>
+      <button id="fanOnBtn">开启风扇/通风</button>
+      <button id="fanOffBtn">关闭风扇</button>
+      <span id="actionStateText" class="action-state">尚未处理</span>
+    </div>
+  </section>
+
   <section class="chart-area">
     <div class="chart-head">
       <h2>趋势（Chart.js）</h2>
