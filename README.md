@@ -15,6 +15,7 @@
 - **实时看板（M5）**：① 启动 Broker：`<Mosquitto安装目录>\mosquitto.exe -c <同目录>\mosquitto.conf -v`（本机为 `D:\Mosquitto\`；conf 需含 listener 1883 / listener 8083 + protocol websockets / allow_anonymous true，见 `docs/M5_PLAN.md` S1）② 启动模拟节点：`python simulator/simulate.py`（三节点 dorm-a/b/c 定时发布）③ Live Server 打开 `dashboard/index.html` → 三卡片同屏 + Chart.js 趋势（浏览器经 `ws://localhost:8083` 连 Broker）④ MQTTX 连接 `127.0.0.1:1883`、订阅 `dormmate/#` 验证
 - **3D 可视化（M6）**：① 启动 Broker ② `python simulator/simulate.py` ③ Live Server 打开 `three3d/index.html` → Three.js 3D 宿舍场景（三栋楼：状态色 / 指示球 / 粒子 / 标牌四类可见变化）由 MQTT 实时驱动；鼠标拖拽旋转 / 滚轮缩放 / 右键平移，点击楼查看详情；侧栏"演示"按钮可在无 Broker 时用 SPEC §6 四组回归数据打出四状态。Three.js r128 为本地 vendor（three3d/vendor/，防 CDN 网络不稳），必须用 Live Server 以项目根为工作区打开
 - **A 组业务闭环（A1-A4）**：① 启动 Broker ② `python simulator/simulate.py` ③ Live Server 打开 `dashboard/index.html`（可并排再开 `three3d/index.html` 对照）→ 顶部"优先关注"横幅按 A1 规则实时计算（另有测试页 `dashboard/test-priority.html`；现场演示脚本 `python simulator/test_a1.py --group 1|2|3|4|all` 可逐组发布预设三节点序列）④ 选中异常节点 → 点"开启风扇/通风" → Dashboard 显示"处理中"、3D 风扇转动+窗开、simulator 该节点降温（MQTT 动作通道 dormmate/{nodeId}/action）⑤ 连续 ≥2 条正常新数据 → "已恢复"+自动关扇（规则见"已知限制"）⑥"今日事件"面板自动生成完整事件（复盘叙事）→ 点"导出 events.json"存入 `data/` → `python analysis/analyze.py` → report.html 出现"事件复盘（A4）"区
+- **B 组信息闭环（B1-B4）**：① B1/B2 同 Dashboard（测试页 `dashboard/test-priority.html` 含 A1/B1/B2 断言；验证脚本 `python simulator/test_b1.py` / `test_b2.py`）② B3 今日摘要：`python analysis/make_day_data.py --out data/sim-day-1 --seed 1` → `python analysis/daily_summary.py --day data/sim-day-1` → 控制台今日摘要 + `summary.md` + 当日 `report.html`（换 seed 重新生成；验证脚本 `python simulator/test_b3.py`）③ B4：Dashboard"朗读提醒"按钮（TTS 只读当前提醒，分工说明见"主要功能"B 组表）
 
 ## 主要功能
 
@@ -31,6 +32,16 @@
   - **A2 处理动作**：Dashboard"开启风扇/通风"经 MQTT 动作通道（dormmate/{nodeId}/action）发布 actionState；three3d 风扇转动 + 窗开，simulator 对该节点模拟降温趋势；动作成为系统状态的一部分（env 记录 action 字段写入动作值），不直接改状态
   - **A3 恢复判断**：恢复必须由新数据触发（点击按钮不算）；恢复状态机见"已知限制"第 1 条
   - **A4 事件复盘**：完整处理流程（异常开始 → 优先原因 → 处理动作 → 恢复）由程序组装成事件记录，Dashboard"今日事件"面板展示并可导出 `events.json` → 存入 data/ → `python analysis/analyze.py` 后 report.html 出现"事件复盘"区（事件表格 + 复盘叙事，全部程序生成）
+- **B 组信息闭环（B1-B4，进行中）**：当前总览（B1，程序成句自动更新）；判断依据（B2，三项指标附来源 + 优先标注）；今日摘要（B3，模拟日数据程序生成，换数据重新生成）。信息分工（B4）：
+
+  | 入口 | 承担的信息任务 | 为什么放在这里 |
+  |---|---|---|
+  | Dashboard | 当前重点（总览条 / 优先横幅 / 依据卡片 / 处理状态） | 实时数据在此汇聚，盯屏时一眼看到"现在最该看谁" |
+  | 3D | 空间状态（楼色 / 粒子 / 风扇 / 窗） | 空间位置用空间表达，哪个宿舍异常一眼定位 |
+  | TTS | 只读当前提醒（"朗读提醒"按钮，读 B1 总览） | 语音适合短提醒，不适合长数据；听一句即可决策 |
+  | report.html | 历史复盘（事件复盘 / 今日摘要 / ML 异常分析） | 复盘要完整记录，静态报告可回看、可归档 |
+
+  （移动端三节点简报为可选扩展，不纳入最低完成线）
 
 ## 已知限制
 

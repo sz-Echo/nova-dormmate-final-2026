@@ -41,6 +41,7 @@ const msgCountEl = document.getElementById("msgCount");
 const dropCountEl = document.getElementById("dropCount");
 const warnBannerEl = document.getElementById("warnBanner");
 const overviewBarEl = document.getElementById("overviewBar");
+const speakOverviewBtn = document.getElementById("speakOverviewBtn");
 const priorityBannerEl = document.getElementById("priorityBanner");
 const evidenceCardsEl = document.getElementById("evidenceCards");
 const chartCanvas = document.getElementById("trendChart");
@@ -381,10 +382,34 @@ function refreshOverview() {
   // B1 当前总览：每条成功消息后重算（priority.js buildOverview，程序拼接禁写死）
   if (typeof window.buildOverview !== "function") return;   // priority.js 缺失防御
   const hasData = NODE_IDS.some(function (id) { return nodes[id].history.length > 0; });
-  if (!hasData) { overviewBarEl.hidden = true; return; }   // 尚无真实数据时不显示
+  if (!hasData) {
+    overviewBarEl.hidden = true;
+    speakOverviewBtn.hidden = true;   // B4：无提醒可读时隐藏朗读按钮
+    return;
+  }
   overviewBarEl.textContent = window.buildOverview(nodes);
   overviewBarEl.hidden = false;
+  speakOverviewBtn.hidden = false;
 }
+
+function speakOverview() {
+  // B4 信息分工：TTS 只读当前提醒（B1 总览文本），不长读数据；
+  // 实现复用 M1 TTS 模式（web/script.js speechSynthesis 用法，lang zh-CN）
+  if (!("speechSynthesis" in window) || !window.speechSynthesis) {
+    showWarn("浏览器不支持语音合成（speechSynthesis）——请使用 Chrome / Edge");
+    return;
+  }
+  const text = overviewBarEl.hidden ? "" : overviewBarEl.textContent;
+  if (!text) {
+    showWarn("暂无当前提醒可朗读——请先接收实时数据");
+    return;
+  }
+  window.speechSynthesis.cancel();   // 重复点击从头朗读，不叠加（web/script.js 同款做法）
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "zh-CN";
+  window.speechSynthesis.speak(utterance);
+}
+speakOverviewBtn.addEventListener("click", speakOverview);
 
 // ---- B2 判断依据：三节点依据卡片（每项指标附数据来源；优先节点 ★ + 原因）----
 const evidenceEls = {};

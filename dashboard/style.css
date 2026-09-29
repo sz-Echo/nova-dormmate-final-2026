@@ -53,9 +53,18 @@ body {
   font-size: 14px;
 }
 
-/* B1 当前总览条：中性蓝白，一句话讲清全局（程序实时重算，与优先关注横幅分工：总览看全局 / 横幅看重点） */
-.overview {
+/* B1 当前总览条：中性蓝白，一句话讲清全局（程序实时重算，与优先关注横幅分工：总览看全局 / 横幅看重点）
+   B4 朗读提醒按钮：TTS 只读当前提醒 */
+.overview-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 12px 24px 0;
+}
+
+.overview {
+  flex: 1;
+  margin: 0;
   padding: 12px 14px;
   background: #eef4fb;
   color: #2c5f8a;
@@ -64,6 +73,19 @@ body {
   font-size: 15px;
   font-weight: bold;
 }
+
+.speak-btn {
+  border: 1px solid var(--blue);
+  background: #fff;
+  color: var(--blue);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.speak-btn:hover { background: var(--blue); color: #fff; }
 
 /* A1 优先关注横幅：有异常橙底强调 / 全正常绿底平静（程序实时重算） */
 .priority {

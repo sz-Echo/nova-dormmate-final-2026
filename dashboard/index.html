@@ -18,8 +18,12 @@
 
   <p id="warnBanner" class="warn" hidden></p>
 
-  <!-- B1 当前总览：程序根据三节点真实状态自动成句（priority.js buildOverview），每条消息后自动刷新，不写死 -->
-  <p id="overviewBar" class="overview" hidden></p>
+  <!-- B1 当前总览 + B4 朗读提醒：总览程序成句（priority.js buildOverview）；
+       TTS 只读当前提醒（B4 分工：语音适合短提醒，不长读数据） -->
+  <div class="overview-wrap">
+    <p id="overviewBar" class="overview" hidden></p>
+    <button id="speakOverviewBtn" class="speak-btn" hidden>朗读提醒</button>
+  </div>
 
   <!-- A1 优先关注横幅：程序根据三节点历史实时计算（priority.js computePriority），每条消息后自动刷新 -->
   <p id="priorityBanner" class="priority" hidden></p>
