@@ -45,6 +45,7 @@
 - **C 组轻量 ML（C1-C4，进行中）**：数据准备（C1）——`data/c_history.csv`（dorm-a 40 条**模拟**历史：24~26℃ / 55~65%，random_state=42 可复现）+ `data/c_new.csv`（8 组待判断新数据，与历史严格分离，含"规则正常但与历史明显不同"候选 29℃/72%）。**数据来源**：历史数据 = `analysis/make_c_data.py` 按 dorm-a"平时"画像程序生成的模拟值（非真实传感器）；待判断新数据 = 同脚本生成的独立文件（截图 C1：历史与新数据要分开，不能先混入再判断自己）；换新历史 CSV 重跑即可
   - 模型与对照（C2）：`python analysis/c_ml.py` —— IsolationForest（n_estimators=100、random_state=42）用 c_history fit、对 c_new predict（1=接近历史常态 / -1=与历史明显不同），与固定规则并排对照输出控制台 + `data/c_compare.json`；"规则正常、ML 不同"未出现则如实记录"本次测试未出现"。实现方式与替代原因见"已知限制"
   - 结果接回 DormMate（C3）：`python analysis/analyze.py` 生成 `data/report.html` 时自动加入"ML 异常分析（C3）"区——C2 对照结果并排（当前值 / 固定规则 / ML 判断 + 异常分数，数据来自 `data/c_compare.json`）；c_history / c_new 有更新时报告生成前自动重跑对照（复用 c_ml 同一实现，零重写）；"规则正常、ML 明显不同"的差异行高亮。换一份新数据：`python analysis/make_c_data.py --variant 2` → 重跑 `python analysis/analyze.py` → 报告全量重新生成 ML 结果（验证脚本 `python simulator/test_c3.py`）
+  - 不理想案例（C4）：从实际对照结果中保留 1 个"判断不太理想"的例子（数据 + 模型输出已保留在 `data/c_new.csv` 与 `data/c_compare.json`）——**2026-09-28 10:03 的 27.5℃ / 70%**：固定规则判"正常"，ML 判"与历史明显不同"（分数 0.6738，比规则异常组 16/60 的 0.5641、31/60 的 0.5967、25/80 的 0.6219 都高，与 29℃/72% 并列最高分）。**可能原因**：模拟历史只有 40 条且全部落在 24~26℃ / 55~65% 窄区间，模型学到的"常态"范围过窄——现实宿舍只是略偏热偏湿（27.5℃ 尚在舒适范围），却因历史里从没出现过这样的值而被标"明显不同"；ML 的语义是"与历史不同"而非"规则异常"，直接当异常提醒使用时会对轻微偏离过于敏感。**C4 明确不做的口径**（截图 C4 不要求）：不引入 Label / Train / Test / Accuracy / F1 / 混淆矩阵，不调参凑指标，不做模型版本管理（验证脚本 `python simulator/test_c4.py`）
 
 ## 已知限制
 
