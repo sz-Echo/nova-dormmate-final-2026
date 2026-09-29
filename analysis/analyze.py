@@ -194,6 +194,78 @@ def load_events(data_dir):
     return [e for e in data if isinstance(e, dict)]
 
 
+def load_c_compare(data_dir, refresh=False):
+    """C3：读取 data/c_compare.json（C2 对照结果，analysis/c_ml.py 程序生成）。
+
+    refresh=True 时先保证结果与当前数据一致：data/c_history.csv 与 data/c_new.csv 都存在时，
+    若 c_compare.json 缺失或早于任一数据文件，则复用 analysis/c_ml.compare_rows 重新对照
+    （零重写）并写回——"换一份新 CSV 后重跑 analyze.py 即全量重新生成"（SPEC §9 C3）。
+    数据文件缺失 / JSON 损坏时返回 []，不阻塞报告生成（ML 异常分析是可叠加区块）。
+    """
+    data_dir = Path(data_dir)
+    cmp_path = data_dir / "c_compare.json"
+    hist_path = data_dir / "c_history.csv"
+    new_path = data_dir / "c_new.csv"
+
+    if refresh and hist_path.exists() and new_path.exists():
+        data_mtime = max(hist_path.stat().st_mtime, new_path.stat().st_mtime)
+        if not cmp_path.exists() or cmp_path.stat().st_mtime < data_mtime:
+            try:
+                if str(ROOT) not in sys.path:
+                    sys.path.insert(0, str(ROOT))  # 脚本直跑时包路径不在 sys.path（c_ml 反向 import 本模块）
+                from analysis import c_ml  # 延迟导入：c_ml 依赖 numpy 且反向 import 本模块（无环）
+                compare = c_ml.compare_rows(str(hist_path), str(new_path))
+                cmp_path.write_text(
+                    json.dumps(compare, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
+                print(f"[ML 对照] 已按当前 c_history.csv / c_new.csv 重新生成: {cmp_path}")
+            except (ImportError, ValueError, OSError) as exc:
+                print(f"[ML 对照] 重新生成失败（报告将显示旧结果或暂无）: {exc}", file=sys.stderr)
+
+    if not cmp_path.exists():
+        return []
+    try:
+        data = json.loads(cmp_path.read_text(encoding="utf-8-sig"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        print(f"[ML 对照] c_compare.json 解析失败（忽略）：{exc}", file=sys.stderr)
+        return []
+    return data if isinstance(data, list) else []
+
+
+def build_ml_block(compare):
+    """C3 ML 异常分析区 HTML（全部由程序生成）：C2 对照结果并排（当前值 / 固定规则 / ML 判断，
+    附异常分数）；"规则正常、ML 明显不同"的差异行高亮（截图 C3：ML 与固定规则并列，仅辅助判断）。"""
+    if not compare:
+        return ("<p>暂无 ML 对照结果（运行 <code>python analysis/c_ml.py</code> 生成 "
+                "<code>data/c_compare.json</code> 后重新生成报告）</p>")
+    rows = []
+    for c in compare:
+        is_diff = c.get("rule_status") == "正常" and c.get("ml_verdict") == -1
+        row_class = " class='ml-diff'" if is_diff else ""
+        ml_class = " class='ml-away'" if c.get("ml_verdict") == -1 else ""
+        rows.append(
+            f"<tr{row_class}><td>dorm-a</td>"
+            f"<td>{html.escape(str(c.get('time') or ''))}</td>"
+            f"<td>{c.get('temperature', 0):g}℃ / {c.get('humidity', 0):g}%</td>"
+            f"<td class='status'>{html.escape(str(c.get('rule_status') or ''))}</td>"
+            f"<td{ml_class}>{html.escape(str(c.get('ml_text') or ''))}</td>"
+            f"<td>{c.get('ml_score', 0):.4f}</td></tr>"
+        )
+    diff_count = sum(1 for c in compare if c.get("rule_status") == "正常" and c.get("ml_verdict") == -1)
+    note = (
+        "<p class='meta'>模型：自实现 IsolationForest（n_estimators=100、random_state=42、阈值 0.5，"
+        "替代原因见 README）；历史 = data/c_history.csv（dorm-a 40 条模拟数据，程序生成）；"
+        "口径：1 = 接近历史常态，-1 = 与历史明显不同；ML 结果与固定规则并列，仅作辅助判断。"
+        f"本次对照 {len(compare)} 组，'固定规则正常、ML 与历史明显不同' {diff_count} 组"
+        + ("（高亮行）。" if diff_count else "。") + "</p>"
+    )
+    table = (
+        "<table><tr><th>宿舍</th><th>时间</th><th>当前值</th><th>固定规则</th><th>ML 判断</th>"
+        "<th>异常分数</th></tr>" + "".join(rows) + "</table>"
+    )
+    return note + table
+
+
 def build_events_block(events):
     """A4 事件复盘区 HTML（全部由程序生成）：事件表格 + 程序拼接的复盘叙事。"""
     if not events:
@@ -219,8 +291,9 @@ def build_events_block(events):
     return table + stories_block
 
 
-def render_report(stats, csv_path, out_dir, events=None):
-    """生成 data/report.html：摘要、关注记录、事件复盘（A4）、趋势图（内容全部由程序生成）。"""
+def render_report(stats, csv_path, out_dir, events=None, c_compare=None):
+    """生成 data/report.html：摘要、关注记录、事件复盘（A4）、ML 异常分析（C3）、趋势图
+    （内容全部由程序生成；c_compare=None 时不渲染 ML 区——如 B3 模拟日报告）。"""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def fmt_num(v):
@@ -252,6 +325,11 @@ def render_report(stats, csv_path, out_dir, events=None):
         attention_block = "<p>无关注记录（全部正常）</p>"
 
     events_block = build_events_block(events if events is not None else [])
+    # C3：ML 异常分析区（c_compare=None 时不渲染；空列表渲染"暂无"占位）
+    ml_block = build_ml_block(c_compare) if c_compare is not None else None
+    ml_section = ""
+    if ml_block is not None:
+        ml_section = "<section>\n<h2>ML 异常分析（C3）</h2>\n" + ml_block + "\n</section>\n"
 
     html_text = f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -269,6 +347,8 @@ th, td {{ border: 1px solid #e3e8ee; padding: .4rem .6rem; text-align: left; }}
 th {{ background: #f0f4f8; }}
 .meta {{ color: #7f8c8d; }}
 td.status {{ font-weight: bold; color: #c0392b; }}
+.ml-diff td {{ background: #fdeee8; }}
+.ml-away {{ color: #c0392b; font-weight: bold; }}
 img {{ max-width: 100%; border: 1px solid #e3e8ee; border-radius: 4px; }}
 </style>
 </head>
@@ -276,7 +356,7 @@ img {{ max-width: 100%; border: 1px solid #e3e8ee; border-radius: 4px; }}
 <h1>DormMate 离线分析报告</h1>
 <p class="meta">生成时间：{now} · 数据来源：{csv_path.name}（{stats['count']} 条记录）</p>
 <!-- C3 扩展点：IsolationForest 结果接回此 section（勿删本注释） -->
-<section>
+{ml_section}<section>
 <h2>摘要</h2>
 <table>{summary_rows}</table>
 <h3>各状态数量（按统一规则重算）</h3>
@@ -300,8 +380,8 @@ img {{ max-width: 100%; border: 1px solid #e3e8ee; border-radius: 4px; }}
     (out_dir / "report.html").write_text(html_text, encoding="utf-8")
 
 
-def print_stats(stats, csv_path, trend_path, report_path, events=None):
-    """控制台统计输出（证据：与 CSV 人工核对一致）。"""
+def print_stats(stats, csv_path, trend_path, report_path, events=None, c_compare=None):
+    """控制台统计输出（证据：与 CSV 人工核对一致；c_compare 为 C3 ML 对照行列表）。"""
     def fmt_num(v):
         return f"{v:g}"
 
@@ -329,6 +409,11 @@ def print_stats(stats, csv_path, trend_path, report_path, events=None):
     for ev in (events or []):
         if ev.get("summary"):
             print(f"  {ev['summary']}")
+    if c_compare:
+        diff_n = sum(1 for c in c_compare if c.get("rule_status") == "正常" and c.get("ml_verdict") == -1)
+        print(f"ML 异常分析（C3，data/c_compare.json）: {len(c_compare)} 组，差异行 {diff_n} 组")
+    else:
+        print("ML 异常分析（C3，data/c_compare.json）: 暂无")
     print("产物已重新生成:")
     print(f"  {trend_path}")
     print(f"  {report_path}")
@@ -381,9 +466,10 @@ def run_pipeline(csv_path, out_dir):
     trend_path = out_dir / "trend.png"
     report_path = out_dir / "report.html"
     events = load_events(out_dir)   # A4：data/events.json 缺失时不阻塞（区块显示"暂无事件记录"）
+    c_compare = load_c_compare(out_dir, refresh=True)   # C3：报告 ML 区与当前 c_history/c_new 一致
     plot_trend(df, trend_path)
-    render_report(stats, Path(csv_path), out_dir, events)
-    print_stats(stats, csv_path, trend_path, report_path, events)
+    render_report(stats, Path(csv_path), out_dir, events, c_compare)
+    print_stats(stats, csv_path, trend_path, report_path, events, c_compare)
 
 
 def main():

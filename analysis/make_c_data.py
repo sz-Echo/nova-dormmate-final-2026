@@ -11,7 +11,7 @@ C1（SPEC §9 C1 / MASTER_PLAN §6.6）：单节点 dorm-a 的"平时"模拟历�
 数据来源（README 已记录）：历史数据 = 本脚本按 dorm-a"平时"画像生成的模拟值（非真实传感器）；
 待判断新数据 = 本脚本生成的独立文件，与历史零混入。
 
-用法：python analysis/make_c_data.py [--out data]
+用法：python analysis/make_c_data.py [--out data] [--variant 1|2]（variant 2 供 C3 换数据验证）
 """
 import argparse
 import csv
@@ -38,6 +38,20 @@ NEW_ROWS = [
     (25.0, 80),    # 规则异常：偏湿
     (18.0, 74),    # 规则边界附近：正常（湿度 74 < 75）
 ]
+
+# variant 2（C3"换一份新数据"验证用）：同样程序内置、可复现，内容与 variant 1 不同
+NEW_ROWS_V2 = [
+    (24.9, 57),    # 贴近平时
+    (26.2, 63),    # 贴近平时
+    (28.8, 73),    # 候选：规则正常（<30 且 <75），但明显偏离平时 24~26/55~65
+    (22.0, 66),    # 略偏离平时（观察 ML 是否标记，不预设结论）
+    (15.0, 58),    # 规则异常：偏冷
+    (30.5, 61),    # 规则异常：偏热
+    (25.0, 78),    # 规则异常：偏湿
+    (18.0, 75),    # 规则边界：偏湿（湿度 = 75）
+]
+
+VARIANTS = {1: NEW_ROWS, 2: NEW_ROWS_V2}
 
 
 def write_csv(path, rows):
@@ -66,10 +80,10 @@ def make_history():
     return rows
 
 
-def make_new():
-    """待判断新数据：时间独立（2026-09-28），与历史零混入。"""
+def make_new(variant=1):
+    """待判断新数据：时间独立（2026-09-28），与历史零混入；variant 2 供 C3"换一份新数据"验证。"""
     rows = []
-    for i, (temp, hum) in enumerate(NEW_ROWS):
+    for i, (temp, hum) in enumerate(VARIANTS[variant]):
         rows.append({
             "time": f"2026-09-28 10:{i:02d}:00",
             "temperature": temp,
@@ -82,18 +96,20 @@ def make_new():
 def main():
     parser = argparse.ArgumentParser(description="C1 数据准备（程序生成，random_state=42）")
     parser.add_argument("--out", default=str(ROOT / "data"), help="输出目录（默认 data/）")
+    parser.add_argument("--variant", type=int, choices=sorted(VARIANTS), default=1,
+                        help="待判断新数据组版本（默认 1；2 供 C3 换数据验证）")
     args = parser.parse_args()
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     history = make_history()
-    new = make_new()
+    new = make_new(args.variant)
     write_csv(out_dir / "c_history.csv", history)
     write_csv(out_dir / "c_new.csv", new)
 
     print(f"已生成（模拟数据，random_state={RANDOM_STATE}，可复现）:")
     print(f"  {out_dir / 'c_history.csv'} —— 历史 {len(history)} 条（dorm-a 平时 24~26℃ / 55~65%）")
-    print(f"  {out_dir / 'c_new.csv'} —— 待判断新数据 {len(new)} 条（与历史严格分离）")
+    print(f"  {out_dir / 'c_new.csv'} —— 待判断新数据 {len(new)} 条（variant {args.variant}，与历史严格分离）")
     print("注：历史与新数据分开存放，模型须用历史 fit、再对新数据 predict（截图 C1 红线）。")
     return 0
 

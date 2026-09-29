@@ -112,33 +112,23 @@ def load_rows(path):
     return rows
 
 
-def main():
-    parser = argparse.ArgumentParser(description="C2 固定规则 / ML 对照（自实现 IsolationForest）")
-    parser.add_argument("--history", default=str(ROOT / "data" / "c_history.csv"), help="历史 CSV（默认 data/c_history.csv）")
-    parser.add_argument("--new", default=str(ROOT / "data" / "c_new.csv"), help="待判断新数据 CSV（默认 data/c_new.csv）")
-    args = parser.parse_args()
+def compare_rows(history_csv, new_csv):
+    """fit 历史 → predict 新数据 → 对照行列表（含固定规则列，复用 compute_status 零重写）。
 
-    X_hist = load_csv_matrix(args.history)
-    X_new = load_csv_matrix(args.new)
-    new_rows = load_rows(args.new)
+    C3 复用：c_ml.main（控制台 + c_compare.json）与 analysis/analyze.py 报告刷新
+    共用同一实现，保证报告 ML 区与 C2 输出永远一致。
+    """
+    X_hist = load_csv_matrix(history_csv)
+    X_new = load_csv_matrix(new_csv)
+    new_rows = load_rows(new_csv)
     if len(new_rows) != X_new.shape[0]:
-        print("[错误] 新数据行列数不一致", file=sys.stderr)
-        return 1
-
+        raise ValueError("新数据行列数不一致")
     trees, c_n = fit_isolation_forest(X_hist)
-    verdicts = predict(trees, c_n, X_new)
-
-    print(f"=== C2 固定规则 / ML 对照 ===")
-    print(f"历史: {args.history}（{X_hist.shape[0]} 条，n_estimators={N_ESTIMATORS}，random_state={RANDOM_STATE}）")
-    print(f"新数据: {args.new}（{len(new_rows)} 条，与历史严格分离）")
-    print(f"{'时间':22s} {'温度':>6s} {'湿度':>6s} {'固定规则':>6s} {'ML 判定':>12s} {'异常分数':>8s}")
-
     compare = []
-    for row, verdict in zip(new_rows, verdicts):
+    for row, verdict in zip(new_rows, predict(trees, c_n, X_new)):
         rule = compute_status(row["temperature"], row["humidity"])
         score = score_samples(trees, c_n, np.array([row["temperature"], row["humidity"]]))
         ml_text = "接近历史常态" if verdict == 1 else "与历史明显不同"
-        print(f"{row['time']:22s} {row['temperature']:>6.1f} {row['humidity']:>6.1f} {rule:>6s} {ml_text:>12s} {score:>8.4f}")
         compare.append({
             "time": row["time"],
             "temperature": row["temperature"],
@@ -148,6 +138,28 @@ def main():
             "ml_text": ml_text,
             "ml_score": round(score, 4),
         })
+    return compare
+
+
+def main():
+    parser = argparse.ArgumentParser(description="C2 固定规则 / ML 对照（自实现 IsolationForest）")
+    parser.add_argument("--history", default=str(ROOT / "data" / "c_history.csv"), help="历史 CSV（默认 data/c_history.csv）")
+    parser.add_argument("--new", default=str(ROOT / "data" / "c_new.csv"), help="待判断新数据 CSV（默认 data/c_new.csv）")
+    args = parser.parse_args()
+
+    try:
+        compare = compare_rows(args.history, args.new)
+    except (ValueError, OSError) as exc:
+        print(f"[错误] {exc}", file=sys.stderr)
+        return 1
+
+    X_hist = load_csv_matrix(args.history)
+    print(f"=== C2 固定规则 / ML 对照 ===")
+    print(f"历史: {args.history}（{X_hist.shape[0]} 条，n_estimators={N_ESTIMATORS}，random_state={RANDOM_STATE}）")
+    print(f"新数据: {args.new}（{len(compare)} 条，与历史严格分离）")
+    print(f"{'时间':22s} {'温度':>6s} {'湿度':>6s} {'固定规则':>6s} {'ML 判定':>12s} {'异常分数':>8s}")
+    for c in compare:
+        print(f"{c['time']:22s} {c['temperature']:>6.1f} {c['humidity']:>6.1f} {c['rule_status']:>6s} {c['ml_text']:>12s} {c['ml_score']:>8.4f}")
 
     # 截图 C2：优先寻找"固定规则仍为正常，但 ML 认为与该宿舍历史明显不同"的情况；
     # 不要求一定出现——未出现则如实记录，不伪造、不调参凑结果
