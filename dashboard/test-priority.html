@@ -144,6 +144,28 @@
       check("组⑥ 全正常 → nodeId=null 且原因含均正常", r.nodeId === null && r.reason.indexOf("均正常") >= 0, r.reason);
     })();
 
+    // ---- 组 ⑦（B1）：当前总览模板（程序拼接，禁写死，截图 52 例句口径）----
+    (function () {
+      var allNormal = nodesWith([
+        norm("dorm-a", ["20:30:00"]), norm("dorm-b", ["20:30:00"]), norm("dorm-c", ["20:30:00"])
+      ]);
+      var t1 = window.buildOverview(allNormal);
+      check("组⑦ 全正常总览", t1 === "当前 3 个宿舍中，3 个正常，0 个需要关注。", t1);
+      var mixed = nodesWith([
+        norm("dorm-a", ["20:20:00", "20:25:00", "20:30:00"]),
+        hot("dorm-b", ["20:10:00", "20:15:00", "20:20:00", "20:25:00", "20:30:00"]),
+        wet("dorm-c", ["20:25:00", "20:30:00"])
+      ]);
+      var t2 = window.buildOverview(mixed);
+      check("组⑦ 双异常总览（截图例句逐字一致）",
+        t2 === "当前 3 个宿舍中，1 个正常，2 个需要关注；dorm-b 持续异常时间更长，是当前重点，dorm-c 出现偏湿。", t2);
+      var single = nodesWith([
+        norm("dorm-a", ["20:30:00"]), hot("dorm-b", ["20:25:00", "20:30:00"]), norm("dorm-c", ["20:30:00"])
+      ]);
+      var t3 = window.buildOverview(single);
+      check("组⑦ 单异常总览", t3.indexOf("2 个正常，1 个需要关注") >= 0 && t3.indexOf("dorm-b 出现偏热，是当前重点") >= 0, t3);
+    })();
+
     summaryEl.textContent = "结果：" + passCount + " 通过 / " + failCount + " 失败";
     summaryEl.className = failCount === 0 ? "pass" : "fail";
   </script>

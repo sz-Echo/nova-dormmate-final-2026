@@ -40,6 +40,7 @@ const connStatusEl = document.getElementById("connStatus");
 const msgCountEl = document.getElementById("msgCount");
 const dropCountEl = document.getElementById("dropCount");
 const warnBannerEl = document.getElementById("warnBanner");
+const overviewBarEl = document.getElementById("overviewBar");
 const priorityBannerEl = document.getElementById("priorityBanner");
 const chartCanvas = document.getElementById("trendChart");
 const actionNodeEl = document.getElementById("actionNode");
@@ -222,6 +223,7 @@ function handleMessage(topic, text) {
 
   updateCard(message.nodeId);
   if (message.nodeId === selectedNode) appendChartPoint(record);
+  refreshOverview();
   refreshPriority();
   if (message.nodeId === selectedNode) refreshActionBar();   // A3：新数据推进恢复状态机后同步动作条
   // 注意：成功路径不清空警告横幅——丢弃原因持续显示（点击横幅可关闭），
@@ -372,6 +374,15 @@ function refreshActionBar() {
 
 fanOnBtn.addEventListener("click", function () { publishAction("fan_on"); });
 fanOffBtn.addEventListener("click", function () { publishAction("fan_off"); });
+
+function refreshOverview() {
+  // B1 当前总览：每条成功消息后重算（priority.js buildOverview，程序拼接禁写死）
+  if (typeof window.buildOverview !== "function") return;   // priority.js 缺失防御
+  const hasData = NODE_IDS.some(function (id) { return nodes[id].history.length > 0; });
+  if (!hasData) { overviewBarEl.hidden = true; return; }   // 尚无真实数据时不显示
+  overviewBarEl.textContent = window.buildOverview(nodes);
+  overviewBarEl.hidden = false;
+}
 
 function refreshPriority() {
   // A1 优先关注：每条成功消息后重算横幅（priority.js computePriority，程序计算禁人工）

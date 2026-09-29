@@ -78,5 +78,53 @@ function computePriority(nodes) {
   return { nodeId: winner.nodeId, reason: parts.join("；") + "。", details: details };
 }
 
+function buildOverview(nodes) {
+  // B1 当前总览（SPEC §9 B1 / MASTER_PLAN §6.5）：程序模板拼接，禁写死；
+  // 输出如"当前 3 个宿舍中，1 个正常，2 个需要关注；dorm-b 持续异常时间更长，是当前重点，dorm-c 出现偏湿。"
+  // 节点/状态/重点全部来自真实数据；重点依据短语按实际命中规则（时长/次数/顺序）程序选择。
+  const details = PRIORITY_NODE_ORDER.map(function (id) {
+    const node = nodes[id];
+    const streak = node ? computeStreak(node.history) : null;
+    return {
+      nodeId: id,
+      status: streak ? streak.statusType : "正常",
+      durationMinutes: streak ? streak.durationMinutes : 0,
+      abnormalCount: streak ? streak.abnormalCount : 0
+    };
+  });
+  const abnormal = details.filter(function (d) { return d.status !== "正常"; });
+  const normalCount = details.length - abnormal.length;
+  let text = "当前 3 个宿舍中，" + normalCount + " 个正常，" + abnormal.length + " 个需要关注";
+  if (abnormal.length > 0) {
+    const result = computePriority(nodes);   // 复用 A1 排序，零重写
+    let winner = null;
+    for (let i = 0; i < abnormal.length; i++) {
+      if (abnormal[i].nodeId === result.nodeId) { winner = abnormal[i]; break; }
+    }
+    if (!winner) { winner = abnormal[0]; }
+    if (abnormal.length > 1) {
+      const others = abnormal.filter(function (d) { return d.nodeId !== winner.nodeId; });
+      let maxOtherDur = -1;
+      let maxOtherCount = -1;
+      others.forEach(function (d) {
+        if (d.durationMinutes > maxOtherDur) { maxOtherDur = d.durationMinutes; }
+        if (d.abnormalCount > maxOtherCount) { maxOtherCount = d.abnormalCount; }
+      });
+      let rulePhrase;
+      if (winner.durationMinutes > maxOtherDur) { rulePhrase = "持续异常时间更长"; }
+      else if (winner.abnormalCount > maxOtherCount) { rulePhrase = "异常次数更多"; }
+      else { rulePhrase = "按节点顺序优先"; }
+      text += "；" + winner.nodeId + " " + rulePhrase + "，是当前重点";
+      others.forEach(function (d) {
+        text += "，" + d.nodeId + " 出现" + d.status;
+      });
+    } else {
+      text += "；" + winner.nodeId + " 出现" + winner.status + "，是当前重点";
+    }
+  }
+  return text + "。";
+}
+
 window.computeStreak = computeStreak;
 window.computePriority = computePriority;
+window.buildOverview = buildOverview;
