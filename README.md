@@ -43,9 +43,11 @@
 
   （移动端三节点简报为可选扩展，不纳入最低完成线）
 - **C 组轻量 ML（C1-C4，进行中）**：数据准备（C1）——`data/c_history.csv`（dorm-a 40 条**模拟**历史：24~26℃ / 55~65%，random_state=42 可复现）+ `data/c_new.csv`（8 组待判断新数据，与历史严格分离，含"规则正常但与历史明显不同"候选 29℃/72%）。**数据来源**：历史数据 = `analysis/make_c_data.py` 按 dorm-a"平时"画像程序生成的模拟值（非真实传感器）；待判断新数据 = 同脚本生成的独立文件（截图 C1：历史与新数据要分开，不能先混入再判断自己）；换新历史 CSV 重跑即可
+  - 模型与对照（C2）：`python analysis/c_ml.py` —— IsolationForest（n_estimators=100、random_state=42）用 c_history fit、对 c_new predict（1=接近历史常态 / -1=与历史明显不同），与固定规则并排对照输出控制台 + `data/c_compare.json`；"规则正常、ML 不同"未出现则如实记录"本次测试未出现"。实现方式与替代原因见"已知限制"
 
 ## 已知限制
 
+- **C2 IsolationForest 实现（C 组，等价替代）**：任务书建议 scikit-learn，但本机 Python 3.14 + Windows 下 sklearn 安装成功却无法导入（依赖的 scipy 1.18.1 编译扩展 DLL 加载失败：`cython_blas` / `_rank_filter_1d` ImportError，PyPI 与清华镜像重装均复现）。**替代方案**：`analysis/c_ml.py` 自实现 IsolationForest（纯 numpy、确定性 random_state=42，n_estimators=100、深度上限 ceil(log2(n))，阈值 s>0.5 判"与历史明显不同"，同参数口径与截图 58 最小代码路线一致）。**测试结果**：test_c2.py 全过（对照表 8 组、可复现、如实记录）——沿 M3 ASR"等价替代"先例（SPEC §13-3）
 - **A3 恢复规则（A 组）**：本项目采用比统一规则更严格的恢复判定——动作（fan_on）之后，**连续 ≥2 条新数据 status==正常** 才判"已恢复"并自动发布 fan_off（SPEC §9 A3：更严格规则须在 README 写清）；期间仍异常则保持"处理中"继续提示。Dashboard 内存态（actionState / recovery / 事件 / streak）刷新即失，现场演示请按剧本一气呵成（demo 演示记录带 demo 标记，不参与 A1 计算）
 - **ASR（M3，等价方案）**：原生 SpeechRecognition（webkitSpeechRecognition）依赖 Google 在线识别服务，国内网络无法连接，实测不可用。**替代方案**：改用 Windows 系统语音输入（Win+H）作为等价 ASR——识别文字进入页面"语音指令"输入框，由程序捕获并匹配固定指令（"朗读状态" / "拍照"）触发已有功能。**测试结果**：Win+H 说"朗读状态" → 页面显示识别结果 → TTS 动态朗读"偏热，注意通风"；说"拍照" → 成功触发快照下载；未定义指令正确提示（2026-09-26 实测通过）
 - **TTS 中文语音**：若系统未装中文语音包，朗读可能异常（页面会提示）；建议使用 Edge（自带较稳定的中文语音）
