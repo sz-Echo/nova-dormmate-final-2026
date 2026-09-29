@@ -1,0 +1,513 @@
+commit cb947ff5566f603e5c7b7e560e5dfb8de8b992bb
+Author: 41628 <2592144024@qq.com>
+Date:   Sun Sep 27 09:48:32 2026 +0800
+
+    feat: M4 微信小程序复用DormMate统一规则
+    
+    Co-Authored-By: Claude Code <noreply@anthropic.com>
+
+diff --git a/nova-dormmate-final-2026/README.md b/nova-dormmate-final-2026/README.md
+index 8844420..aa8df77 100644
+--- a/nova-dormmate-final-2026/README.md
++++ b/nova-dormmate-final-2026/README.md
+@@ -11,6 +11,7 @@
+   - `python analysis/analyze.py 其他CSV路径` —— 指定某个 CSV 全量重新生成统计与两产物（验收要求，禁止手工修改）
+   - `python analysis/analyze.py --watch` —— 监控 `data/`：放入或更换 CSV 后**自动重新生成**，无需手动运行（Ctrl+C 停止）
+   - `python analysis/analyze.py --selftest` —— SPEC §6 四组回归自测
++- **微信小程序（M4）**：微信开发者工具 → "导入项目"选择 `mobile/` 目录 → AppID 选"测试号"（无需注册、无需真机）→ 编译运行。核心页面：输入温湿度 → 状态 / 建议 + 带时间历史（含"载入演示数据"按钮）；打开项目时 Console 自动打印四组回归自测结果（4 行 PASS）
+ 
+ ## 主要功能
+ 
+@@ -31,4 +32,4 @@
+ ## 文档
+ 
+ - 项目规格：`docs/DORMMATE_SPEC.md`
+-- 执行计划：`docs/PLAN.md`（M1 见 `docs/M1_PLAN.md`，M2 见 `docs/M2_PLAN.md`，M3 详细步骤与现场演示剧本见 `docs/M3_PLAN.md`）
++- 执行计划：`docs/PLAN.md`（M1 见 `docs/M1_PLAN.md`，M2 见 `docs/M2_PLAN.md`，M3 详细步骤与现场演示剧本见 `docs/M3_PLAN.md`，M4 见 `docs/M4_PLAN.md`）
+diff --git a/nova-dormmate-final-2026/docs/M4_PLAN.md b/nova-dormmate-final-2026/docs/M4_PLAN.md
+new file mode 100644
+index 0000000..f69201d
+--- /dev/null
++++ b/nova-dormmate-final-2026/docs/M4_PLAN.md
+@@ -0,0 +1,114 @@
++# M4 详细执行计划 — 移动端小程序（微信原生小程序）
++
++> 依据：docs/DORMMATE_SPEC.md、docs/PLAN.md、任务书 M4 原文（第 16-19 条）。本文件是 M4 期间的执行依据，随进度更新；与 SPEC/PLAN 冲突时以 SPEC 为准。
++
++## 1. 决策记录（已与用户确认）
++
++- **平台**：微信原生小程序（任务书关键词 WXML / WXSS / Page data / setData / bindinput / bindtap 均为小程序技术栈；不选 H5 / uni-app）
++- **AppID**：微信开发者工具"测试号"模式（touristappid），不注册小程序账号、不做真机（SPEC §13 约定 2）
++- **规则移植口径**：小程序无法直接 require web/script.js（含 window/document DOM 代码、无 module.exports，且小程序项目根为 mobile/）→ 按 M2 Python 同模式"移植纯函数 + 过 SPEC §6 同一四组回归"，逐行同语义，**不复制 Web DOM 代码**；web/ 保持不动（M1 已收口，避免回归）
++- **演示数据**："载入演示数据"按钮预置 4 条模拟历史 = SPEC §6 四组回归数据（25/60 正常、16/60 偏冷、31/60 偏热、25/80 偏湿），时间取当前往前推几分钟，同时演示规则与"查看数据"
++- **验收口径**：验收清单严格按任务书第 16-19 条组织，S5 时逐条对照走查
++
++## 2. 范围红线（M4 不做）
++
++- 不做 AppID 注册 / 真机预览 / 发布（测试号即可）
++- 不做 MQTT 订阅（M5 起可选，仅注释预留）；不做 Camera / ASR / TTS（M3 是 web 侧，M3_PLAN §4 已定小程序不要求）
++- 单宿舍 dorm-a；无数据库 / 传感器 / LLM
++- 小程序内不做 CSV 导出（离线链在 M2 web 侧已覆盖）
++- 不改 web/、analysis/、data/；不建 simulator/ dashboard/ three3d/（未解锁阶段）
++
++## 3. 执行步骤（每步完成停下等用户确认）
++
++### S0 文档对齐 ✅ 已完成（2026-09-27：本文件创建 + PLAN 看板更新；用户已批准计划并确认 4 项决策；微信开发者工具已安装——稳定版 2.02.2608070）
++
++### S1 小程序骨架 ✅ 已完成（2026-09-27：mobile/ 全部文件已建；冷启动渲染用户已验证通过）
++
++- 新建 mobile/（= 开发者工具项目根）：
++  - `app.json`（pages 注册 + window：navigationBarTitleText "DormMate"）
++  - `app.js`（App({}) 最小实现）、`app.wxss`（全局字体 / 卡片 / 配色）
++  - `pages/index/index.wxml` + `index.wxss` + `index.js` + `index.json`
++- WXML 区块：标题 DormMate → 环境输入（温度、湿度 input + 分析环境 / 载入演示数据按钮）→ 错误提示区 → 当前状态（status 大字 + advice）→ 历史记录列表（wx:for，空时"暂无记录"占位）
++- 开发者工具"导入项目"选 mobile/，AppID 选"测试号"；project.config.json 由工具自动生成
++- **检查点**：模拟器冷启动渲染页面，布局齐全
++
++### S2 规则移植 + 四组回归 ✅ 已完成（2026-09-27：rules.js 移植 + onLoad 自动自测，Console 4 行 PASS 用户已确认）
++
++- 新建 `mobile/utils/rules.js`，从 web/script.js 逐行移植（文件头注释注明来源与 SPEC §3/§3.1/§6）：
++  - `computeStatus(temperature, humidity)`（顺序不可改：<18 偏冷 → ≥30 偏热 → ≥75 偏湿 → 正常）
++  - `ADVICE`（偏冷→注意保暖 / 偏热→注意通风 / 偏湿→注意除湿 / 正常→环境舒适）
++  - `TEMP_MIN/-50、TEMP_MAX/50、HUMIDITY_MIN/0、HUMIDITY_MAX/100`、`validateField`、`validateInputs`
++  - `pad2`、`formatTime`（YYYY-MM-DD HH:MM:SS）、`runRulesSelfTest()`（跑四组比对，逐行打印 PASS/FAIL）
++  - 全部 `module.exports` 导出
++- **检查点**：页面 onLoad 自动执行 runRulesSelfTest()，Console 输出 4 行 PASS；截图（对应 web/test.html 的角色）
++- **备注（2026-09-27 实测修复）**：开发者工具 Console 直接敲 require 报 "require is not defined"，自测改为 onLoad 自动执行，无需手动命令
++
++### S3 页面交互（Page data / setData / bindinput / bindtap） ✅ 已完成（2026-09-27 用户实测：输入 / 拦截 / 历史 / 演示数据全部通过）
++
++- `index.js`：
++  - `data: { temperature:"", humidity:"", status:"—", advice:"—", errorMsg:"", history:[] }`
++  - `bindinput="onTempInput"/"onHumidityInput"` → `e.detail.value` → `setData`
++  - `bindtap="onAnalyze"`：`validateInputs` → 有错 setData errorMsg（不分析、不追加历史）；合法 → `computeStatus` + `ADVICE` → setData 状态/建议/清错误 → 记录 `{nodeId:"dorm-a",temperature,humidity,status,time:formatTime(new Date()),action:""}`（SPEC §4 统一 JSON）→ `setData({history: this.data.history.concat(record)})`
++  - `bindtap="onLoadDemo"`：预置 4 条演示历史（四个状态各一，time 依次往前推）
++  - 输入框 `bindconfirm="onAnalyze"`（对应 M1 的 Enter 体验）；温度 input 用 `type="text"`（小程序数字键盘无负号，温度范围 −50~50 含负数，与 M1 README 已知限制一致；text 也便于演示非数字校验拦截）
++- `index.wxss`：状态大字高亮、卡片式三区块、错误红色提示（对应 M1 自定义样式，能指出位置）
++- **检查点**：模拟器输入 31/60 → 偏热+注意通风；25/80 → 偏湿+注意除湿；非法输入（空 / 非数字 / 60℃ / 120%）被拦截且提示原因
++- **提交（用户确认后）**：Commit `feat(nova-dormmate-final-2026): M4 mini program core page`（先展示变更摘要）
++
++### S4 冷启动 + 新数据验收（任务书第 18-19 条） ✅ 已完成（2026-09-27 用户实测：冷启动正常 / 31-60 偏热+注意通风 / 演示数据 4 条 / 拦截提示 / Console 4 行 PASS；证据截图待用户现场演示时补拍 docs/evidence/m4/，同 M3 模式）
++
++- 完全退出微信开发者工具 → 重新打开 → 打开 mobile/ 项目 → 页面正常渲染
++- 现场输入 3 组新数据（如 31/60、16/60、25/80）→ 状态 / 建议正确变化、历史逐条追加
++- 截图留存 docs/evidence/m4/（冷启动截图、新数据结果截图、四组回归 Console 截图、页面布局截图）
++
++### S5 验收 + 交接 ✅ 已完成（2026-09-27：验收清单第 16-19 条走查通过、README 补小程序运行方式、PLAN 看板收口、提交 feat: M4 微信小程序复用DormMate统一规则）
++
++- 对照验收清单逐条走查；README 补 M4 运行方式（开发者工具导入 mobile/、测试号、Console 回归自测命令）与已知限制（数字键盘无负号）
++- 更新 PLAN.md §4 看板（M4 完成）与 §2 状态列；按 PLAN §6 模板输出交接摘要
++- **提交（用户确认后）**：证据 + README + 看板收口提交
++
++## 4. 关键设计 — 与 M1-M6 / A / B / C 联系
++
++| 阶段 | 联系 |
++|---|---|
++| M1 | computeStatus / ADVICE / 校验范围移植（同语义 + 同一四组回归）；记录结构 = SPEC §4 统一 JSON（nodeId dorm-a、action ""）；**不复制 Web DOM 代码**；web/ 不改动 |
++| M2 | 离线链（web→CSV→Python→trend/report）不受影响；小程序历史字段与 CSV 4 列同源（time/temperature/humidity/status）；小程序不做 CSV 导出（红线） |
++| M3 | 小程序不要求 Camera/ASR/TTS（M3_PLAN §4 已定）；M3 产物不迁移 |
++| M4 自身 | 任务书第 16-19 条逐条对应验收清单（见 §5） |
++| M5 | 单宿舍占位 dorm-a；记录 JSON 已含 nodeId，M5 三节点只需换 nodeId；MQTT 订阅 M5 起可选（代码注释预留，不实现） |
++| M6 | 无直接接口（3D 由 MQTT 驱动，与小程序平行） |
++| A | action 字段 M1-M4 恒 ""（SPEC §4），A2 动作状态 M5+ 实现；小程序记录结构已预留兼容，无需后期改结构 |
++| B | M4 证据截图是 B 组程序化说明的素材来源；说明由 B 阶段程序生成，M4 不手写 |
++| C | 无直接接口（C 复用离线链 CSV + report.html 扩展点） |
++| Final | mobile/ 在最终提交清单（SPEC §11）；Final 重启复验时顺带打开小程序确认可运行 |
++
++## 5. 验收清单（任务书第 16-19 条 + 项目门禁）
++
++1. **第 16 条（规则迁移）**：同一套 DormMate 核心业务规则迁移到小程序——computeStatus 纯函数移植、顺序不可改；不复制 Web DOM 代码；四组回归全过（25/60→正常、16/60→偏冷、31/60→偏热、25/80→偏湿）
++2. **第 17 条（技术关键词）**：WXML（页面结构）/ WXSS（样式）/ Page data（页面数据）/ setData（数据更新）/ bindinput（输入绑定）/ bindtap（按钮绑定）全部落地，现场能指出每个关键词对应哪段代码
++3. **第 18 条（冷启动）**：微信开发者工具从关闭状态打开，小程序正常运行（测试号，无 AppID/真机）
++4. **第 19 条（新数据）**：输入新数据得到正确状态 / 建议（现场 3 组新数据，状态+建议正确变化；非法输入拦截）
++5. **项目门禁（非任务书）**：开发者工具稳定运行核心页面；证据截图 docs/evidence/m4/；README 补 M4 运行方式
++
++## 6. 现场演示剧本（S5 照着走）
++
++**准备**：微信开发者工具登录（测试号）→ 导入 mobile/ → 模拟器运行。
++
++1. **冷启动（第 18 条）**：关闭开发者工具 → 重新打开 → 打开项目 → 页面正常
++2. **输入新数据（第 19 条）**：输入 31/60 → 偏热、注意通风；25/80 → 偏湿、注意除湿；16/60 → 偏冷、注意保暖；再试一组非法输入（如 60℃ / 120%）→ 拦截提示
++3. **技术关键词（第 17 条）**：打开 index.wxml 指出 bindinput/bindtap 位置、index.js 指出 Page data 与 setData、WXSS 指出样式
++4. **规则迁移（第 16 条）**：打开项目时 Console 自动输出四组回归 PASS（onLoad 自动执行 runRulesSelfTest）；对照 web/script.js 的 computeStatus 说明同一套规则（顺序不可改）
++5. **查看数据**：点"载入演示数据" → 4 条历史（四个状态各一）→ 再手动分析几条，历史逐条追加、带时间与 nodeId
++
++## 7. 验证方式
++
++- Console：页面 onLoad 自动执行 runRulesSelfTest()，输出四组 PASS
++- 冷启动（关闭重开）+ 现场 3 组新数据，按演示剧本走查
++- 证据截图 → docs/evidence/m4/，随 M4 提交
++
++## 8. 风险
++
++- **工具未安装（当前阻塞）** → 用户安装后开工；安装遇问题按 SPEC §13 约定 5 检索排查
++- 基础库版本差异 → 用开发者工具默认基础库，不用新特性
++- 测试号无法真机预览 → 完成线不要求真机（SPEC §13 约定 2）
++- 小程序数字键盘无负号 → 温度输入框 type="text"（与 M1 已知限制一致）
+diff --git a/nova-dormmate-final-2026/docs/PLAN.md b/nova-dormmate-final-2026/docs/PLAN.md
+index 6de75d2..80058bd 100644
+--- a/nova-dormmate-final-2026/docs/PLAN.md
++++ b/nova-dormmate-final-2026/docs/PLAN.md
+@@ -22,7 +22,7 @@
+ | M1 | Web 主应用（输入 / 判断 / 记录）+ 统一规则 | 阶段0 | 四组回归全对 + 任务书 5 条验收 | 页面 + test.html + 历史截图 | 已完成 |
+ | M2 | 离线数据分析与报告（CSV -> Python -> trend.png / report.html） | M1 | 任务书 6-10 条；换 CSV 全量重生成 | CSV + 脚本 + 两产物 | 已完成 |
+ | M3 | Camera / ASR / TTS + Git / GitHub | M1 | 任务书 11-15 条；≥3 次有意义 Commit | 快照 / 识别 / 提交记录 / README | 已完成 |
+-| M4 | 移动端小程序核心页面（单宿舍） | M1 | 微信开发者工具稳定运行 | 开发者工具截图 | 未开始 |
++| M4 | 移动端小程序核心页面（单宿舍） | M1 | 微信开发者工具稳定运行 | 开发者工具截图 | 已完成 |
+ | M5 | 本机 Broker + 模拟节点三宿舍 + Dashboard | M1（M4 可交叉） | 三节点同屏不串线 | 运行截图 | 未开始 |
+ | M6 | Three.js 3D 三节点联动 | M5 | 3D 实时更新 | 截图 / 录屏 | 未开始 |
+ | A | 优先关注 / 处理动作 / 恢复判断（A1-A3） | M5 / M6 | A1-A3 全过 | 逐项证据 | 未开始 |
+@@ -167,13 +167,13 @@
+ 
+ ## 4. 当前阶段看板
+ 
+-- **当前阶段**：M4（移动端小程序）——待用户启动；进入前先建 docs/M4_PLAN.md（同 M1/M2/M3 模式）
+-- **当前只做**：无进行中任务；M3 已收口（S1-S3 用户实测通过，三次提交 b2b293a / 88aabc2 / 9fa9e37 + GitHub Private 仓库推送 a745f96；评审修复随最近Commit 完成）
+-- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）
++- **当前阶段**：M5（MQTT 实时系统）——待用户启动；M4 已收口，进入 M5 前先建 docs/M5_PLAN.md（同 M1-M4 模式）
++- **当前只做**：无进行中任务；M4 已收口（S1-S5 用户实测通过，提交 feat: M4 微信小程序复用DormMate统一规则）
++- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）；M4 S0（docs/M4_PLAN.md 创建 + 看板更新，4 项决策经用户确认：原生小程序测试号 / 规则移植口径 / 载入演示数据 / 按第 16-19 条验收）；M4 全部（S0-S5：文档对齐 / 小程序骨架 / 规则移植 / 页面交互 / 冷启动验收 / 交接，用户实测通过，提交 feat: M4 微信小程序复用DormMate统一规则，证据截图待用户补拍 docs/evidence/m4/，详细见 docs/M4_PLAN.md）
+ - **阻塞**：无
+-- **下一步**：用户说"继续 M4"即建 docs/M4_PLAN.md 启动 M4（微信小程序核心页面，复用 M1 的 computeStatus 纯函数）
+-- **最近Commit**：fix(nova-dormmate-final-2026): M3 review fixes for voice commands camera and TTS（本看板随该提交更新；GitHub 待同步此提交，用户确认后补推）
+-- **下一阶段接口**：M3 复用 M1 的 analyze() 入口与 web/ 页面（详细步骤见 docs/M3_PLAN.md）；M4 复用 M1 的 computeStatus() 纯函数与统一规则，不复制 Web DOM 代码；M5 起三节点
++- **下一步**：用户说"继续 M5"即建 docs/M5_PLAN.md 启动 M5（本机 Broker + 模拟节点三宿舍 + Dashboard 同屏不串线）
++- **最近Commit**：feat: M4 微信小程序复用DormMate统一规则（本看板随该提交更新）
++- **下一阶段接口**：M5 复用 M1 规则与 SPEC §4 统一 JSON；三节点 dorm-a / dorm-b / dorm-c 独立 topic（dormmate/{nodeId}/env）不串线；M4 小程序 M5 起可选订阅 MQTT；M6 消费同一 MQTT 数据流
+ 
+ ## 5. 给 Claude Code 的调用模板
+ 
+diff --git a/nova-dormmate-final-2026/mobile/app.js b/nova-dormmate-final-2026/mobile/app.js
+new file mode 100644
+index 0000000..7833e32
+--- /dev/null
++++ b/nova-dormmate-final-2026/mobile/app.js
+@@ -0,0 +1,2 @@
++// DormMate 小程序入口（M4 S1）：最小实现，无全局数据；业务逻辑在 pages/index 与 utils/rules.js
++App({});
+diff --git a/nova-dormmate-final-2026/mobile/app.json b/nova-dormmate-final-2026/mobile/app.json
+new file mode 100644
+index 0000000..3909cc5
+--- /dev/null
++++ b/nova-dormmate-final-2026/mobile/app.json
+@@ -0,0 +1,13 @@
++{
++  "pages": [
++    "pages/index/index"
++  ],
++  "window": {
++    "navigationBarTitleText": "DormMate",
++    "navigationBarBackgroundColor": "#4a90d9",
++    "navigationBarTextStyle": "white",
++    "backgroundColor": "#f5f6f8"
++  },
++  "style": "v2",
++  "sitemapLocation": "sitemap.json"
++}
+diff --git a/nova-dormmate-final-2026/mobile/pages/index/index.js b/nova-dormmate-final-2026/mobile/pages/index/index.js
+new file mode 100644
+index 0000000..e09dcac
+--- /dev/null
++++ b/nova-dormmate-final-2026/mobile/pages/index/index.js
+@@ -0,0 +1,80 @@
++// M4 S2/S3：Page data + setData + bindinput + bindtap（任务书第 17 条）
++// 业务规则统一来自 utils/rules.js（移植 M1 web/script.js 纯函数，见该文件头注释）
++const rules = require("../../utils/rules.js");
++
++Page({
++  // Page data：页面数据的唯一来源；界面渲染与更新全部走 setData
++  data: {
++    temperature: "",
++    humidity: "",
++    status: "—",
++    advice: "—",
++    errorMsg: "",
++    history: []
++  },
++
++  // onLoad：页面加载即自动跑四组回归自测（SPEC §6），Console 直接输出 4 行 PASS
++  // 说明：开发者工具 Console 不支持直接 require('utils/rules.js')（实测报 require is not defined），
++  // 故自测入口放在这里，随页面加载自动执行，无需手动命令
++  onLoad: function () {
++    rules.runRulesSelfTest();
++  },
++
++  // bindinput：输入即写入 Page data（e.detail.value = 输入框当前值）
++  onTempInput: function (e) {
++    this.setData({ temperature: e.detail.value });
++  },
++  onHumidityInput: function (e) {
++    this.setData({ humidity: e.detail.value });
++  },
++
++  // bindtap="onAnalyze"：校验 → 统一规则判断 → setData 更新状态/建议 → 追加历史
++  // 校验失败：只显示错误提示，不分析、不追加历史（与 M1 行为一致）
++  onAnalyze: function () {
++    const result = rules.validateInputs(this.data.temperature, this.data.humidity);
++    if (result.messages.length > 0) {
++      this.setData({ errorMsg: result.messages.join("；") });
++      return null;
++    }
++    const status = rules.computeStatus(result.temperature, result.humidity);
++    // 记录结构 = SPEC §4 统一 JSON（nodeId / temperature / humidity / status / time / action；
++    // action 为预留字段，M1-M4 恒为空字符串）
++    const record = {
++      nodeId: "dorm-a",
++      temperature: result.temperature,
++      humidity: result.humidity,
++      status: status,
++      time: rules.formatTime(new Date()),
++      action: ""
++    };
++    this.setData({
++      status: status,
++      advice: rules.ADVICE[status],
++      errorMsg: "",
++      history: this.data.history.concat(record)
++    });
++    return record;
++  },
++
++  // bindtap="onLoadDemo"：预置 4 条演示历史 = SPEC §6 四组回归数据（四个状态各一），
++  // time 取当前往前推 1-4 分钟；不改变当前状态/建议区（只演示"查看数据"）
++  onLoadDemo: function () {
++    const now = Date.now();
++    const demo = [
++      { temperature: 25, humidity: 60 },
++      { temperature: 16, humidity: 60 },
++      { temperature: 31, humidity: 60 },
++      { temperature: 25, humidity: 80 }
++    ].map(function (item, index) {
++      return {
++        nodeId: "dorm-a",
++        temperature: item.temperature,
++        humidity: item.humidity,
++        status: rules.computeStatus(item.temperature, item.humidity),
++        time: rules.formatTime(new Date(now - (3 - index) * 60000)),
++        action: ""
++      };
++    });
++    this.setData({ history: demo });
++  }
++});
+diff --git a/nova-dormmate-final-2026/mobile/pages/index/index.json b/nova-dormmate-final-2026/mobile/pages/index/index.json
+new file mode 100644
+index 0000000..205011a
+--- /dev/null
++++ b/nova-dormmate-final-2026/mobile/pages/index/index.json
+@@ -0,0 +1,3 @@
++{
++  "navigationBarTitleText": "DormMate"
++}
+diff --git a/nova-dormmate-final-2026/mobile/pages/index/index.wxml b/nova-dormmate-final-2026/mobile/pages/index/index.wxml
+new file mode 100644
+index 0000000..ec61738
+--- /dev/null
++++ b/nova-dormmate-final-2026/mobile/pages/index/index.wxml
+@@ -0,0 +1,37 @@
++<!-- M4 S1/S3：WXML 页面结构（任务书第 17 条）
++     bindinput：输入即写入 Page data；bindtap：按钮点击；bindconfirm：键盘确认键触发分析
++     界面所有数据来自 Page data，渲染由 setData 驱动 -->
++<view class="container">
++  <view class="card">
++    <view class="title">DormMate</view>
++    <view class="field">
++      <view class="label">温度（℃）</view>
++      <input class="input" type="text" placeholder="如 25" value="{{temperature}}"
++        bindinput="onTempInput" bindconfirm="onAnalyze" />
++    </view>
++    <view class="field">
++      <view class="label">湿度（%）</view>
++      <input class="input" type="text" placeholder="如 55" value="{{humidity}}"
++        bindinput="onHumidityInput" bindconfirm="onAnalyze" />
++    </view>
++    <view class="buttons">
++      <button class="btn primary" bindtap="onAnalyze">分析环境</button>
++      <button class="btn" bindtap="onLoadDemo">载入演示数据</button>
++    </view>
++    <view class="error" wx:if="{{errorMsg}}">{{errorMsg}}</view>
++  </view>
++
++  <view class="card">
++    <view class="section-title">当前状态</view>
++    <view class="status">{{status}}</view>
++    <view class="advice">{{advice}}</view>
++  </view>
++
++  <view class="card">
++    <view class="section-title">历史记录</view>
++    <view class="empty" wx:if="{{history.length === 0}}">暂无记录</view>
++    <view class="history-item" wx:for="{{history}}" wx:key="time">
++      {{item.time}} · {{item.nodeId}} · {{item.temperature}}℃ / {{item.humidity}}% · {{item.status}}
++    </view>
++  </view>
++</view>
+diff --git a/nova-dormmate-final-2026/mobile/project.config.json b/nova-dormmate-final-2026/mobile/project.config.json
+new file mode 100644
+index 0000000..6d9b28c
+--- /dev/null
++++ b/nova-dormmate-final-2026/mobile/project.config.json
+@@ -0,0 +1,24 @@
++{
++  "setting": {
++    "es6": true,
++    "postcss": true,
++    "minified": true,
++    "uglifyFileName": false,
++    "enhance": true,
++    "packNpmRelationList": [],
++    "babelSetting": {
++      "ignore": [],
++      "disablePlugins": [],
++      "outputPath": ""
++    },
++    "useCompilerPlugins": false
++  },
++  "compileType": "miniprogram",
++  "simulatorPluginLibVersion": {},
++  "packOptions": {
++    "ignore": [],
++    "include": []
++  },
++  "appid": "wxd7c27e7d8b4c53e1",
++  "editorSetting": {}
++}
+\ No newline at end of file
+diff --git a/nova-dormmate-final-2026/mobile/project.private.config.json b/nova-dormmate-final-2026/mobile/project.private.config.json
+new file mode 100644
+index 0000000..43f0d72
+--- /dev/null
++++ b/nova-dormmate-final-2026/mobile/project.private.config.json
+@@ -0,0 +1,14 @@
++{
++  "libVersion": "3.17.3",
++  "projectname": "mobile",
++  "setting": {
++    "urlCheck": true,
++    "coverView": true,
++    "lazyloadPlaceholderEnable": false,
++    "skylineRenderEnable": false,
++    "preloadBackgroundData": false,
++    "autoAudits": false,
++    "showShadowRootInWxmlPanel": true,
++    "compileHotReLoad": true
++  }
++}
+\ No newline at end of file
+diff --git a/nova-dormmate-final-2026/mobile/sitemap.json b/nova-dormmate-final-2026/mobile/sitemap.json
+new file mode 100644
+index 0000000..90bb324
+--- /dev/null
++++ b/nova-dormmate-final-2026/mobile/sitemap.json
+@@ -0,0 +1,9 @@
++{
++  "desc": "DormMate 小程序页面索引配置",
++  "rules": [
++    {
++      "action": "allow",
++      "page": "*"
++    }
++  ]
++}
+diff --git a/nova-dormmate-final-2026/mobile/utils/rules.js b/nova-dormmate-final-2026/mobile/utils/rules.js
+new file mode 100644
+index 0000000..5847ce9
+--- /dev/null
++++ b/nova-dormmate-final-2026/mobile/utils/rules.js
+@@ -0,0 +1,96 @@
++// DormMate 统一状态规则 —— 小程序侧实现（M4 S2）
++// 移植自 web/script.js（M1 全项目唯一 JS 实现）的纯函数部分，逐行同语义，禁止改规则：
++//   SPEC §3：status 顺序不可改（① <18 偏冷 ② >=30 偏热 ③ >=75 偏湿 ④ 其余 正常），命中即返回
++//   SPEC §3.1：温度 −50~50、湿度 0~100（含边界）
++//   SPEC §6：四组回归（25/60→正常、16/60→偏冷、31/60→偏热、25/80→偏湿）必须全部通过
++// 说明：小程序无法直接 require web/script.js（含 window/document DOM 代码、无 module.exports），
++// 故按 M2 Python 移植同模式，仅迁移纯函数、不复制 Web DOM 代码（M4_PLAN §1 决策记录）。
++// 回归自测：由 pages/index/index.js 的 onLoad 自动执行（开发者工具 Console 不支持直接 require，实测报 require is not defined）
++
++// SPEC §3：status 判断顺序不可改（① <18 偏冷 ② >=30 偏热 ③ >=75 偏湿 ④ 其余 正常），命中即返回
++function computeStatus(temperature, humidity) {
++  if (temperature < 18) return "偏冷";
++  if (temperature >= 30) return "偏热";
++  if (humidity >= 75) return "偏湿";
++  return "正常";
++}
++
++// 建议映射表（与 web/script.js 的 ADVICE 一致）
++const ADVICE = {
++  "偏冷": "注意保暖",
++  "偏热": "注意通风",
++  "偏湿": "注意除湿",
++  "正常": "环境舒适"
++};
++
++// SPEC §3.1 输入合法范围（含边界，与 web/script.js 一致）
++const TEMP_MIN = -50, TEMP_MAX = 50;
++const HUMIDITY_MIN = 0, HUMIDITY_MAX = 100;
++
++// 单字段校验（与 web/script.js 的 validateField 同语义）：
++// 空值 / 非数字（只接受十进制书写，拦截 0x/0b/1e 等） / 超出范围
++// 返回错误文案，空字符串 = 合法
++function validateField(rawValue, min, max, label) {
++  const text = String(rawValue).trim();
++  if (text === "") return `${label}不能为空`;
++  if (!/^-?\d+(\.\d+)?$/.test(text)) return `${label}必须是数字`;
++  const value = Number(text);
++  if (value < min || value > max) return `${label}须在 ${min}~${max} 之间`;
++  return "";
++}
++
++// 校验并解析两字段（与 web/script.js 的 validateInputs 同语义）
++// messages 为空 = 合法，此时 temperature/humidity 可直接使用（调用方无需二次 Number()）
++function validateInputs(rawTemperature, rawHumidity) {
++  const temperatureText = String(rawTemperature).trim();
++  const humidityText = String(rawHumidity).trim();
++  const messages = [];
++  const temperatureError = validateField(temperatureText, TEMP_MIN, TEMP_MAX, "温度");
++  if (temperatureError) messages.push(temperatureError);
++  const humidityError = validateField(humidityText, HUMIDITY_MIN, HUMIDITY_MAX, "湿度");
++  if (humidityError) messages.push(humidityError);
++  return {
++    messages: messages,
++    temperature: Number(temperatureText),
++    humidity: Number(humidityText)
++  };
++}
++
++function pad2(n) { return String(n).padStart(2, "0"); }
++
++// time 格式：YYYY-MM-DD HH:MM:SS（SPEC §4）
++function formatTime(d) {
++  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ` +
++    `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
++}
++
++// SPEC §6 四组回归自测（对应 web/test.html 的角色）：逐行打印 PASS/FAIL，返回全部是否通过
++function runRulesSelfTest() {
++  const cases = [
++    { temperature: 25, humidity: 60, expected: "正常" },
++    { temperature: 16, humidity: 60, expected: "偏冷" },
++    { temperature: 31, humidity: 60, expected: "偏热" },
++    { temperature: 25, humidity: 80, expected: "偏湿" }
++  ];
++  let allPassed = true;
++  cases.forEach(function (c) {
++    const actual = computeStatus(c.temperature, c.humidity);
++    const passed = actual === c.expected;
++    if (!passed) allPassed = false;
++    console.log(`${passed ? "PASS" : "FAIL"}  ${c.temperature}/${c.humidity} -> ${actual}（期望 ${c.expected}）`);
++  });
++  return allPassed;
++}
++
++module.exports = {
++  computeStatus: computeStatus,
++  ADVICE: ADVICE,
++  TEMP_MIN: TEMP_MIN,
++  TEMP_MAX: TEMP_MAX,
++  HUMIDITY_MIN: HUMIDITY_MIN,
++  HUMIDITY_MAX: HUMIDITY_MAX,
++  validateField: validateField,
++  validateInputs: validateInputs,
++  formatTime: formatTime,
++  runRulesSelfTest: runRulesSelfTest
++};
