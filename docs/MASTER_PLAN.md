@@ -103,7 +103,7 @@ M6 看板收口 → A1 → A2 → A3 → A4 → B1 → B2 → B3 → B4 → C1 �
 ```
 
 - C 严格最后（SPEC §10）；Final 在 A/B/C 全部完成之后
-- 当前状态：M1-M6 已完成；A 组（A1-A4）已完成（提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/）；B 组（B1-B4）已完成（提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/）；C 组（C1-C4）已完成（提交 73dd8f8、fcc0f9e、4762947、dda3de1，证据 docs/evidence/c/，含 C2 自实现 IsolationForest 兜底与 C4 不理想案例）；剩余 Final
+- 当前状态：M1-M6 已完成；A 组（A1-A4）已完成（提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/）；B 组（B1-B4）已完成（提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/）；C 组（C1-C4）已完成（提交 73dd8f8、fcc0f9e、4762947、dda3de1，证据 docs/evidence/c/，含 C2 自实现 IsolationForest 兜底与 C4 不理想案例）；Final 复验已完成（提交 49db648，证据 docs/evidence/final/），仅剩 GitHub 稳定版推送（待网络恢复）
 
 ## 6. 统一契约扩展（执行时与 SPEC 对齐）
 
@@ -272,15 +272,16 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 - 逐条对照 SPEC §9 C1-C4 与截图完成线（§3 表）全过；证据 docs/evidence/c/（v1/v2 报告 + 控制台 + 截图）；README 补 C 组运行方式与 C4 案例
 - 提交 + GitHub 同步（先展示变更摘要/命令，用户确认）
 
-### 7.6 Final 关闭重启验证 + 稳定版
+### 7.6 Final 关闭重启验证 + 稳定版 ✅ 复验已完成（2026-09-29，提交 49db648；GitHub 推送待网络恢复）
 
 - 关闭所有进程（Mosquitto / simulator / Live Server / 微信开发者工具）→ 按 README 顺序重启：
-  1. 离线链复跑：Web 录入 → 导出 CSV → `python analysis/analyze.py` → trend.png + report.html（含事件复盘/今日摘要/ML 异常分析三区）
-  2. 实时链复跑：Broker → simulator → Dashboard + 3D 并排（三节点不串线）
-  3. A 闭环重演：偏热 → 优先关注 → 开风扇 → 降温 → 已恢复 → 事件复盘
-  4. B 信息闭环演示：总览/依据/今日摘要/四类分工
-  5. C 对照复现：同数据同 random_state=42 → 同结果
-- 复验截图/录屏 → docs/evidence/final/；稳定版同步用户 GitHub 账号 `nova-dormmate-final-2026` 仓库（先展示命令，用户确认）
+  1. 离线链复跑：Web 录入 → 导出 CSV → `python analysis/analyze.py` → trend.png + report.html（含事件复盘/今日摘要/ML 异常分析三区）✅ F S2（19 项断言）
+  2. 实时链复跑：Broker → simulator → Dashboard + 3D 并排（三节点不串线）✅ F S3（10 项断言，环境冷启动后复验）
+  3. A 闭环重演：偏热 → 优先关注 → 开风扇 → 降温 → 已恢复 → 事件复盘 ✅ F S4（14 项断言，含 3D 风扇联动与自动关扇）
+  4. B 信息闭环演示：总览/依据/今日摘要/四类分工 ✅ F S5（11 项断言，含 TTS mock 与换 seed 摘要；顺带修复 make_day_data seed≥3 事件参数化——"换数据摘要同句"缺陷）
+  5. C 对照复现：同数据同 random_state=42 → 同结果 ✅ F S6（8 项断言，c_compare.json 与已提交版本逐字段一致）
+- 复验脚本 simulator/test_final.py（五段 62 项断言全过）；证据 docs/evidence/final/ 13 份；数据产物 data/final-dormmate.csv + data/sim-day-final/
+- 稳定版同步用户 GitHub 账号 `nova-dormmate-final-2026` 仓库：**待用户开代理后执行**（github.com:443 被网络阻断；命令 `git subtree push --prefix=nova-dormmate-final-2026 nova master`，执行前先展示）
 
 ## 8. 风险与红线
 
@@ -318,7 +319,7 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 | C2 | 固定规则/ML 对照 | 对照保留；不一致解释或如实记录 | evidence/c/ | ☑ |
 | C3 | ML 结果接回 report.html 并排 | 换 CSV 重新生成 | evidence/c/ | ☑ |
 | C4 | ≥1 个不理想案例 + 原因 | README/report 落地 | evidence/c/ | ☑ |
-| Final | 关闭重启复验 + GitHub 同步 | 两链 + A/B/C 闭环复验通过 | evidence/final/ | ☐ |
+| Final | 关闭重启复验 + GitHub 同步 | 两链 + A/B/C 闭环复验通过 | evidence/final/ | ☑（复验完成；推送待网络恢复） |
 
 ## 10. 现场演示剧本索引（执行到对应阶段时细化）
 
