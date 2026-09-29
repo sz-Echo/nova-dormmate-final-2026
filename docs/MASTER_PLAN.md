@@ -66,10 +66,10 @@
 | M6-28 | 至少 3 组 DormMate 状态让某个 3D 对象产生明显可见变化 | three3d/（4 类：主色/指示球/粒子/标牌） | 四状态逐一打出 | docs/evidence/m6/ | 已完成 |
 | M6-29 | 把 MQTT/实时状态接入 3D：至少一个模拟节点消息驱动 3D 变化 | three3d/ handleMessage→updateScene | MQTTX 手发一条即变 | docs/evidence/m6/ | 已完成 |
 | M6-30 | 1 个自主有用改进 + 记录 1 个真实 Bug 及修复 | three3d/（Edge 鼠标手势防御等） | 改进理由 + 2-3 组数据验证 + Bug 记录 | docs/evidence/m6/ | 已完成 |
-| A1 | 哪个宿舍现在最值得关注：优先规则（连续异常时长→异常次数→nodeId 顺序）+ 可解释原因 + 总览进详情 + Dashboard/3D 明确当前节点 | dashboard/ + three3d/ | ≥3 组三节点测试数据通过；时长由程序计算禁人工 | docs/evidence/a1/ | 未开始 |
-| A2 | 发现问题后能做什么：≥1 真实用户操作（开启风扇/通风），动作成为系统状态，Dashboard/3D 状态一致 | dashboard/ + three3d/ + simulator/ | 操作后内部状态、Dashboard、3D 一致；能说明"用户做了什么、系统因此改变了什么" | docs/evidence/a2/ | 未开始 |
-| A3 | 我处理以后真的变好了吗："仍需关注/处理中/已恢复"；恢复必须由新数据触发，不能按钮直改 | dashboard/ + simulator/ | ≥1 次"异常→措施→≥2 组新数据→判断"完整反馈过程 | docs/evidence/a3/ | 未开始 |
-| A4 | 能不能把一次问题完整留下来并复盘：事件字段齐全 + 进入 report.html"事件复盘"区 | dashboard/ + analysis/ | ≥1 条完整事件；能重新讲清"发现→判断→处理→验证→恢复" | docs/evidence/a4/ | 未开始 |
+| A1 | 哪个宿舍现在最值得关注：优先规则（连续异常时长→异常次数→nodeId 顺序）+ 可解释原因 + 总览进详情 + Dashboard/3D 明确当前节点 | dashboard/ + three3d/ | ≥3 组三节点测试数据通过；时长由程序计算禁人工 | docs/evidence/a1/ | 已完成 |
+| A2 | 发现问题后能做什么：≥1 真实用户操作（开启风扇/通风），动作成为系统状态，Dashboard/3D 状态一致 | dashboard/ + three3d/ + simulator/ | 操作后内部状态、Dashboard、3D 一致；能说明"用户做了什么、系统因此改变了什么" | docs/evidence/a2/ | 已完成 |
+| A3 | 我处理以后真的变好了吗："仍需关注/处理中/已恢复"；恢复必须由新数据触发，不能按钮直改 | dashboard/ + simulator/ | ≥1 次"异常→措施→≥2 组新数据→判断"完整反馈过程 | docs/evidence/a3/ | 已完成 |
+| A4 | 能不能把一次问题完整留下来并复盘：事件字段齐全 + 进入 report.html"事件复盘"区 | dashboard/ + analysis/ | ≥1 条完整事件；能重新讲清"发现→判断→处理→验证→恢复" | docs/evidence/a4/ | 已完成 |
 | B1 | 现在发生了什么：程序根据三节点真实状态自动形成"当前总览" | dashboard/ | 状态变化总览自动变；节点/状态/重点可回到真实数据；不写死 | docs/evidence/b/ | 未开始 |
 | B2 | 为什么值得关注：依据（持续时间/异常次数/当前状态）讲清，能指出依据来自哪里 | dashboard/ | ≥3 组三节点情况；优先对象与依据合理变化 | docs/evidence/b/ | 未开始 |
 | B3 | 今天发生了什么：程序自动生成"今日摘要"（谁出问题/做了什么/结果） | analysis/ + report.html | ≥2 事件模拟日数据；换数据摘要必须重新生成 | docs/evidence/b/ | 未开始 |
@@ -103,7 +103,7 @@ M6 看板收口 → A1 → A2 → A3 → A4 → B1 → B2 → B3 → B4 → C1 �
 ```
 
 - C 严格最后（SPEC §10）；Final 在 A/B/C 全部完成之后
-- 当前状态：M1-M5 已完成；M6 代码/证据/提交完成（415c9db、7e72183、8fb68a4），待看板收口；A/B/C 未开始
+- 当前状态：M1-M6 已完成；A 组（A1-A4）已完成（提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/）；B/C 未开始
 
 ## 6. 统一契约扩展（执行时与 SPEC 对齐）
 
@@ -220,9 +220,7 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 - analysis/analyze.py：新增 `load_events(path)`（文件缺失容错为空列表）→ render_report 增加"事件复盘"section（事件表格 + summary 复盘文本）
 - 完整故事演示：dorm-b 偏热 → 优先关注 → 开风扇 → 降温 → 恢复 → 导出 events.json → python analysis/analyze.py → report.html 出现事件复盘（截图）
 
-**S7 A 组验收交接**
-- 逐条对照 SPEC §9 A1-A4 与截图完成线（§3 表）；证据 docs/evidence/a1-a4/；README 补 A 组运行方式
-- 提交 + GitHub 同步（先展示变更摘要/命令，用户确认）
+**S7 A 组验收交接** ✅ 已完成（2026-09-29：A1-A4 逐条对照 SPEC §9 与截图完成线全过；README 补 A 组运行方式（演示剧本 ①-⑥）；PLAN/MASTER_PLAN 状态列更新；提交与 GitHub 同步待用户确认）
 
 ### 7.4 B 组：把已有信息讲清楚（B1-B4）
 
@@ -310,10 +308,10 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 | M6-28 | ≥3 组状态可见变化 | 四状态逐一打出 | evidence/m6/ | ☑ |
 | M6-29 | ≥1 条 MQTT 消息驱动 3D | MQTTX 手发即变 | evidence/m6/ | ☑ |
 | M6-30 | 1 个自主改进 + 1 个真实 Bug 修复 | 理由+验证+Bug 记录 | evidence/m6/ | ☑ |
-| A1 | 优先规则 + 可解释原因 + 总览进详情 | 3 组三节点数据；程序计算 | evidence/a1/ | ☐ |
-| A2 | ≥1 真实操作；Dashboard/3D 一致 | 动作成系统状态 | evidence/a2/ | ☐ |
-| A3 | 恢复由新数据触发；三态显示 | ≥1 次完整反馈（≥2 组新数据） | evidence/a3/ | ☐ |
-| A4 | 完整事件记录进 report.html | ≥1 条完整事件可复盘 | evidence/a4/ | ☐ |
+| A1 | 优先规则 + 可解释原因 + 总览进详情 | 3 组三节点数据；程序计算 | evidence/a1/ | ☑ |
+| A2 | ≥1 真实操作；Dashboard/3D 一致 | 动作成系统状态 | evidence/a2/ | ☑ |
+| A3 | 恢复由新数据触发；三态显示 | ≥1 次完整反馈（≥2 组新数据） | evidence/a3/ | ☑ |
+| A4 | 完整事件记录进 report.html | ≥1 条完整事件可复盘 | evidence/a4/ | ☑ |
 | B1 | 程序自动生成当前总览 | 状态变化自动变；不写死 | evidence/b/ | ☐ |
 | B2 | 依据讲清 + 来源可指 | 3 组情况合理变化 | evidence/b/ | ☐ |
 | B3 | 程序自动生成今日摘要 | ≥2 事件；换数据重生成 | evidence/b/ | ☐ |
