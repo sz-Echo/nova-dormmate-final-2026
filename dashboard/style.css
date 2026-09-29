@@ -112,6 +112,45 @@ body {
 .card .advice { color: var(--muted); margin-top: 6px; }
 .card .time { color: #aaa; font-size: 12px; margin-top: 8px; }
 
+/* B2 判断依据卡片（每节点三项指标附来源；优先节点橙色描边 + ★ 标注） */
+.evidence-area {
+  background: var(--card);
+  margin: 0 24px 16px;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.evidence-area h2 { font-size: 16px; margin: 0 0 10px; }
+
+.evidence-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 800px) {
+  .evidence-cards { grid-template-columns: 1fr; }
+}
+
+.evidence-card {
+  border: 1px solid #e3e8ee;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.evidence-card.winner {
+  border: 1px solid var(--orange);
+  background: #fffaf2;
+}
+
+.evidence-card .ev-node { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+.evidence-card .ev-winner { color: var(--orange); font-weight: bold; }
+.evidence-card ul { list-style: none; margin: 0; padding: 0; }
+.evidence-card li { padding: 2px 0; color: #555; }
+.evidence-card li.ev-source { color: #999; font-size: 12px; }
+
 /* A2 处理动作区（actionState：动作成为系统状态，不直接改 status） */
 .action-area {
   background: var(--card);

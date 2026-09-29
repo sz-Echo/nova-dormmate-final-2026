@@ -78,10 +78,32 @@ function computePriority(nodes) {
   return { nodeId: winner.nodeId, reason: parts.join("；") + "。", details: details };
 }
 
+function computeWinnerPhrase(nodes) {
+  // B2 依据短语（SPEC §9 B2 / MASTER_PLAN §6.5）：返回 { nodeId, phrase } 或 null（无异常）。
+  // 短语按实际命中规则程序选择：持续异常时间更长 / 异常次数更多 / 按节点顺序优先 / 是唯一异常节点。
+  // buildOverview（B1）与 Dashboard 依据卡片（B2）共用本函数，避免两处口径漂移。
+  const result = computePriority(nodes);
+  if (!result.nodeId) return null;
+  const winner = result.details.filter(function (d) { return d.nodeId === result.nodeId; })[0];
+  const others = result.details.filter(function (d) {
+    return d.nodeId !== result.nodeId && d.status !== "正常";
+  });
+  if (others.length === 0) { return { nodeId: result.nodeId, phrase: "是唯一异常节点" }; }
+  let maxOtherDur = -1;
+  let maxOtherCount = -1;
+  others.forEach(function (d) {
+    if (d.durationMinutes > maxOtherDur) { maxOtherDur = d.durationMinutes; }
+    if (d.abnormalCount > maxOtherCount) { maxOtherCount = d.abnormalCount; }
+  });
+  if (winner.durationMinutes > maxOtherDur) { return { nodeId: result.nodeId, phrase: "持续异常时间更长" }; }
+  if (winner.abnormalCount > maxOtherCount) { return { nodeId: result.nodeId, phrase: "异常次数更多" }; }
+  return { nodeId: result.nodeId, phrase: "按节点顺序优先" };
+}
+
 function buildOverview(nodes) {
   // B1 当前总览（SPEC §9 B1 / MASTER_PLAN §6.5）：程序模板拼接，禁写死；
   // 输出如"当前 3 个宿舍中，1 个正常，2 个需要关注；dorm-b 持续异常时间更长，是当前重点，dorm-c 出现偏湿。"
-  // 节点/状态/重点全部来自真实数据；重点依据短语按实际命中规则（时长/次数/顺序）程序选择。
+  // 节点/状态/重点全部来自真实数据；重点依据短语复用 computeWinnerPhrase（与 B2 同源）。
   const details = PRIORITY_NODE_ORDER.map(function (id) {
     const node = nodes[id];
     const streak = node ? computeStreak(node.history) : null;
@@ -96,27 +118,12 @@ function buildOverview(nodes) {
   const normalCount = details.length - abnormal.length;
   let text = "当前 3 个宿舍中，" + normalCount + " 个正常，" + abnormal.length + " 个需要关注";
   if (abnormal.length > 0) {
-    const result = computePriority(nodes);   // 复用 A1 排序，零重写
-    let winner = null;
-    for (let i = 0; i < abnormal.length; i++) {
-      if (abnormal[i].nodeId === result.nodeId) { winner = abnormal[i]; break; }
-    }
-    if (!winner) { winner = abnormal[0]; }
+    const winnerPhrase = computeWinnerPhrase(nodes);   // 复用 A1 排序与依据判定，零重写
+    const winner = abnormal.filter(function (d) { return d.nodeId === winnerPhrase.nodeId; })[0];
     if (abnormal.length > 1) {
-      const others = abnormal.filter(function (d) { return d.nodeId !== winner.nodeId; });
-      let maxOtherDur = -1;
-      let maxOtherCount = -1;
-      others.forEach(function (d) {
-        if (d.durationMinutes > maxOtherDur) { maxOtherDur = d.durationMinutes; }
-        if (d.abnormalCount > maxOtherCount) { maxOtherCount = d.abnormalCount; }
-      });
-      let rulePhrase;
-      if (winner.durationMinutes > maxOtherDur) { rulePhrase = "持续异常时间更长"; }
-      else if (winner.abnormalCount > maxOtherCount) { rulePhrase = "异常次数更多"; }
-      else { rulePhrase = "按节点顺序优先"; }
-      text += "；" + winner.nodeId + " " + rulePhrase + "，是当前重点";
-      others.forEach(function (d) {
-        text += "，" + d.nodeId + " 出现" + d.status;
+      text += "；" + winner.nodeId + " " + winnerPhrase.phrase + "，是当前重点";
+      abnormal.forEach(function (d) {
+        if (d.nodeId !== winner.nodeId) { text += "，" + d.nodeId + " 出现" + d.status; }
       });
     } else {
       text += "；" + winner.nodeId + " 出现" + winner.status + "，是当前重点";
@@ -127,4 +134,5 @@ function buildOverview(nodes) {
 
 window.computeStreak = computeStreak;
 window.computePriority = computePriority;
+window.computeWinnerPhrase = computeWinnerPhrase;
 window.buildOverview = buildOverview;

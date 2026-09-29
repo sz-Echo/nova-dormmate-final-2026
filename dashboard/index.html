@@ -26,6 +26,12 @@
 
   <section class="cards" id="cards"><!-- 三节点卡片由 app.js 渲染 --></section>
 
+  <!-- B2 判断依据：每节点三项指标（连续异常时长/异常次数/当前状态）各附数据来源，优先节点标注原因（程序计算） -->
+  <section class="evidence-area">
+    <h2>判断依据（B2）</h2>
+    <div id="evidenceCards" class="evidence-cards"><!-- 依据卡片由 app.js 渲染 --></div>
+  </section>
+
   <!-- A2 处理动作：对选中节点发布 actionState（dormmate/{nodeId}/action，SPEC §9 A2 / MASTER_PLAN §6.1）
        动作成为系统状态的一部分，不直接改 status（恢复由 A3 新数据触发） -->
   <section class="action-area">

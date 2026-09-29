@@ -42,6 +42,7 @@ const dropCountEl = document.getElementById("dropCount");
 const warnBannerEl = document.getElementById("warnBanner");
 const overviewBarEl = document.getElementById("overviewBar");
 const priorityBannerEl = document.getElementById("priorityBanner");
+const evidenceCardsEl = document.getElementById("evidenceCards");
 const chartCanvas = document.getElementById("trendChart");
 const actionNodeEl = document.getElementById("actionNode");
 const fanOnBtn = document.getElementById("fanOnBtn");
@@ -225,6 +226,7 @@ function handleMessage(topic, text) {
   if (message.nodeId === selectedNode) appendChartPoint(record);
   refreshOverview();
   refreshPriority();
+  refreshEvidence();
   if (message.nodeId === selectedNode) refreshActionBar();   // A3：新数据推进恢复状态机后同步动作条
   // 注意：成功路径不清空警告横幅——丢弃原因持续显示（点击横幅可关闭），
   // 避免"警告被下一条正常消息冲掉"导致验收时看不到拦截提示
@@ -384,6 +386,66 @@ function refreshOverview() {
   overviewBarEl.hidden = false;
 }
 
+// ---- B2 判断依据：三节点依据卡片（每项指标附数据来源；优先节点 ★ + 原因）----
+const evidenceEls = {};
+
+function buildEvidenceCards() {
+  NODE_IDS.forEach(function (id) {
+    const card = document.createElement("div");
+    card.className = "evidence-card";
+    card.innerHTML =
+      '<div class="ev-node">' + id + "</div>" +
+      '<div class="ev-winner" hidden></div>' +
+      "<ul></ul>";
+    evidenceCardsEl.appendChild(card);
+    evidenceEls[id] = {
+      card: card,
+      node: card.querySelector(".ev-node"),
+      winner: card.querySelector(".ev-winner"),
+      list: card.querySelector("ul")
+    };
+  });
+}
+
+function refreshEvidence() {
+  // 每条成功消息后重算：指标与来源全部来自程序计算（priority.js），无手写结论
+  if (typeof window.computePriority !== "function") return;   // priority.js 缺失防御
+  const hasData = NODE_IDS.some(function (id) { return nodes[id].history.length > 0; });
+  if (!hasData) { evidenceCardsEl.parentElement.hidden = true; return; }
+  evidenceCardsEl.parentElement.hidden = false;
+
+  const result = window.computePriority(nodes);
+  const winnerPhrase = typeof window.computeWinnerPhrase === "function"
+    ? window.computeWinnerPhrase(nodes) : null;
+
+  result.details.forEach(function (d) {
+    const refs = evidenceEls[d.nodeId];
+    const latest = nodes[d.nodeId].latest;
+    const lines = [];
+    // 当前状态（来源：最新记录）
+    lines.push("<li>当前状态：<b>" + d.status + "</b>" +
+      (latest ? "（" + latest.time.slice(11) + " " + latest.temperature + "℃/" + latest.humidity + "%）" : "（暂无数据）") + "</li>");
+    // 连续异常时长（来源：连续异常链的时间范围与条数）
+    if (d.status !== "正常") {
+      lines.push("<li>连续异常时长：<b>" + d.durationMinutes + " 分钟</b></li>");
+      lines.push('<li class="ev-source">依据：' + d.source + "</li>");
+    } else {
+      lines.push("<li>连续异常时长：无（当前正常）</li>");
+    }
+    // 异常次数（来源：该节点历史中 status != 正常的记录）
+    lines.push("<li>异常次数：<b>" + d.abnormalCount + " 条</b></li>");
+    lines.push('<li class="ev-source">依据：该节点历史中 status != 正常的记录条数（demo 记录除外）</li>');
+    refs.list.innerHTML = lines.join("");
+    // 优先节点标注（原因与优先横幅同源）
+    const isWinner = d.nodeId === result.nodeId;
+    refs.card.className = "evidence-card" + (isWinner ? " winner" : "");
+    refs.winner.hidden = !isWinner;
+    if (isWinner && winnerPhrase) {
+      refs.winner.textContent = "★ 当前优先：依据（" + winnerPhrase.phrase + "）";
+    }
+  });
+}
+
 function refreshPriority() {
   // A1 优先关注：每条成功消息后重算横幅（priority.js computePriority，程序计算禁人工）
   if (typeof window.computePriority !== "function") return;   // priority.js 缺失防御
@@ -505,5 +567,6 @@ function buildTabs() {
 // 初始渲染
 buildCards();
 buildTabs();
+buildEvidenceCards();
 rebuildChart();
 refreshActionBar();

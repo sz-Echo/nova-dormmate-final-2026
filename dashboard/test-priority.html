@@ -166,6 +166,39 @@
       check("组⑦ 单异常总览", t3.indexOf("2 个正常，1 个需要关注") >= 0 && t3.indexOf("dorm-b 出现偏热，是当前重点") >= 0, t3);
     })();
 
+    // ---- 组 ⑧（B2）：依据短语（computeWinnerPhrase，与总览/依据卡片同源）----
+    (function () {
+      function same3(nodeId, maker) {
+        return maker(nodeId, ["20:00:00"]).concat(norm(nodeId, ["20:05:00"]), maker(nodeId, ["20:25:00", "20:30:00"]));
+      }
+      var g1 = nodesWith([
+        norm("dorm-a", ["20:20:00", "20:25:00", "20:30:00"]),
+        hot("dorm-b", ["20:10:00", "20:15:00", "20:20:00", "20:25:00", "20:30:00"]),
+        norm("dorm-c", ["20:20:00", "20:25:00", "20:30:00"])
+      ]);
+      check("组⑧ 唯一异常 → 是唯一异常节点", window.computeWinnerPhrase(g1).phrase === "是唯一异常节点",
+        window.computeWinnerPhrase(g1).phrase);
+      var g2 = nodesWith([
+        norm("dorm-a", ["20:20:00", "20:25:00", "20:30:00"]),
+        hot("dorm-b", ["20:10:00", "20:15:00", "20:20:00", "20:25:00", "20:30:00"]),
+        wet("dorm-c", ["20:25:00", "20:30:00"])
+      ]);
+      check("组⑧ 时长不同 → 持续异常时间更长", window.computeWinnerPhrase(g2).phrase === "持续异常时间更长",
+        window.computeWinnerPhrase(g2).phrase);
+      var g3 = nodesWith([
+        cold("dorm-a", ["20:00:00"]).concat(norm("dorm-a", ["20:05:00"]), cold("dorm-a", ["20:25:00", "20:30:00"])),
+        hot("dorm-b", ["19:58:00", "20:00:00"]).concat(norm("dorm-b", ["20:05:00"]), hot("dorm-b", ["20:25:00", "20:30:00"])),
+        wet("dorm-c", ["20:00:00"]).concat(norm("dorm-c", ["20:05:00"]), wet("dorm-c", ["20:25:00", "20:30:00"]))
+      ]);
+      check("组⑧ 时长同次数异 → 异常次数更多", window.computeWinnerPhrase(g3).phrase === "异常次数更多",
+        window.computeWinnerPhrase(g3).phrase);
+      var g4 = nodesWith([
+        same3("dorm-a", cold), same3("dorm-b", hot), same3("dorm-c", wet)
+      ]);
+      check("组⑧ 全相同 → 按节点顺序优先", window.computeWinnerPhrase(g4).phrase === "按节点顺序优先",
+        window.computeWinnerPhrase(g4).phrase);
+    })();
+
     summaryEl.textContent = "结果：" + passCount + " 通过 / " + failCount + " 失败";
     summaryEl.className = failCount === 0 ? "pass" : "fail";
   </script>
