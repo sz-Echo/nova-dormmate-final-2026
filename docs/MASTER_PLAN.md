@@ -70,10 +70,10 @@
 | A2 | 发现问题后能做什么：≥1 真实用户操作（开启风扇/通风），动作成为系统状态，Dashboard/3D 状态一致 | dashboard/ + three3d/ + simulator/ | 操作后内部状态、Dashboard、3D 一致；能说明"用户做了什么、系统因此改变了什么" | docs/evidence/a2/ | 已完成 |
 | A3 | 我处理以后真的变好了吗："仍需关注/处理中/已恢复"；恢复必须由新数据触发，不能按钮直改 | dashboard/ + simulator/ | ≥1 次"异常→措施→≥2 组新数据→判断"完整反馈过程 | docs/evidence/a3/ | 已完成 |
 | A4 | 能不能把一次问题完整留下来并复盘：事件字段齐全 + 进入 report.html"事件复盘"区 | dashboard/ + analysis/ | ≥1 条完整事件；能重新讲清"发现→判断→处理→验证→恢复" | docs/evidence/a4/ | 已完成 |
-| B1 | 现在发生了什么：程序根据三节点真实状态自动形成"当前总览" | dashboard/ | 状态变化总览自动变；节点/状态/重点可回到真实数据；不写死 | docs/evidence/b/ | 未开始 |
-| B2 | 为什么值得关注：依据（持续时间/异常次数/当前状态）讲清，能指出依据来自哪里 | dashboard/ | ≥3 组三节点情况；优先对象与依据合理变化 | docs/evidence/b/ | 未开始 |
-| B3 | 今天发生了什么：程序自动生成"今日摘要"（谁出问题/做了什么/结果） | analysis/ + report.html | ≥2 事件模拟日数据；换数据摘要必须重新生成 | docs/evidence/b/ | 未开始 |
-| B4 | 这些信息应该放在哪里：≥3 类表达方式承担不同信息任务，能说明放置理由 | dashboard/ 3D/ TTS/ report.html | 核心四类分工落地 + 分工说明；不复制同一段文字 | docs/evidence/b/ | 未开始 |
+| B1 | 现在发生了什么：程序根据三节点真实状态自动形成"当前总览" | dashboard/ | 状态变化总览自动变；节点/状态/重点可回到真实数据；不写死 | docs/evidence/b/ | 已完成 |
+| B2 | 为什么值得关注：依据（持续时间/异常次数/当前状态）讲清，能指出依据来自哪里 | dashboard/ | ≥3 组三节点情况；优先对象与依据合理变化 | docs/evidence/b/ | 已完成 |
+| B3 | 今天发生了什么：程序自动生成"今日摘要"（谁出问题/做了什么/结果） | analysis/ + report.html | ≥2 事件模拟日数据；换数据摘要必须重新生成 | docs/evidence/b/ | 已完成 |
+| B4 | 这些信息应该放在哪里：≥3 类表达方式承担不同信息任务，能说明放置理由 | dashboard/ 3D/ TTS/ report.html | 核心四类分工落地 + 分工说明；不复制同一段文字 | docs/evidence/b/ | 已完成 |
 | C1 | 先让模型认识"平时"：单节点 30-50 条模拟历史；历史与新数据分开；random_state 固定可复现 | analysis/ + data/ | 换新历史 CSV 能重跑；README 写清"模拟"与数据来源 | docs/evidence/c/ | 未开始 |
 | C2 | 固定规则没发现的 ML 能不能发现：多组新数据双判断对照 | analysis/ | 对照结果保留；不一致保留 ≥1 组解释，未出现如实记录；不调参不伪造 | docs/evidence/c/ | 未开始 |
 | C3 | 不要停在 Python：结果接回 report.html"ML 异常分析"（当前值/固定规则/ML 判断并排） | analysis/ + report.html | 换新 CSV 重新生成 ML 结果并与固定规则并排 | docs/evidence/c/ | 未开始 |
@@ -103,7 +103,7 @@ M6 看板收口 → A1 → A2 → A3 → A4 → B1 → B2 → B3 → B4 → C1 �
 ```
 
 - C 严格最后（SPEC §10）；Final 在 A/B/C 全部完成之后
-- 当前状态：M1-M6 已完成；A 组（A1-A4）已完成（提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/）；B/C 未开始
+- 当前状态：M1-M6 已完成；A 组（A1-A4）已完成（提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/）；B 组（B1-B4）已完成（提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/）；C 未开始
 
 ## 6. 统一契约扩展（执行时与 SPEC 对齐）
 
@@ -244,9 +244,7 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 - 分工说明表（README + 本文档 §2.3）：Dashboard 当前重点 / 3D 空间状态 / TTS 当前提醒 / report.html 历史复盘——每行写明"为什么这条信息适合放在这里"
 - 验证点：四类分工演示截图；能现场说明放置理由
 
-**S5 B 组验收交接**
-- 逐条对照 SPEC §9 B1-B4 与截图完成线（§3 表）；证据 docs/evidence/b/；README 补 B 组说明
-- 提交 + GitHub 同步（先展示变更摘要/命令，用户确认）
+**S5 B 组验收交接** ✅ 已完成（2026-09-29：B1-B4 逐条对照 SPEC §9 与截图完成线全过；README 补 B 组运行方式与分工说明表；PLAN/MASTER_PLAN 状态列更新；提交与 GitHub 同步待用户确认）
 
 ### 7.5 C 组：从历史数据中发现异常（C1-C4，最后做）
 
@@ -312,10 +310,10 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 | A2 | ≥1 真实操作；Dashboard/3D 一致 | 动作成系统状态 | evidence/a2/ | ☑ |
 | A3 | 恢复由新数据触发；三态显示 | ≥1 次完整反馈（≥2 组新数据） | evidence/a3/ | ☑ |
 | A4 | 完整事件记录进 report.html | ≥1 条完整事件可复盘 | evidence/a4/ | ☑ |
-| B1 | 程序自动生成当前总览 | 状态变化自动变；不写死 | evidence/b/ | ☐ |
-| B2 | 依据讲清 + 来源可指 | 3 组情况合理变化 | evidence/b/ | ☐ |
-| B3 | 程序自动生成今日摘要 | ≥2 事件；换数据重生成 | evidence/b/ | ☐ |
-| B4 | ≥3 类表达方式分工（做 4 类） | 分工落地 + 说明理由 | evidence/b/ | ☐ |
+| B1 | 程序自动生成当前总览 | 状态变化自动变；不写死 | evidence/b/ | ☑ |
+| B2 | 依据讲清 + 来源可指 | 3 组情况合理变化 | evidence/b/ | ☑ |
+| B3 | 程序自动生成今日摘要 | ≥2 事件；换数据重生成 | evidence/b/ | ☑ |
+| B4 | ≥3 类表达方式分工（做 4 类） | 分工落地 + 说明理由 | evidence/b/ | ☑ |
 | C1 | 单节点模拟历史；数据分离；可复现 | 换 CSV 重跑；来源写清 | evidence/c/ | ☐ |
 | C2 | 固定规则/ML 对照 | 对照保留；不一致解释或如实记录 | evidence/c/ | ☐ |
 | C3 | ML 结果接回 report.html 并排 | 换 CSV 重新生成 | evidence/c/ | ☐ |
