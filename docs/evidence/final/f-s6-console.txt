@@ -1,0 +1,17 @@
+=== DormMate M2 离线分析 ===
+数据文件: F:\AIcoding\nova-dormmate-final-2026\data\final-dormmate.csv
+记录数: 7
+温度: 最高 31℃（2026-09-29 15:31:08）/ 最低 16℃（2026-09-29 15:31:08）
+湿度: 最高 80%（2026-09-29 15:31:09）/ 最低 58%（2026-09-29 15:31:09）
+各状态数量（按统一规则重算）: 正常 4 / 偏冷 1 / 偏热 1 / 偏湿 1
+自查: CSV status 列与重算不一致 0 条
+关注记录（status 非正常）:
+  2026-09-29 15:31:08 · 16℃ / 60% · 偏冷
+  2026-09-29 15:31:08 · 31℃ / 60% · 偏热
+  2026-09-29 15:31:09 · 25℃ / 80% · 偏湿
+事件复盘（A4，data/events.json）: 1 条
+  15:22:44 dorm-b 连续偏热 → 优先关注 dorm-b（已连续偏热 11 分钟） → 15:32:50 开启风扇并通风 → 15:35:44 恢复正常
+ML 异常分析（C3，data/c_compare.json）: 8 组，差异行 3 组
+产物已重新生成:
+  F:\AIcoding\nova-dormmate-final-2026\data\trend.png
+  F:\AIcoding\nova-dormmate-final-2026\data\report.html

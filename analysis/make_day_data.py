@@ -87,8 +87,8 @@ def generate(day_dir, seed):
     write_node_csv(day_dir, "dorm-a", normal_stretch("dorm-a", 8 * 60, 21 * 60, 60, rng))
 
     # dorm-b：下午一次"偏热"事件（seed 变化时长与恢复节奏），处理后恢复
-    hot_duration = 40 if seed == 1 else 30
-    recover_after = 30 if seed == 1 else 15   # 开启风扇后 N 分钟恢复（截图 B3 例句口径）
+    hot_duration = 40 if seed == 1 else (30 if seed == 2 else 25 + (seed - 2) * 10)
+    recover_after = 30 if seed == 1 else (15 if seed == 2 else 15 + (seed - 2) * 5)   # 开启风扇后 N 分钟恢复（截图 B3 例句口径）
     hot_start_min = 13 * 60 + 20
     action_min = hot_start_min + hot_duration + 5
     recover_min = action_min + recover_after
@@ -113,8 +113,8 @@ def generate(day_dir, seed):
     ))
 
     # dorm-c：晚间一次异常事件（seed 变化问题类型与开始时间；未处理 → 仍未恢复）
-    wet_start_min = 19 * 60 + 30 if seed == 1 else 20 * 60
-    c_problem = "偏湿" if seed == 1 else "偏冷"
+    wet_start_min = 19 * 60 + 30 if seed == 1 else 20 * 60 + (seed - 2) * 20
+    c_problem = "偏湿" if seed == 1 else ("偏冷" if seed % 2 == 0 else "偏湿")
     rows_c = normal_stretch("dorm-c", 8 * 60, 18 * 60, 60, rng)
     t = wet_start_min
     while t <= 21 * 60:

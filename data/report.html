@@ -21,7 +21,7 @@ img { max-width: 100%; border: 1px solid #e3e8ee; border-radius: 4px; }
 </head>
 <body>
 <h1>DormMate 离线分析报告</h1>
-<p class="meta">生成时间：2026-09-29 14:27:03 · 数据来源：dormmate2.csv（9 条记录）</p>
+<p class="meta">生成时间：2026-09-29 15:40:55 · 数据来源：final-dormmate.csv（7 条记录）</p>
 <!-- C3 扩展点：IsolationForest 结果接回此 section（勿删本注释） -->
 <section>
 <h2>ML 异常分析（C3）</h2>
@@ -29,17 +29,17 @@ img { max-width: 100%; border: 1px solid #e3e8ee; border-radius: 4px; }
 </section>
 <section>
 <h2>摘要</h2>
-<table><tr><th>记录数</th><td>9</td></tr><tr><th>温度最高</th><td>32℃（2026-09-26 15:44:29）</td></tr><tr><th>温度最低</th><td>15℃（2026-09-26 15:44:48）</td></tr><tr><th>湿度最高</th><td>90%（2026-09-26 15:44:29）</td></tr><tr><th>湿度最低</th><td>50%（2026-09-26 15:44:18）</td></tr><tr><th>状态自查</th><td>CSV status 列与重算不一致 0 条</td></tr></table>
+<table><tr><th>记录数</th><td>7</td></tr><tr><th>温度最高</th><td>31℃（2026-09-29 15:31:08）</td></tr><tr><th>温度最低</th><td>16℃（2026-09-29 15:31:08）</td></tr><tr><th>湿度最高</th><td>80%（2026-09-29 15:31:09）</td></tr><tr><th>湿度最低</th><td>58%（2026-09-29 15:31:09）</td></tr><tr><th>状态自查</th><td>CSV status 列与重算不一致 0 条</td></tr></table>
 <h3>各状态数量（按统一规则重算）</h3>
-<table><tr><th>正常</th><td>6</td></tr><tr><th>偏冷</th><td>2</td></tr><tr><th>偏热</th><td>1</td></tr><tr><th>偏湿</th><td>0</td></tr></table>
+<table><tr><th>正常</th><td>4</td></tr><tr><th>偏冷</th><td>1</td></tr><tr><th>偏热</th><td>1</td></tr><tr><th>偏湿</th><td>1</td></tr></table>
 </section>
 <section>
 <h2>关注记录（status 非正常）</h2>
-<table><tr><th>时间</th><th>温度</th><th>湿度</th><th>状态</th></tr><tr><td>2026-09-26 15:44:29</td><td>32℃</td><td>90%</td><td class='status'>偏热</td></tr><tr><td>2026-09-26 15:44:48</td><td>15℃</td><td>80%</td><td class='status'>偏冷</td></tr><tr><td>2026-09-26 15:44:49</td><td>15℃</td><td>80%</td><td class='status'>偏冷</td></tr></table>
+<table><tr><th>时间</th><th>温度</th><th>湿度</th><th>状态</th></tr><tr><td>2026-09-29 15:31:08</td><td>16℃</td><td>60%</td><td class='status'>偏冷</td></tr><tr><td>2026-09-29 15:31:08</td><td>31℃</td><td>60%</td><td class='status'>偏热</td></tr><tr><td>2026-09-29 15:31:09</td><td>25℃</td><td>80%</td><td class='status'>偏湿</td></tr></table>
 </section>
 <section>
 <h2>事件复盘（A4）</h2>
-<table><tr><th>宿舍</th><th>开始时间</th><th>问题</th><th>优先原因</th><th>处理动作</th><th>恢复时间</th><th>结果</th></tr><tr><td>dorm-b</td><td>2026-09-28 22:48:45</td><td class='status'>偏热</td><td>已连续偏热 20 分钟</td><td>fan_on（2026-09-28 23:08:46）</td><td>2026-09-28 23:10:45</td><td class='status'>已恢复</td></tr></table><h3>复盘</h3><ul><li>22:48:45 dorm-b 连续偏热 → 优先关注 dorm-b（已连续偏热 20 分钟） → 23:08:46 开启风扇并通风 → 23:10:45 恢复正常</li></ul>
+<table><tr><th>宿舍</th><th>开始时间</th><th>问题</th><th>优先原因</th><th>处理动作</th><th>恢复时间</th><th>结果</th></tr><tr><td>dorm-b</td><td>2026-09-29 15:22:44</td><td class='status'>偏热</td><td>已连续偏热 11 分钟</td><td>fan_on（2026-09-29 15:32:50）</td><td>2026-09-29 15:35:44</td><td class='status'>已恢复</td></tr></table><h3>复盘</h3><ul><li>15:22:44 dorm-b 连续偏热 → 优先关注 dorm-b（已连续偏热 11 分钟） → 15:32:50 开启风扇并通风 → 15:35:44 恢复正常</li></ul>
 </section>
 <section>
 <h2>趋势图</h2>

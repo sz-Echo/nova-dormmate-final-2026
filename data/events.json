@@ -1,13 +1,13 @@
 [
   {
     "nodeId": "dorm-b",
-    "startTime": "2026-09-28 22:48:45",
+    "startTime": "2026-09-29 15:22:44",
     "problem": "偏热",
-    "priorityReason": "已连续偏热 20 分钟",
+    "priorityReason": "已连续偏热 11 分钟",
     "action": "fan_on",
-    "actionTime": "2026-09-28 23:08:46",
-    "recoverTime": "2026-09-28 23:10:45",
+    "actionTime": "2026-09-29 15:32:50",
+    "recoverTime": "2026-09-29 15:35:44",
     "result": "已恢复",
-    "summary": "22:48:45 dorm-b 连续偏热 → 优先关注 dorm-b（已连续偏热 20 分钟） → 23:08:46 开启风扇并通风 → 23:10:45 恢复正常"
+    "summary": "15:22:44 dorm-b 连续偏热 → 优先关注 dorm-b（已连续偏热 11 分钟） → 15:32:50 开启风扇并通风 → 15:35:44 恢复正常"
   }
 ]
