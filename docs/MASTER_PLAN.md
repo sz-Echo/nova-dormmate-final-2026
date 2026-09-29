@@ -74,10 +74,10 @@
 | B2 | 为什么值得关注：依据（持续时间/异常次数/当前状态）讲清，能指出依据来自哪里 | dashboard/ | ≥3 组三节点情况；优先对象与依据合理变化 | docs/evidence/b/ | 已完成 |
 | B3 | 今天发生了什么：程序自动生成"今日摘要"（谁出问题/做了什么/结果） | analysis/ + report.html | ≥2 事件模拟日数据；换数据摘要必须重新生成 | docs/evidence/b/ | 已完成 |
 | B4 | 这些信息应该放在哪里：≥3 类表达方式承担不同信息任务，能说明放置理由 | dashboard/ 3D/ TTS/ report.html | 核心四类分工落地 + 分工说明；不复制同一段文字 | docs/evidence/b/ | 已完成 |
-| C1 | 先让模型认识"平时"：单节点 30-50 条模拟历史；历史与新数据分开；random_state 固定可复现 | analysis/ + data/ | 换新历史 CSV 能重跑；README 写清"模拟"与数据来源 | docs/evidence/c/ | 未开始 |
-| C2 | 固定规则没发现的 ML 能不能发现：多组新数据双判断对照 | analysis/ | 对照结果保留；不一致保留 ≥1 组解释，未出现如实记录；不调参不伪造 | docs/evidence/c/ | 未开始 |
-| C3 | 不要停在 Python：结果接回 report.html"ML 异常分析"（当前值/固定规则/ML 判断并排） | analysis/ + report.html | 换新 CSV 重新生成 ML 结果并与固定规则并排 | docs/evidence/c/ | 未开始 |
-| C4 | ML 会不会也判断不好：保留 ≥1 个不理想例子（数据+模型结果+可能原因） | README + report.html | 例子与原因落地；做到 C4 完成 C 闭环 | docs/evidence/c/ | 未开始 |
+| C1 | 先让模型认识"平时"：单节点 30-50 条模拟历史；历史与新数据分开；random_state 固定可复现 | analysis/ + data/ | 换新历史 CSV 能重跑；README 写清"模拟"与数据来源 | docs/evidence/c/ | 已完成 |
+| C2 | 固定规则没发现的 ML 能不能发现：多组新数据双判断对照 | analysis/ | 对照结果保留；不一致保留 ≥1 组解释，未出现如实记录；不调参不伪造 | docs/evidence/c/ | 已完成 |
+| C3 | 不要停在 Python：结果接回 report.html"ML 异常分析"（当前值/固定规则/ML 判断并排） | analysis/ + report.html | 换新 CSV 重新生成 ML 结果并与固定规则并排 | docs/evidence/c/ | 已完成 |
+| C4 | ML 会不会也判断不好：保留 ≥1 个不理想例子（数据+模型结果+可能原因） | README + report.html | 例子与原因落地；做到 C4 完成 C 闭环 | docs/evidence/c/ | 已完成 |
 | Final | 关闭重启验证 + 稳定版同步 GitHub | 全部 | 重启后两条链 + A/B/C 闭环复验通过 | docs/evidence/final/ | 未开始 |
 
 ## 4. M1-M6 ↔ A/B/C 联系矩阵
@@ -103,7 +103,7 @@ M6 看板收口 → A1 → A2 → A3 → A4 → B1 → B2 → B3 → B4 → C1 �
 ```
 
 - C 严格最后（SPEC §10）；Final 在 A/B/C 全部完成之后
-- 当前状态：M1-M6 已完成；A 组（A1-A4）已完成（提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/）；B 组（B1-B4）已完成（提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/）；C 未开始
+- 当前状态：M1-M6 已完成；A 组（A1-A4）已完成（提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/）；B 组（B1-B4）已完成（提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/）；C 组（C1-C4）已完成（提交 73dd8f8、fcc0f9e、4762947、dda3de1，证据 docs/evidence/c/，含 C2 自实现 IsolationForest 兜底与 C4 不理想案例）；剩余 Final
 
 ## 6. 统一契约扩展（执行时与 SPEC 对齐）
 
@@ -250,26 +250,26 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 
 **S0 文档对齐** ✅ 已完成（2026-09-28：SPEC §9 C 组细化为截图口径，diff 经用户确认）。执行时建 docs/evidence/c/。
 
-**S1 数据准备 C1**（data/ + analysis/）
-- analysis/make_c_data.py：生成 data/c_history.csv（dorm-a 30-50 条模拟历史，可延续现有 dormmate.csv）+ data/c_new.csv（多组待判断新数据，含若干"规则正常但与历史不同"的候选如 29℃/72%）；两份严格分开；生成脚本标记"模拟"
-- README/报告写清"模拟"标记与两份数据分别来自哪里；换新历史 CSV 可重跑
+**S1 数据准备 C1** ✅ 已完成（2026-09-29，提交 73dd8f8）
+- analysis/make_c_data.py：生成 data/c_history.csv（dorm-a 40 条模拟历史）+ data/c_new.csv（8 组待判断新数据，含候选 29℃/72%）；两份严格分开（时间零重叠）；random_state=42；README 写清"模拟"标记与数据来源；`--variant 2` 供 C3 换数据验证
+- 验证：simulator/test_c1.py（14 项断言全过）
 
-**S2 模型与对照 C2**（analysis/c_ml.py）
-- 优先 sklearn：pip install scikit-learn（**先征得用户同意**）→ `IsolationForest(n_estimators=100, contamination="auto", random_state=42).fit(X_history)` → `predict(X_new)`；安装失败 → 纯 Python 自实现同参数版本（README 记录替代原因，沿用 M3 ASR 等价替代先例）
-- 固定规则列用现有 compute_status（analysis/analyze.py:39，零重写）→ 对照表输出控制台 + data/c_compare.json（当前值/固定规则状态/ML 判定）
-- 寻找"规则正常、ML 判明显不同"案例并用自己的话解释；**未出现则如实记录"本次测试未出现"并说明观察**，不调参、不伪造、不改模型输出
+**S2 模型与对照 C2** ✅ 已完成（2026-09-29，提交 fcc0f9e）
+- sklearn 按用户批准的兜底链尝试失败（scipy 1.18.1 DLL 加载失败）→ 纯 Python 自实现同参数 IsolationForest（n_estimators=100、random_state=42、阈值 0.5，README 记录替代原因）
+- 固定规则列用 compute_status（零重写）→ 对照表控制台 + data/c_compare.json；"规则正常、ML 明显不同"出现 3 组并保留解释；未出现分支如实记录逻辑在代码中保留
+- 验证：simulator/test_c2.py（16 项断言全过）
 
-**S3 结果接回 C3**（analysis/ + report.html）
-- analyze.py render_report 扩展：新增"ML 异常分析"section，三列并排行（"dorm-a | 29℃/72% | 固定规则：正常 | ML：与历史状态明显不同"），数据来自 c_compare.json（C3 扩展点注释 line 232 处落位）
-- 验证点：换一份新 CSV → report.html 重新生成 ML 结果并与固定规则并排（截图）
-- 进阶（可选，不纳入最低完成线）：c_compare.json 由 dashboard 经 Live Server fetch 展示，不新建后端
+**S3 结果接回 C3** ✅ 已完成（2026-09-29，提交 4762947）
+- analyze.py render_report 扩展：report.html 新增"ML 异常分析（C3）"section（C3 扩展点注释处落位），当前值 / 固定规则 / ML 判断 + 异常分数并排（例句"dorm-a | 29℃/72% | 固定规则：正常 | ML：与历史明显不同"逐字一致），差异行高亮；数据来自 c_compare.json，c_history/c_new 更新时自动重跑对照（复用 c_ml.compare_rows 零重写）
+- 验证点达成：换一份新数据（--variant 2）→ 重跑 analyze.py → 报告全量重新生成 ML 结果并与固定规则并排（截图 docs/evidence/c/c3-report.png）
+- 进阶（可选，不纳入最低完成线）未做：c_compare.json 已是 JSON 结果文件，后续可被 dashboard fetch，不新建后端
 
-**S4 不理想案例 C4**（README + report.html）
-- 从实际运行结果中找 1 个"判断不太理想"的例子（如历史太少把普通数据标异常），保留当时数据 + 模型输出，用自己的话说明可能原因（历史太少/过去太单一/数据本身有问题/环境模式已变）
-- 写入 README 或 report.html；不做 Label/Train/Test/Accuracy/F1/混淆矩阵/模型版本管理/调参
+**S4 不理想案例 C4** ✅ 已完成（2026-09-29，提交 dda3de1）
+- 实际案例：27.5℃/70% 规则正常但 ML"与历史明显不同"（0.6738，高于三组规则异常 0.5641/0.5967/0.6219、与 29/72 并列最高）；可能原因：历史仅 40 条且全在 24~26℃/55~65% 窄区间，模型"常态"边界过窄，对轻微偏离过于敏感；数据+输出保留在 c_new.csv / c_compare.json；README 写入案例 + 不做 Label/Train/Test/Accuracy/F1/混淆矩阵/调参/版本管理的口径
+- 验证：simulator/test_c4.py（15 项断言全过，README 数字与 c_compare.json 逐项一致）
 
-**S5 C 组验收交接**
-- 逐条对照 SPEC §9 C1-C4 与截图完成线（§3 表）；证据 docs/evidence/c/；README 补 C 组说明
+**S5 C 组验收交接** ✅ 已完成（2026-09-29）
+- 逐条对照 SPEC §9 C1-C4 与截图完成线（§3 表）全过；证据 docs/evidence/c/（v1/v2 报告 + 控制台 + 截图）；README 补 C 组运行方式与 C4 案例
 - 提交 + GitHub 同步（先展示变更摘要/命令，用户确认）
 
 ### 7.6 Final 关闭重启验证 + 稳定版
@@ -314,10 +314,10 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 | B2 | 依据讲清 + 来源可指 | 3 组情况合理变化 | evidence/b/ | ☑ |
 | B3 | 程序自动生成今日摘要 | ≥2 事件；换数据重生成 | evidence/b/ | ☑ |
 | B4 | ≥3 类表达方式分工（做 4 类） | 分工落地 + 说明理由 | evidence/b/ | ☑ |
-| C1 | 单节点模拟历史；数据分离；可复现 | 换 CSV 重跑；来源写清 | evidence/c/ | ☐ |
-| C2 | 固定规则/ML 对照 | 对照保留；不一致解释或如实记录 | evidence/c/ | ☐ |
-| C3 | ML 结果接回 report.html 并排 | 换 CSV 重新生成 | evidence/c/ | ☐ |
-| C4 | ≥1 个不理想案例 + 原因 | README/report 落地 | evidence/c/ | ☐ |
+| C1 | 单节点模拟历史；数据分离；可复现 | 换 CSV 重跑；来源写清 | evidence/c/ | ☑ |
+| C2 | 固定规则/ML 对照 | 对照保留；不一致解释或如实记录 | evidence/c/ | ☑ |
+| C3 | ML 结果接回 report.html 并排 | 换 CSV 重新生成 | evidence/c/ | ☑ |
+| C4 | ≥1 个不理想案例 + 原因 | README/report 落地 | evidence/c/ | ☑ |
 | Final | 关闭重启复验 + GitHub 同步 | 两链 + A/B/C 闭环复验通过 | evidence/final/ | ☐ |
 
 ## 10. 现场演示剧本索引（执行到对应阶段时细化）

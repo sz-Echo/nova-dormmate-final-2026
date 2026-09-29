@@ -28,7 +28,7 @@
 | M6 | Three.js 3D 三节点联动 | M5 | 3D 实时更新 | 截图 / 录屏 | 已完成 |
 | A | 优先关注 / 处理动作 / 恢复判断 / 事件复盘（A1-A4） | M5 / M6 | A1-A4 全过 | 逐项证据 | 已完成 |
 | B | 把已有信息讲清楚：当前总览 / 判断依据 / 今日摘要 / 合适表达（B1-B4，不新增 LLM/VLM） | M1-M6 / A | B1-B4 全过；内容全部由程序生成 | 程序输出截图 | 已完成 |
-| C | 轻量 ML 应用闭环 C1-C4（从历史数据中发现异常，固定规则 / ML 对照） | A、B 之后（最后做） | C1-C4 全过；结果与固定规则并排接回 report.html；保留 1 个不理想案例 | 模型 / 展示 / 说明 | 未开始 |
+| C | 轻量 ML 应用闭环 C1-C4（从历史数据中发现异常，固定规则 / ML 对照） | A、B 之后（最后做） | C1-C4 全过；结果与固定规则并排接回 report.html；保留 1 个不理想案例 | 模型 / 展示 / 说明 | 已完成 |
 | Final | 关闭重启验证 + 稳定版同步 GitHub | A / B / C | 重启后两条链跑通 | 复验截图 + Git | 未开始 |
 
 ## 3. 每阶段详情
@@ -171,13 +171,13 @@
 
 ## 4. 当前阶段看板
 
-- **当前阶段**：C 组（从历史数据中发现异常，C1-C4）——S0 文档对齐已完成（SPEC §9 C 组细化为截图口径，提交 d973401）；下一步 C S1（数据准备）
-- **当前只做**：C 组 S1 → S2 → S3 → S4 → S5（每步停下等用户确认；详细步骤与契约见 docs/MASTER_PLAN.md §7.5）
-- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）；M4 全部（S0-S6：文档对齐 / 小程序骨架 / 规则移植 / 页面交互 / 冷启动验收 / 交接 / 评审修复，用户实测通过，提交 cb947ff、6b0e91b，GitHub 同步至 f1885a4，证据截图待用户补拍 docs/evidence/m4/，详细见 docs/M4_PLAN.md）；M5 S0（docs/M5_PLAN.md 创建 + 看板更新，3 项决策经用户确认：程序发布+MQTTX 演示 / Python paho-mqtt / Dashboard 本地 vendor；评审修正 4 项：端口冲突检查 / 断线重连 / JSON 容错 / 历史上限裁剪）；M5 全部（S0-S5：文档对齐 / 环境 / simulator 三节点发布 / Dashboard 骨架 / 趋势与切换 / 验收交接，S1-S4 用户实测通过——Broker 冷启动、MQTTX 互测、三卡片同屏、串线与坏消息拦截，证据 docs/evidence/m5/ 6 张，详细见 docs/M5_PLAN.md）；M6 全部（S0-S6：文档对齐 / vendor r128 三文件 / 静态场景 / 状态映射+演示按钮 / MQTT 实时驱动 / 验收交接 / 评审修复，提交 415c9db、7e72183、8fb68a4，GitHub 同步至 44b391c，证据 docs/evidence/m6/，详细见 docs/M6_PLAN.md）；A 组 S0 文档对齐（SPEC §9 更新为 A1-A4/B1-B4/C1-C4 + docs/MASTER_PLAN.md 建立，提交 d973401）；A 组全部（S1-S7：simulator 动作响应 / A1 优先关注横幅+测试页+演示脚本 / A2 动作入口 / three3d 动作联动 / A3 恢复状态机 / A4 事件复盘进 report.html / 验收交接，提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/，详细见 MASTER_PLAN §7.3）；B 组全部（S1-S5：B1 当前总览 / B2 判断依据卡片 / B3 今日摘要（make_day_data + daily_summary + sim-day-1/2 数据）/ B4 朗读提醒+信息分工 / 验收交接，提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/，详细见 MASTER_PLAN §7.4）
+- **当前阶段**：C 组（从历史数据中发现异常，C1-C4）——C1-C4 全部完成（提交 73dd8f8、fcc0f9e、4762947、dda3de1）；下一步 Final
+- **当前只做**：Final（关闭重启验证 + 稳定版同步 GitHub；详细步骤与契约见 docs/MASTER_PLAN.md §7.6）
+- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）；M4 全部（S0-S6：文档对齐 / 小程序骨架 / 规则移植 / 页面交互 / 冷启动验收 / 交接 / 评审修复，用户实测通过，提交 cb947ff、6b0e91b，GitHub 同步至 f1885a4，证据截图待用户补拍 docs/evidence/m4/，详细见 docs/M4_PLAN.md）；M5 S0（docs/M5_PLAN.md 创建 + 看板更新，3 项决策经用户确认：程序发布+MQTTX 演示 / Python paho-mqtt / Dashboard 本地 vendor；评审修正 4 项：端口冲突检查 / 断线重连 / JSON 容错 / 历史上限裁剪）；M5 全部（S0-S5：文档对齐 / 环境 / simulator 三节点发布 / Dashboard 骨架 / 趋势与切换 / 验收交接，S1-S4 用户实测通过——Broker 冷启动、MQTTX 互测、三卡片同屏、串线与坏消息拦截，证据 docs/evidence/m5/ 6 张，详细见 docs/M5_PLAN.md）；M6 全部（S0-S6：文档对齐 / vendor r128 三文件 / 静态场景 / 状态映射+演示按钮 / MQTT 实时驱动 / 验收交接 / 评审修复，提交 415c9db、7e72183、8fb68a4，GitHub 同步至 44b391c，证据 docs/evidence/m6/，详细见 docs/M6_PLAN.md）；A 组 S0 文档对齐（SPEC §9 更新为 A1-A4/B1-B4/C1-C4 + docs/MASTER_PLAN.md 建立，提交 d973401）；A 组全部（S1-S7：simulator 动作响应 / A1 优先关注横幅+测试页+演示脚本 / A2 动作入口 / three3d 动作联动 / A3 恢复状态机 / A4 事件复盘进 report.html / 验收交接，提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/，详细见 MASTER_PLAN §7.3）；B 组全部（S1-S5：B1 当前总览 / B2 判断依据卡片 / B3 今日摘要（make_day_data + daily_summary + sim-day-1/2 数据）/ B4 朗读提醒+信息分工 / 验收交接，提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/，详细见 MASTER_PLAN §7.4）；C 组全部（S1-S5：C1 数据准备（c_history/c_new 严格分离 + random_state=42）/ C2 固定规则/ML 对照（sklearn 失败自实现 IsolationForest 兜底，README 记录替代原因）/ C3 结果接回 report.html"ML 异常分析"区（并排+差异高亮+换数据重生成）/ C4 不理想案例（27.5/70 对轻微偏离过敏感 + 可能原因 + 不做指标口径）/ 验收交接，提交 73dd8f8、fcc0f9e、4762947、dda3de1，证据 docs/evidence/c/，详细见 MASTER_PLAN §7.5）
 - **阻塞**：无
-- **下一步**：C S1 数据准备（analysis/make_c_data.py：c_history.csv 与 c_new.csv 严格分离 + random_state=42，见 MASTER_PLAN §7.5 S1）
-- **最近Commit**：feat(nova-dormmate-final-2026): B S4 TTS reminder button and information division（c8a6771，2026-09-29）
-- **下一阶段接口**：C 复用离线链 CSV（data/）与 report.html 管线（C3 扩展点注释 analysis/analyze.py:232）；固定规则列用 compute_status 零重写；sklearn 优先、自实现兜底（pip install 前征得用户同意）
+- **下一步**：Final（关闭所有进程 → 按 README 重启复跑两条链 + A 闭环重演 + B 信息闭环 + C 对照复现 → GitHub 稳定版同步，见 MASTER_PLAN §7.6）
+- **最近Commit**：feat(nova-dormmate-final-2026): C S4 not-ideal case documented from real ML results（dda3de1，2026-09-29）
+- **下一阶段接口**：Final 复验依赖全部阶段产物（README 运行方式 / data 产物 / 证据目录）；GitHub 同步用 `git subtree push --prefix=nova-dormmate-final-2026 nova master`（执行前先展示命令）
 
 ## 5. 给 Claude Code 的调用模板
 
