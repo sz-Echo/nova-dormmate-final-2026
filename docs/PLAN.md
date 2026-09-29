@@ -29,7 +29,7 @@
 | A | 优先关注 / 处理动作 / 恢复判断 / 事件复盘（A1-A4） | M5 / M6 | A1-A4 全过 | 逐项证据 | 已完成 |
 | B | 把已有信息讲清楚：当前总览 / 判断依据 / 今日摘要 / 合适表达（B1-B4，不新增 LLM/VLM） | M1-M6 / A | B1-B4 全过；内容全部由程序生成 | 程序输出截图 | 已完成 |
 | C | 轻量 ML 应用闭环 C1-C4（从历史数据中发现异常，固定规则 / ML 对照） | A、B 之后（最后做） | C1-C4 全过；结果与固定规则并排接回 report.html；保留 1 个不理想案例 | 模型 / 展示 / 说明 | 已完成 |
-| Final | 关闭重启验证 + 稳定版同步 GitHub | A / B / C | 重启后两条链跑通 | 复验截图 + Git | 复验完成；推送待网络恢复 |
+| Final | 关闭重启验证 + 稳定版同步 GitHub | A / B / C | 重启后两条链跑通 | 复验截图 + Git | 已完成 |
 
 ## 3. 每阶段详情
 
@@ -171,13 +171,13 @@
 
 ## 4. 当前阶段看板
 
-- **当前阶段**：Final（关闭重启验证 + 稳定版同步 GitHub）——复验已完成（提交 49db648，62 项断言全过）；GitHub 推送待网络恢复（用户开代理后执行）
-- **当前只做**：GitHub 稳定版同步（命令 `git subtree push --prefix=nova-dormmate-final-2026 nova master`，执行前先展示，用户确认后执行）
+- **当前阶段**：项目收尾——Final 全部完成（复验 49db648 + 文档收口 8d94eb2 + GitHub 稳定版已同步 d384cb5）
+- **当前只做**：无（全部阶段完成；GitHub 仓库 `nova-dormmate-final-2026` master 与本地一致）
 - **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）；M4 全部（S0-S6：文档对齐 / 小程序骨架 / 规则移植 / 页面交互 / 冷启动验收 / 交接 / 评审修复，用户实测通过，提交 cb947ff、6b0e91b，GitHub 同步至 f1885a4，证据截图待用户补拍 docs/evidence/m4/，详细见 docs/M4_PLAN.md）；M5 S0（docs/M5_PLAN.md 创建 + 看板更新，3 项决策经用户确认：程序发布+MQTTX 演示 / Python paho-mqtt / Dashboard 本地 vendor；评审修正 4 项：端口冲突检查 / 断线重连 / JSON 容错 / 历史上限裁剪）；M5 全部（S0-S5：文档对齐 / 环境 / simulator 三节点发布 / Dashboard 骨架 / 趋势与切换 / 验收交接，S1-S4 用户实测通过——Broker 冷启动、MQTTX 互测、三卡片同屏、串线与坏消息拦截，证据 docs/evidence/m5/ 6 张，详细见 docs/M5_PLAN.md）；M6 全部（S0-S6：文档对齐 / vendor r128 三文件 / 静态场景 / 状态映射+演示按钮 / MQTT 实时驱动 / 验收交接 / 评审修复，提交 415c9db、7e72183、8fb68a4，GitHub 同步至 44b391c，证据 docs/evidence/m6/，详细见 docs/M6_PLAN.md）；A 组 S0 文档对齐（SPEC §9 更新为 A1-A4/B1-B4/C1-C4 + docs/MASTER_PLAN.md 建立，提交 d973401）；A 组全部（S1-S7：simulator 动作响应 / A1 优先关注横幅+测试页+演示脚本 / A2 动作入口 / three3d 动作联动 / A3 恢复状态机 / A4 事件复盘进 report.html / 验收交接，提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/，详细见 MASTER_PLAN §7.3）；B 组全部（S1-S5：B1 当前总览 / B2 判断依据卡片 / B3 今日摘要（make_day_data + daily_summary + sim-day-1/2 数据）/ B4 朗读提醒+信息分工 / 验收交接，提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/，详细见 MASTER_PLAN §7.4）；C 组全部（S1-S5：C1 数据准备（c_history/c_new 严格分离 + random_state=42）/ C2 固定规则/ML 对照（sklearn 失败自实现 IsolationForest 兜底，README 记录替代原因）/ C3 结果接回 report.html"ML 异常分析"区（并排+差异高亮+换数据重生成）/ C4 不理想案例（27.5/70 对轻微偏离过敏感 + 可能原因 + 不做指标口径）/ 验收交接，提交 73dd8f8、fcc0f9e、4762947、dda3de1，证据 docs/evidence/c/，详细见 MASTER_PLAN §7.5）；Final 复验（F S1-S7：环境冷启动（Broker 1883/8083 + simulator 三节点）→ 实时链（Dashboard+3D 并排不串线）→ 离线链（Web 录入→CSV→analyze→report 五区）→ A 闭环重演（偏热→优先→开风扇→3D 联动→降温→已恢复→自动关扇→事件→报告复盘）→ B 信息闭环（总览/依据/朗读提醒/换 seed 摘要）→ C 对照复现（random_state=42 与已提交版本逐字段一致），test_final.py 62 项断言全过，证据 docs/evidence/final/，提交 49db648，详细见 MASTER_PLAN §7.6）
-- **阻塞**：GitHub 推送——github.com:443 TLS 被网络阻断（ping 通、api.github.com 正常、ssh.github.com:443 可达但无授权密钥）；用户选择先本地提交、待开代理后统一推送
-- **下一步**：GitHub 稳定版同步（用户开代理后执行 `git subtree push --prefix=nova-dormmate-final-2026 nova master`；备选：配置 SSH key 走 ssh.github.com:443）
-- **最近Commit**：feat(nova-dormmate-final-2026): Final cold-restart re-verification of both chains and A/B/C loops（49db648，2026-09-29）
-- **下一阶段接口**：项目收尾；全部提交历史在本地 git log 中完整保留，推送时一次性同步
+- **阻塞**：无
+- **下一步**：无（项目全部完成；如需继续可走 SPEC 变更流程）
+- **最近Commit**：docs(nova-dormmate-final-2026): Final re-verification done, push pending network recovery（8d94eb2，2026-09-29）；GitHub 已同步至 d384cb5（2026-09-29，网络恢复窗口推送成功）
+- **下一阶段接口**：项目收尾；GitHub 仓库 `nova-dormmate-final-2026` master 与本地一致（subtree push 重写哈希，内容与顺序一致）
 
 ## 5. 给 Claude Code 的调用模板
 

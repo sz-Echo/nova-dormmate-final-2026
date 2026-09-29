@@ -281,7 +281,7 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
   4. B 信息闭环演示：总览/依据/今日摘要/四类分工 ✅ F S5（11 项断言，含 TTS mock 与换 seed 摘要；顺带修复 make_day_data seed≥3 事件参数化——"换数据摘要同句"缺陷）
   5. C 对照复现：同数据同 random_state=42 → 同结果 ✅ F S6（8 项断言，c_compare.json 与已提交版本逐字段一致）
 - 复验脚本 simulator/test_final.py（五段 62 项断言全过）；证据 docs/evidence/final/ 13 份；数据产物 data/final-dormmate.csv + data/sim-day-final/
-- 稳定版同步用户 GitHub 账号 `nova-dormmate-final-2026` 仓库：**待用户开代理后执行**（github.com:443 被网络阻断；命令 `git subtree push --prefix=nova-dormmate-final-2026 nova master`，执行前先展示）
+- 稳定版同步用户 GitHub 账号 `nova-dormmate-final-2026` 仓库：✅ 已完成（2026-09-29 网络恢复窗口，`git subtree push --prefix=nova-dormmate-final-2026 nova master` 推送成功，GitHub master = d384cb5，与本地内容/顺序一致；subtree push 重写哈希属正常机制）
 
 ## 8. 风险与红线
 
@@ -319,7 +319,7 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 | C2 | 固定规则/ML 对照 | 对照保留；不一致解释或如实记录 | evidence/c/ | ☑ |
 | C3 | ML 结果接回 report.html 并排 | 换 CSV 重新生成 | evidence/c/ | ☑ |
 | C4 | ≥1 个不理想案例 + 原因 | README/report 落地 | evidence/c/ | ☑ |
-| Final | 关闭重启复验 + GitHub 同步 | 两链 + A/B/C 闭环复验通过 | evidence/final/ | ☑（复验完成；推送待网络恢复） |
+| Final | 关闭重启复验 + GitHub 同步 | 两链 + A/B/C 闭环复验通过 | evidence/final/ | ☑ |
 
 ## 10. 现场演示剧本索引（执行到对应阶段时细化）
 
