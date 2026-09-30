@@ -2,6 +2,25 @@
      bindinput：输入即写入 Page data；bindtap：按钮点击；bindconfirm：键盘确认键触发分析
      界面所有数据来自 Page data，渲染由 setData 驱动 -->
 <view class="container">
+  <!-- A1/A2：MQTT 实时区（V0.8R5 阶段 A）：三节点卡片 + 开启风扇（联动#1，2 秒防抖） -->
+  <view class="card">
+    <view class="section-title">MQTT 实时</view>
+    <view class="mqtt-state">{{mqttState}}</view>
+    <view class="node-card" wx:for="{{mqttNodes}}" wx:key="nodeId">
+      <view class="node-head">
+        <view class="node-name">{{item.nodeId}}<text wx:if="{{item.isPriority}}" class="node-star"> ★重点</text></view>
+        <view class="node-right">
+          <view wx:if="{{item.eventBadge}}" class="node-badge {{item.eventBadgeClass}}">{{item.eventBadge}}</view>
+          <view class="node-status {{item.statusClass}}">{{item.status}}</view>
+        </view>
+      </view>
+      <view class="node-meta" wx:if="{{item.status === '等待数据'}}">等待数据…（需 Broker + simulator）</view>
+      <view class="node-meta" wx:else>{{item.temperature}}℃ / {{item.humidity}}% · {{item.time}}</view>
+      <button class="btn fan-btn" bindtap="onFanOn" data-node="{{item.nodeId}}"
+        disabled="{{fanPending || item.status === '等待数据'}}">开启风扇</button>
+    </view>
+  </view>
+
   <view class="card">
     <view class="title">DormMate</view>
     <view class="field">
@@ -19,6 +38,7 @@
       <button class="btn" bindtap="onLoadDemo">载入演示数据</button>
     </view>
     <view class="error" wx:if="{{errorMsg}}">{{errorMsg}}</view>
+    <view class="note">离线模式（降级）：无 Broker 时可用手动输入分析；实时数据见上方卡片</view>
   </view>
 
   <view class="card">

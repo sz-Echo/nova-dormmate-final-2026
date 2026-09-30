@@ -77,6 +77,93 @@ button::after {
   margin-bottom: 16rpx;
 }
 
+/* A1：MQTT 连接状态行（连接中/已连接/断开重连等状态文本） */
+.mqtt-state {
+  font-size: 30rpx;
+  color: #4a90d9;
+  margin-bottom: 8rpx;
+}
+
+/* A2：三节点卡片（状态着色与 dashboard 一致）+ 开启风扇按钮 */
+.node-card {
+  border: 2rpx solid #eee;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.node-card:last-child {
+  margin-bottom: 0;
+}
+
+.node-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.node-name {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.node-status {
+  font-size: 28rpx;
+}
+
+.node-status.normal { color: #27ae60; }
+.node-status.cold { color: #4a90d9; }
+.node-status.hot { color: #e67e22; }
+.node-status.wet { color: #16a085; }
+.node-status.waiting { color: #aaa; }
+
+/* A3：★当前重点 + 事件状态徽标（与 Dashboard 事件/优先通道同源） */
+.node-right {
+  display: flex;
+  align-items: center;
+}
+
+.node-star {
+  color: #d0021b;
+  font-size: 24rpx;
+  margin-left: 8rpx;
+}
+
+.node-badge {
+  font-size: 24rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 999rpx;
+  margin-right: 12rpx;
+}
+
+.node-badge.open { background: #fdf3e7; color: #e67e22; }
+.node-badge.handling { background: #eaf3fd; color: #4a90d9; }
+.node-badge.recovered { background: #e8f8ef; color: #27ae60; }
+.node-badge.cancelled { background: #f0f0f0; color: #888; }
+
+.node-meta {
+  font-size: 26rpx;
+  color: #666;
+  margin: 8rpx 0;
+}
+
+.fan-btn {
+  margin-top: 8rpx;
+  font-size: 28rpx;
+}
+
+button[disabled].fan-btn {
+  background: #eef2f7;
+  color: #aaa;
+}
+
+/* A2：离线降级模式说明（不影响上方实时卡片） */
+.note {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 12rpx;
+}
+
 .status {
   font-size: 64rpx;
   font-weight: bold;
