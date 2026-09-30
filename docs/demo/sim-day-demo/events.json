@@ -1,0 +1,24 @@
+[
+  {
+    "nodeId": "dorm-b",
+    "startTime": "2026-09-28 13:20:00",
+    "problem": "偏热",
+    "priorityReason": "已连续偏热 55 分钟",
+    "action": "fan_on",
+    "actionTime": "2026-09-28 14:20:00",
+    "recoverTime": "2026-09-28 14:50:00",
+    "result": "已恢复",
+    "summary": "13:20:00 dorm-b 连续偏热 → 优先关注 dorm-b → 14:20:00 开启风扇并通风 → 14:50:00 恢复正常"
+  },
+  {
+    "nodeId": "dorm-c",
+    "startTime": "2026-09-28 21:00:00",
+    "problem": "偏湿",
+    "priorityReason": "",
+    "action": "",
+    "actionTime": "",
+    "recoverTime": "",
+    "result": "仍需关注",
+    "summary": "21:00:00 dorm-c 连续偏湿 → 优先关注 dorm-c → 至当日结束仍未恢复"
+  }
+]
