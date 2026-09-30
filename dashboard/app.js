@@ -11,6 +11,12 @@
 
 const WS_URL = "ws://localhost:8083";   // WebSocket 端口（mosquitto.conf listener 8083 + protocol websockets）
 const TOPIC = "dormmate/+/env";         // 三节点订阅（SPEC §8：dormmate/{nodeId}/env）
+const ACTION_TOPIC = "dormmate/+/action"; // A2 联动#1：动作通道订阅（自己发布后的回环去重；外部来源=移动端）
+// A3 事件状态跨端广播：Dashboard 状态机是唯一持有者，在 OPEN/HANDLING/RECOVERED/CANCELLED
+// 四个时机发布 dormmate/{nodeId}/event；优先节点变化时发布 dormmate/priority ——
+// 3D 与移动端订阅展示，满足"三端对同一事件保持一致，不各自维护"（恢复仍仅由新数据触发）
+const EVENT_STATES = ["OPEN", "HANDLING", "RECOVERED", "CANCELLED"];
+const PRIORITY_TOPIC = "dormmate/priority";
 const NODE_IDS = ["dorm-a", "dorm-b", "dorm-c"];
 const HISTORY_LIMIT = 60;
 const REQUIRED_FIELDS = ["nodeId", "temperature", "humidity", "status", "time", "action"];
@@ -33,6 +39,7 @@ const events = [];
 let selectedNode = "dorm-a";
 let receivedCount = 0;
 let droppedCount = 0;   // 坏 JSON + 类型/格式/范围非法 + 串线 的总丢弃数
+let lastPriorityPublished = null;   // A3：优先节点仅变化时广播，避免每条消息刷屏
 
 const cardsEl = document.getElementById("cards");
 const tabsEl = document.getElementById("tabs");
@@ -198,7 +205,9 @@ function handleMessage(topic, text) {
         if (node.recovery.normalStreak >= 2) {
           node.recovery = { state: "recovered", recoverTime: record.time };
           publishFanOffAuto(message.nodeId, record.time);   // 自动关扇：simulator 恢复随机游走、3D 风扇停止
-          finalizeEvent(message.nodeId, record.time);       // A4：事件定稿进"今日事件"面板
+          const finalized = finalizeEvent(message.nodeId, record.time);   // A4：事件定稿进"今日事件"面板
+          publishEventState(message.nodeId, "RECOVERED", record.time,
+            finalized ? finalized.summary : "已恢复", finalized ? finalized.eventId : null);
         }
       } else {
         node.recovery.normalStreak = 0;
@@ -211,6 +220,7 @@ function handleMessage(topic, text) {
   // A4 事件草稿：异常出现时开草稿（开始时间/问题）；动作与优先原因由 A1/A2 路径回填
   if (record.status !== "正常" && !node.event) {
     node.event = {
+      eventId: makeEventId(message.nodeId, record.time),
       nodeId: message.nodeId,
       startTime: record.time,
       problem: record.status,
@@ -221,6 +231,7 @@ function handleMessage(topic, text) {
       result: null,
       summary: null
     };
+    publishEventState(message.nodeId, "OPEN", record.time, "发现异常：" + record.status, node.event.eventId);
   }
 
   updateCard(message.nodeId);
@@ -259,6 +270,76 @@ function formatNowLocal() {
     pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
 }
 
+// ---- A2 联动#1：外部（移动端）动作消息处理 ----
+// 本页自己的 fan_on/fan_off 已在 publishAction / publishFanOffAuto 本地完成状态处理，
+// 回环消息一律去重忽略；只有"外部来源（移动端）"的 fan_on 才进入状态机——
+// 移动端开风扇 → Dashboard 显示"处理中"（恢复仍仅由后续新数据触发，本函数不判恢复）
+function handleActionMessage(topic, text) {
+  try {
+    let message;
+    try {
+      message = JSON.parse(text);
+    } catch (err) {
+      drop("动作消息不是合法 JSON：" + text.slice(0, 80));
+      return;
+    }
+    if (typeof message !== "object" || message === null || Array.isArray(message)) {
+      drop("动作消息不是 JSON 对象：" + text.slice(0, 80));
+      return;
+    }
+    const topicNodeId = topic.split("/")[1];
+    if (message.nodeId !== topicNodeId) {
+      drop("动作串线拦截：topic=" + topic + " 但消息 nodeId=" + message.nodeId);
+      return;
+    }
+    if (NODE_IDS.indexOf(message.nodeId) < 0) {
+      drop("动作消息未知节点 " + message.nodeId);
+      return;
+    }
+    if (message.action !== "fan_on") {
+      return; // fan_off 回环 / 未知动作：本页本地逻辑已处理，忽略
+    }
+    const node = nodes[message.nodeId];
+    if (node.recovery && node.recovery.state === "processing") {
+      return; // 已处理中：自己发布后的回环或重复动作，去重忽略
+    }
+    // 外部来源（移动端）触发的处理动作：与 publishAction 的 fan_on 本地分支同语义
+    const actionTime = String(message.actionTime || formatNowLocal());
+    node.actionState = { nodeId: message.nodeId, action: "fan_on", actionTime: actionTime };
+    node.recovery = { state: "processing", actionTime: actionTime, normalStreak: 0 };
+    if (node.event) {
+      node.event.action = "fan_on";
+      node.event.actionTime = actionTime;
+    }
+    const evId = (node.event && node.event.eventId) || makeEventId(message.nodeId, actionTime);
+    publishEventState(message.nodeId, "HANDLING", actionTime, "已开启风扇，处理中（移动端触发）", evId);
+    console.log("[联动] 收到移动端发来的 fan_on: " + message.nodeId + "（" + actionTime + "）");
+    updateCard(message.nodeId);
+    if (message.nodeId === selectedNode) refreshActionBar();
+  } catch (err) {
+    drop("动作处理异常：" + err.message + "（" + text.slice(0, 60) + "）");
+  }
+}
+
+function makeEventId(nodeId, time) {
+  return nodeId + "-" + String(time).replace(/[^0-9]/g, "");
+}
+
+function publishEventState(nodeId, state, time, summary, eventId) {
+  // A3：事件状态经共享状态流广播（dormmate/{nodeId}/event），三端同源；
+  // eventId 由草稿开始时间派生，同一事件各状态共用，便于三端对齐
+  const payload = {
+    nodeId: nodeId,
+    eventId: eventId || makeEventId(nodeId, time),
+    state: state,
+    time: time,
+    summary: summary || ""
+  };
+  client.publish("dormmate/" + nodeId + "/event", JSON.stringify(payload), { qos: 0 }, function (err) {
+    if (err) showWarn("事件状态发布失败：" + err.message);
+  });
+}
+
 function publishAction(action) {
   // A2：动作经 MQTT 动作通道发布（dormmate/{nodeId}/action），simulator 与 three3d 同订阅响应；
   // 本地 actionState 只在发布成功后写入——与 A3 解耦：不因点击直接把状态改为"已恢复"
@@ -282,10 +363,14 @@ function publishAction(action) {
         nodes[nodeId].event.action = actionState.action;
         nodes[nodeId].event.actionTime = actionState.actionTime;
       }
+      const evId = (nodes[nodeId].event && nodes[nodeId].event.eventId) || makeEventId(nodeId, actionState.actionTime);
+      publishEventState(nodeId, "HANDLING", actionState.actionTime, "已开启风扇，处理中", evId);
     } else {
       // 手动关闭风扇不视为恢复，重置状态机（恢复必须由新数据触发）；放弃处理 → 丢弃草稿
+      const evId = (nodes[nodeId].event && nodes[nodeId].event.eventId) || makeEventId(nodeId, actionState.actionTime);
       nodes[nodeId].recovery = null;
       nodes[nodeId].event = null;
+      publishEventState(nodeId, "CANCELLED", actionState.actionTime, "已取消处理", evId);
     }
     updateCard(nodeId);
     refreshActionBar();
@@ -319,6 +404,7 @@ function finalizeEvent(nodeId, recoverTime) {
   events.push(ev);
   nodes[nodeId].event = null;
   renderEvents();
+  return ev;   // A3：返回定稿事件（含 eventId 与 summary），供 RECOVERED 广播使用
 }
 
 function renderEvents() {
@@ -480,6 +566,14 @@ function refreshPriority() {
   priorityBannerEl.textContent = result.reason;
   priorityBannerEl.className = "priority " + (result.nodeId ? "has" : "none");
   priorityBannerEl.hidden = false;
+  // A3 跨端广播：优先节点变化时发布 dormmate/priority（与横幅同源、程序计算；空串=无重点）
+  const winner = result.nodeId || "";
+  if (winner !== lastPriorityPublished) {
+    lastPriorityPublished = winner;
+    client.publish(PRIORITY_TOPIC, JSON.stringify({ nodeId: winner, reason: result.reason, time: formatNowLocal() }), { qos: 0 }, function (err) {
+      if (err) showWarn("优先状态发布失败：" + err.message);
+    });
+  }
   // A4：优先原因回填到当前优先节点的事件草稿（随横幅每次刷新更新，保持"当下判断"的原因；
   // 短语取横幅"优先关注 X：已连续…分钟"中的依据部分，与截图 A1 例句口径一致）
   if (result.nodeId && nodes[result.nodeId].event) {
@@ -504,11 +598,17 @@ client.on("connect", function () {
     client.subscribe(TOPIC, function (err) {
       if (err) showWarn("订阅失败：" + err.message);
     });
+    client.subscribe(ACTION_TOPIC, function (err) {
+      if (err) showWarn("动作订阅失败：" + err.message);
+    });
     return;
   }
   setConnState(true, "已连接 " + WS_URL);
   client.subscribe(TOPIC, function (err) {
     if (err) showWarn("订阅失败：" + err.message);
+  });
+  client.subscribe(ACTION_TOPIC, function (err) {
+    if (err) showWarn("动作订阅失败：" + err.message);
   });
 });
 client.on("reconnect", function () { setConnState(false, "已断开，重连中…"); });
@@ -516,7 +616,12 @@ client.on("close", function () { setConnState(false, "已断开，重连中…")
 client.on("error", function (err) { setConnState(false, "连接错误：" + err.message); });
 client.on("message", function (topic, payload) {
   // mqtt.js v5 浏览器端 payload 恒为 Uint8Array，单例 TextDecoder 解码
-  handleMessage(topic, utf8Decoder.decode(payload));
+  const text = utf8Decoder.decode(payload);
+  if (/^dormmate\/[^/]+\/action$/.test(topic)) {
+    handleActionMessage(topic, text);   // A2 联动#1：动作通道（外部 fan_on 进入状态机）
+  } else {
+    handleMessage(topic, text);
+  }
 });
 
 // ---- 渲染：三卡片与 tab 均建一次、增量更新（评审修复：不再每条消息全量重建 DOM）----
