@@ -23,15 +23,27 @@ const STATUS_STYLE = {
   "偏湿": { body: 0x16a085, light: 0x1abc9c, sphereY: 3.0, particles: "rain", particleColor: 0x5dade2 }
 };
 
+// E1 B1 优先光环：比选中环（1.8~2.1 金色）更大、橙色、位高 0.05 防 z-fight，呼吸脉冲在 updateDormAnimation
+const HALO_STYLE = { inner: 2.55, outer: 2.85, color: 0xe67e22, y: 0.05 };
+
 let scene, camera, renderer, controls;   // 任务书关键词：scene / camera / renderer
 let selectedNodeId = null;               // A1 预留：当前查看的是谁
 let priorityWinner = "";                 // A3：当前优先节点（来自 Dashboard 广播，本页只展示）
-const dormVisuals = {};                  // { nodeId: { group, status, sphereTargetY, bodyMat, sphere, sphereMat, pointLight, sign, signCtx, signTexture, particles, fanBlades, ring } }
+const dormVisuals = {};                  // { nodeId: { group, status, sphereTargetY, bodyMat, sphere, sphereMat, pointLight, sign, signCtx, signTexture, particles, fanBlades, ring, halo } }
 const nodes = {};                        // { nodeId: { latest, history[], actionState } }，history 上限 HISTORY_LIMIT（统一 JSON 六字段）
 NODE_IDS.forEach(function (id) { nodes[id] = { latest: null, history: [], actionState: null, eventState: null }; });
 // vendor 缺失防御：three.min.js 加载失败时顶层不抛 ReferenceError（降级横幅由启动调用处兜底）
 const raycaster = (typeof THREE !== "undefined") ? new THREE.Raycaster() : null;
 const clock = (typeof THREE !== "undefined") ? new THREE.Clock() : null;
+
+// E1 B3 镜头聚焦（手写 lerp，无 TWEEN；任务书 E1⑦ 视角切换亮点）
+const FOCUS_DEFAULT_CAM = (typeof THREE !== "undefined") ? new THREE.Vector3(0, 14, 22) : null;   // 默认总览机位（initScene 现值）
+const FOCUS_DEFAULT_TARGET = (typeof THREE !== "undefined") ? new THREE.Vector3(0, 3, 0) : null;
+const FOCUS_OFFSET_CAM = (typeof THREE !== "undefined") ? new THREE.Vector3(3.2, 6.8, 8.0) : null;   // 聚焦机位 = 楼体 x + 此偏移
+const FOCUS_OFFSET_TARGET = (typeof THREE !== "undefined") ? new THREE.Vector3(0, 2.2, 0) : null;
+let focusAnim = null;            // { cam: Vector3, ctrl: Vector3 }，null=无动画
+let focusedNodeId = null;        // 当前镜头聚焦的节点（null=默认总览）
+let userHasInteracted = false;   // 用户交互闸门：首次交互前优先变化只出光环不动镜头（阶段 A 验收依赖默认机位）
 
 // MQTT 连接与校验常量（与 dashboard/app.js 同款）
 const WS_URL = "ws://localhost:8083";   // WebSocket 端口（mosquitto.conf listener 8083 + protocol websockets）
@@ -40,6 +52,8 @@ const ACTION_TOPIC = "dormmate/+/action";   // A2 动作通道订阅（SPEC §9 
 const EVENT_TOPIC = "dormmate/+/event";     // A3 事件状态通道（Dashboard 状态机广播，本页只订阅展示）
 const PRIORITY_TOPIC = "dormmate/priority"; // A3 优先节点通道（Dashboard 广播，本页只订阅展示，不自行算优先规则）
 const EVENT_STATES = ["OPEN", "HANDLING", "RECOVERED", "CANCELLED"];
+const EVENT_LABEL = { OPEN: "待处理", HANDLING: "处理中", RECOVERED: "已恢复", CANCELLED: "已取消" };   // E1 B2：提升到模块级（标牌徽标+侧栏共用）
+const EVENT_BADGE_COLOR = { OPEN: "#4a90d9", HANDLING: "#e67e22", RECOVERED: "#27ae60", CANCELLED: "#888888" };   // E1 B2 徽标底色
 const VALID_ACTIONS = ["fan_on", "fan_off"];
 const REQUIRED_FIELDS = ["nodeId", "temperature", "humidity", "status", "time", "action"];
 const TIME_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;   // SPEC §4 time 全格式
@@ -59,6 +73,9 @@ const sideAdviceEl = document.getElementById("sideAdvice");
 const sideActionEl = document.getElementById("sideAction");
 const sideEventEl = document.getElementById("sideEvent");
 const sideTimeEl = document.getElementById("sideTime");
+const replayBtnEl = document.getElementById("replayBtn");
+const replaySpeedEl = document.getElementById("replaySpeed");
+const replayInfoEl = document.getElementById("replayInfo");
 const sideHistoryEl = document.getElementById("sideHistory");
 
 // 规则模块缺失防御（如 ../web/script.js 因 Live Server 工作区根目录不对而 404）：
@@ -138,6 +155,7 @@ function initScene() {
     controls.target.set(0, 3, 0);
     controls.enableDamping = true;                  // 惯性旋转更顺滑
     controls.maxPolarAngle = Math.PI / 2.1;         // 不钻到地面以下
+    controls.addEventListener("start", function () { userHasInteracted = true; });   // E1 B3：旋转/平移/缩放即打开交互闸门
   }
 
   // 灯光：环境光打底 + 方向光塑形
@@ -261,6 +279,17 @@ function buildDorm(nodeId, x) {
   tagDorm(ring, nodeId);   // 选中环同打标：点击可见的选中环=点自己宿舍，不误取消选中
   group.add(ring);
 
+  // E1 B1 优先光环（RingGeometry 贴地，默认隐藏；优先节点变化时 setPriorityHalo 显示，脉冲在 updateDormAnimation）
+  const halo = new THREE.Mesh(
+    new THREE.RingGeometry(HALO_STYLE.inner, HALO_STYLE.outer, 32),
+    new THREE.MeshBasicMaterial({ color: HALO_STYLE.color, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false })
+  );
+  halo.rotation.x = -Math.PI / 2;
+  halo.position.y = HALO_STYLE.y;
+  halo.visible = false;
+  tagDorm(halo, nodeId);   // 光环同打标：点击光环=点自己宿舍
+  group.add(halo);
+
   dormVisuals[nodeId] = {
     group: group,
     status: "正常",
@@ -275,9 +304,11 @@ function buildDorm(nodeId, x) {
     particles: particles,
     fanBlades: fanBlades,
     ring: ring,
+    halo: halo,              // E1 B1：优先光环（Dashboard 优先广播驱动）
     windows: windows,        // A2：窗 mesh 引用（通风联动）
     fanOn: false,            // A2：风扇是否运行（动作通道驱动）
-    windowTarget: 0          // A2：窗开合目标旋转（fan_on −0.7 / fan_off 0）
+    windowTarget: 0,         // A2：窗开合目标旋转（fan_on −0.7 / fan_off 0）
+    eventHandling: false     // E1 B2：事件处理中标志（粒子橙色加速）
   };
 }
 
@@ -290,12 +321,15 @@ function createSign(nodeId) {
   texture.encoding = THREE.sRGBEncoding;    // 与 renderer.outputEncoding 一致，避免 canvas sRGB 颜色被双重伽马发白（r128 纹理默认 LinearEncoding）
   texture.minFilter = THREE.LinearFilter;   // 防小字发糊（默认 mipmap 会让文字变糊）
   texture.generateMipmaps = false;
-  drawSign(nodeId, null, ctx, texture);
+  drawSign(nodeId, null, null, ctx, texture);
+  canvas.id = "signCanvas-" + nodeId;   // E1 B2 验收断言：测试经 getImageData 直读徽标像素（隐藏挂载，不参与布局）
+  canvas.style.display = "none";
+  document.body.appendChild(canvas);
   return { canvas: canvas, ctx: ctx, texture: texture };
 }
 
-function drawSign(nodeId, record, ctx, texture) {
-  // 标牌四行：nodeId·状态 / 温湿度 / 建议（window.ADVICE 查表）/ 时间
+function drawSign(nodeId, record, event, ctx, texture) {
+  // 标牌四行：nodeId·状态 / 温湿度 / 建议（window.ADVICE 查表）/ 时间；E1 B2 事件徽标在右上角
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, 512, 256);
   ctx.fillStyle = "#2c3e50";
@@ -315,6 +349,15 @@ function drawSign(nodeId, record, ctx, texture) {
     ctx.font = '36px "Microsoft YaHei", sans-serif';
     ctx.fillStyle = "#555555";
     ctx.fillText("等待数据…", 256, 130);
+  }
+  // E1 B2 事件徽标：右上角色块 + 白字（OPEN 蓝/HANDLING 橙/RECOVERED 绿/CANCELLED 灰），无事件不画
+  if (event && event.state) {
+    ctx.fillStyle = EVENT_BADGE_COLOR[event.state] || "#888888";
+    ctx.fillRect(352, 12, 148, 46);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = 'bold 26px "Microsoft YaHei", sans-serif';
+    ctx.textAlign = "center";
+    ctx.fillText(EVENT_LABEL[event.state] || event.state, 426, 44);
   }
   texture.needsUpdate = true;   // CanvasTexture 更新后必须标记，否则画面不刷新（易漏点）
 }
@@ -348,6 +391,32 @@ function setDormStatus(nodeId, status) {
   v.particles.material.color.setHex(style.particleColor);
 }
 
+function applyEventVisuals(nodeId) {
+  // E1 B2：处理中事件 -> 粒子变橙（updateDormAnimation 里 speed*2.2 加速）；其他事件/无事件按状态本色
+  const v = dormVisuals[nodeId];
+  if (!v) { return; }
+  if (replay.active && replay.nodeId === nodeId) { return; }   // E1 B4：回放中粒子由历史帧驱动
+  const evt = nodes[nodeId].eventState;
+  v.eventHandling = !!(evt && evt.state === "HANDLING");
+  v.particles.material.color.setHex(v.eventHandling ? 0xe67e22 : STATUS_STYLE[v.status].particleColor);
+}
+
+function updateSignForNode(nodeId) {
+  // E1 B2：事件变化时按最新数据+事件态重绘标牌（仅事件变化、无新 env 到达时徽标也要刷新——本阶段的坑）
+  const v = dormVisuals[nodeId];
+  const node = nodes[nodeId];
+  if (!v || !node) { return; }
+  if (replay.active && replay.nodeId === nodeId) { return; }   // E1 B4：回放中标牌由历史帧驱动（#sideEvent 侧栏仍实时）
+  const r = node.latest;
+  const evt = node.eventState;
+  const signKey = (r ? r.status + "|" + r.temperature + "|" + r.humidity + "|" + r.time : "none") +
+    "|" + (evt ? evt.state + "|" + evt.eventId : "");
+  if (v.lastSignKey !== signKey) {
+    v.lastSignKey = signKey;
+    drawSign(nodeId, r, evt, v.signCtx, v.signTexture);
+  }
+}
+
 let sceneUnavailableWarned = false;   // 场景未初始化（无 WebGL）时只提示+计数一次，防每条消息刷屏（评审修复）
 
 function updateScene(nodeId, record) {
@@ -374,15 +443,82 @@ function updateScene(nodeId, record) {
   node.latest = rec;
   node.history.push(rec);
   if (node.history.length > HISTORY_LIMIT) { node.history.shift(); }   // 裁剪最旧，防内存增长（A1 复用口径）
-  setDormStatus(nodeId, status);
-  // 标牌内容未变时跳过重绘（CanvasTexture 更新会整张重传 GPU，热路径省一次是一次，评审修复）
-  const signKey = status + "|" + record.temperature + "|" + record.humidity + "|" + record.time;
-  if (v.lastSignKey !== signKey) {
-    v.lastSignKey = signKey;
-    drawSign(nodeId, rec, v.signCtx, v.signTexture);
+  // E1 B4：回放中该节点视觉由回放帧驱动——实时数据只进 latest/history（零丢失），停止时以最新态恢复
+  if (!(replay.active && replay.nodeId === nodeId)) {
+    setDormStatus(nodeId, status);
+    applyEventVisuals(nodeId);   // E1 B2：状态变化后按事件态重定粒子色（防新状态把处理中橙色覆盖回本色）
+    // 标牌内容未变时跳过重绘（CanvasTexture 更新会整张重传 GPU，热路径省一次是一次，评审修复）
+    // E1 B2：signKey 并入事件态——否则仅事件变化时徽标不刷新
+    const evt = node.eventState;
+    const signKey = status + "|" + record.temperature + "|" + record.humidity + "|" + record.time +
+      "|" + (evt ? evt.state + "|" + evt.eventId : "");
+    if (v.lastSignKey !== signKey) {
+      v.lastSignKey = signKey;
+      drawSign(nodeId, rec, evt, v.signCtx, v.signTexture);
+    }
   }
   if (selectedNodeId === nodeId) { renderSidebar(); }
 }
+
+// ---- E1 B4 事件回放：按时间轴重放每节点最近 N 条 env（历史帧驱动楼色/粒子/标牌；实时数据照常进缓存）----
+const REPLAY_BASE_INTERVAL = 500;   // 1× = 500ms/帧（压缩基线），4× = 125ms，8× ≈ 63ms
+const replay = { active: false, nodeId: null, frames: [], index: 0, timer: null };
+
+function applyReplayFrame(rec) {
+  const v = dormVisuals[replay.nodeId];
+  if (!v || !rec) { return; }
+  setDormStatus(replay.nodeId, rec.status);   // 复用状态映射全套（楼色/指示球/粒子）
+  v.lastSignKey = null;                       // 强制重绘标牌为历史帧（徽标是实时事件态，历史帧不画）
+  drawSign(replay.nodeId, rec, null, v.signCtx, v.signTexture);
+  if (selectedNodeId === replay.nodeId) { renderSidebar(); }
+}
+
+function startReplay(nodeId) {
+  const node = nodes[nodeId];
+  if (!node || node.history.length < 2) {
+    showWarn("该节点历史记录不足 2 条，无法回放");
+    return;
+  }
+  if (replay.active) { stopReplay(); }
+  replay.active = true;
+  replay.nodeId = nodeId;
+  replay.frames = node.history.slice();   // 快照：回放期实时消息只进缓存，不搅动 frames
+  replay.index = 0;
+  applyReplayFrame(replay.frames[0]);
+  const speed = parseInt(replaySpeedEl.value, 10) || 4;
+  replay.timer = setInterval(function () {
+    replay.index++;
+    if (replay.index >= replay.frames.length) {
+      stopReplay();   // 到尾自动停止，回到实时
+      return;
+    }
+    applyReplayFrame(replay.frames[replay.index]);
+  }, Math.round(REPLAY_BASE_INTERVAL / speed));
+}
+
+function stopReplay() {
+  if (!replay.active) { return; }
+  if (replay.timer) { clearInterval(replay.timer); replay.timer = null; }
+  const nodeId = replay.nodeId;
+  replay.active = false;
+  replay.nodeId = null;
+  replay.frames = [];
+  replay.index = 0;
+  // 恢复实时态：以最新缓存重建视觉（回放期数据零丢失）
+  const v = dormVisuals[nodeId];
+  const node = nodes[nodeId];
+  if (v && node && node.latest) {
+    setDormStatus(nodeId, node.latest.status);
+  }
+  applyEventVisuals(nodeId);
+  updateSignForNode(nodeId);
+  renderSidebar();
+}
+
+replayBtnEl.addEventListener("click", function () {
+  if (replay.active) { stopReplay(); }
+  else if (selectedNodeId) { startReplay(selectedNodeId); }
+});
 
 function setDormAction(nodeId, action) {
   // A2 动作联动：fan_on 风扇转动 + 窗开（通风）；fan_off 停止并关窗。
@@ -399,6 +535,24 @@ function animate() {
   requestAnimationFrame(animate);
   if (document.hidden) { return; }   // 标签页隐藏时不渲染，省 GPU（dt 有 0.1 上限，恢复无跳变，评审修复）
   const dt = Math.min(clock.getDelta(), 0.1);
+  // E1 B3 聚焦 lerp（在 controls.update 之前：controls 每帧从当前 camera.position 重算球坐标，跟随无回跳）
+  if (focusAnim) {
+    const k = Math.min(1, dt * 3.5);   // 时间常数 ~0.29s，约 1.3s 视觉到位
+    camera.position.lerp(focusAnim.cam, k);
+    if (controls) {
+      controls.target.lerp(focusAnim.ctrl, k);
+    } else {
+      camera.lookAt(focusAnim.ctrl);   // OrbitControls 缺失时降级
+    }
+    if (camera.position.distanceTo(focusAnim.cam) < 0.05 &&
+        (!controls || controls.target.distanceTo(focusAnim.ctrl) < 0.05)) {
+      camera.position.copy(focusAnim.cam);
+      if (controls) { controls.target.copy(focusAnim.ctrl); }
+      focusAnim = null;   // 贴齐结束
+      document.body.dataset.focusAnimating = "";              // E1 B3 验收钩子：动画结束
+      document.body.dataset.focusNode = focusedNodeId || "";  // 镜头已落在该节点（null=总览）
+    }
+  }
   NODE_IDS.forEach(function (id) { updateDormAnimation(id, dt); });
   if (controls) { controls.update(); }   // OrbitControls 缺失（vendor 加载失败）时跳过，页面仍可渲染
   renderer.render(scene, camera);
@@ -415,6 +569,7 @@ function updateDormAnimation(nodeId, dt) {
   else if (p.mode === "rain") { dir = -1; speed = 2.4; }
   else if (p.mode === "heat") { dir = 1; speed = 1.4; }
   else { dir = 1; speed = 0.25; }   // calm
+  if (v.eventHandling) { speed *= 2.2; }   // E1 B2：处理中粒子加速（方向不变，颜色由 applyEventVisuals 置橙）
   for (let i = 0; i < p.positions.length; i += 3) {
     let y = p.positions[i + 1] + dir * speed * dt;
     if (y > yMax) { y = yMin; }
@@ -431,6 +586,15 @@ function updateDormAnimation(nodeId, dt) {
     v.sphere.scale.setScalar(1 + Math.sin(clock.elapsedTime * 4) * 0.08);
   }
 
+  // E1 B1 优先光环呼吸脉冲：缩放+透明度（2.5 rad/s，与指示球 4 rad/s 错开）；隐藏时复位缩放
+  if (v.halo.visible) {
+    const phase = Math.sin(clock.elapsedTime * 2.5);
+    v.halo.scale.setScalar(1 + phase * 0.12);
+    v.halo.material.opacity = 0.45 + (0.5 + 0.5 * phase) * 0.35;
+  } else if (v.halo.scale.x !== 1) {
+    v.halo.scale.setScalar(1);
+  }
+
   // A2 动作联动：fan_on 风扇叶片持续转动 + 窗开（通风）；fan_off 停止并关窗（lerp 平滑过渡）
   if (v.fanOn) { v.fanBlades.rotation.y += 3.5 * dt; }
   v.windows.forEach(function (win) {
@@ -445,6 +609,7 @@ let pointerDownButton = -1;
 function bindPointerSelect() {
   const el = renderer.domElement;
   el.addEventListener("pointerdown", function (e) {
+    if (focusAnim) { focusAnim = null; document.body.dataset.focusAnimating = ""; }   // E1 B3：按住画布立即中止聚焦 lerp，OrbitControls 接管同一拖拽（不吞输入、无抖动）
     if (e.pointerType === "touch" || e.pointerType === "pen") { e.preventDefault(); }   // 触摸手势不交给浏览器默认行为（防边缘滑动=返回，S6 修复）
     pointerDownPos = { x: e.clientX, y: e.clientY };
     pointerDownButton = e.button;
@@ -480,14 +645,46 @@ function handleClick(e) {
   if (selectedNodeId) { selectDorm(null); }   // 点中地面/空白 → 取消选中
 }
 
+function focusBuilding(nodeId) {
+  // E1 B3：镜头平滑飞到目标楼（点击选中 / 优先变化触发）；null 回默认总览。
+  // 手写 lerp 在 animate 里执行；controls 全程 enabled——用户拖拽时 pointerdown 立即中止动画并由 OrbitControls 接管
+  if (!camera || !FOCUS_DEFAULT_CAM) { return; }
+  if (focusAnim || focusedNodeId === nodeId) { return; }   // 动画中不抢镜头；同焦点不重复
+  const camTarget = new THREE.Vector3();
+  const ctrlTarget = new THREE.Vector3();
+  if (nodeId && dormVisuals[nodeId]) {
+    const bx = dormVisuals[nodeId].group.position.x;
+    camTarget.set(FOCUS_OFFSET_CAM.x + bx, FOCUS_OFFSET_CAM.y, FOCUS_OFFSET_CAM.z);
+    ctrlTarget.set(bx, FOCUS_OFFSET_TARGET.y, 0);
+  } else {
+    camTarget.copy(FOCUS_DEFAULT_CAM);
+    ctrlTarget.copy(FOCUS_DEFAULT_TARGET);
+  }
+  focusedNodeId = nodeId || null;
+  focusAnim = { cam: camTarget, ctrl: ctrlTarget };
+  document.body.dataset.focusAnimating = "1";                 // E1 B3 验收钩子：动画进行中
+  document.body.dataset.focusTarget = nodeId || "";           // 本次聚焦目标（中止时也不清，供断言对照）
+}
+
 function selectDorm(nodeId) {
+  if (replay.active) { stopReplay(); }   // E1 B4：切楼即停回放、恢复实时态（简单可预测）
+  userHasInteracted = true;   // E1 B3：点击即打开交互闸门（优先变化自动聚焦从此启用）
   NODE_IDS.forEach(function (id) {
     const v = dormVisuals[id];
     v.ring.visible = id === nodeId;
     v.bodyMat.emissive.setHex(id === nodeId ? 0x222222 : 0x000000);   // 选中楼整体提亮
   });
   selectedNodeId = nodeId;
+  focusBuilding(nodeId);   // E1 B3：null -> 回默认总览
   renderSidebar();
+}
+
+function setPriorityHalo(nodeId) {
+  // E1 B1：优先节点地面光环（Dashboard 广播驱动，本页只展示不自行算优先规则）
+  NODE_IDS.forEach(function (id) {
+    dormVisuals[id].halo.visible = (id === nodeId && nodeId !== "");
+  });
+  document.body.dataset.priorityHalo = nodeId || "";   // 验收断言钩子（canvas 内物体 DOM 不可查）
 }
 
 function renderSidebar() {
@@ -501,26 +698,33 @@ function renderSidebar() {
     sideEventEl.textContent = "";
     sideTimeEl.textContent = "";
     sideHistoryEl.innerHTML = "";
+    replayBtnEl.textContent = "回放";                       // E1 B4：未选中时回放条复位
+    replayBtnEl.classList.remove("replay-stop");
+    replayBtnEl.disabled = true;
+    replaySpeedEl.disabled = false;
+    replayInfoEl.textContent = "";
     return;
   }
   const node = nodes[selectedNodeId];
   const r = node && node.latest;
+  // E1 B4：回放中 status/metrics/advice/time 显示回放帧；#sideEvent/#sideAction 保持实时（用户要求 2）
+  const rep = (replay.active && replay.nodeId === selectedNodeId) ? replay : null;
+  const shown = rep ? rep.frames[rep.index] : r;
   sideNodeIdEl.textContent = selectedNodeId + (priorityWinner === selectedNodeId ? " ★当前重点" : "");
   // A3 事件行：Dashboard 状态机广播（OPEN/HANDLING/RECOVERED/CANCELLED），本页只展示不自行判断
   const evt = node.eventState;
-  const EVENT_LABEL = { OPEN: "待处理", HANDLING: "处理中", RECOVERED: "已恢复", CANCELLED: "已取消" };
   sideEventEl.textContent = evt
     ? ("事件：" + (EVENT_LABEL[evt.state] || evt.state) + (evt.time ? "（" + evt.time.slice(11) + "）" : ""))
     : "";
   // A2 动作行：显示该节点当前动作状态（fan_on 风扇运行中 / fan_off 已停止），与 Dashboard 动作条同源（MQTT 动作通道）
   const st = node.actionState;
   sideActionEl.textContent = st ? (st.action === "fan_on" ? "风扇运行中（" + st.actionTime.slice(11) + "）" : "风扇已停止") : "";
-  if (r) {
-    sideStatusEl.textContent = r.status;
-    sideStatusEl.className = "side-status " + r.status;   // 颜色类随状态切换（与 dashboard 卡片同款）
-    sideMetricsEl.textContent = r.temperature + "℃ / " + r.humidity + "%";
-    sideAdviceEl.textContent = window.ADVICE[r.status];   // 建议查表渲染（与 web/script.js 同一来源）
-    sideTimeEl.textContent = r.time;
+  if (shown) {
+    sideStatusEl.textContent = shown.status;
+    sideStatusEl.className = "side-status " + shown.status;   // 颜色类随状态切换（与 dashboard 卡片同款）
+    sideMetricsEl.textContent = shown.temperature + "℃ / " + shown.humidity + "%";
+    sideAdviceEl.textContent = window.ADVICE[shown.status];   // 建议查表渲染（与 web/script.js 同一来源）
+    sideTimeEl.textContent = shown.time;
     sideHistoryEl.innerHTML = "";
     node.history.slice(-5).reverse().forEach(function (h) {
       const li = document.createElement("li");
@@ -534,6 +738,21 @@ function renderSidebar() {
     sideAdviceEl.textContent = "";
     sideTimeEl.textContent = "";
     sideHistoryEl.innerHTML = "";
+  }
+  // E1 B4 回放条状态：回放中=停止按钮（橙色实底显眼）；空闲=可回放/不可回放
+  if (rep) {
+    replayBtnEl.textContent = "■ 停止回放";
+    replayBtnEl.classList.add("replay-stop");
+    replayBtnEl.disabled = false;
+    replaySpeedEl.disabled = true;
+    replayInfoEl.textContent = "历史回放中：第 " + (rep.index + 1) + "/" + rep.frames.length + " 条 · " +
+      (shown.time ? shown.time.slice(11) : "");
+  } else {
+    replayBtnEl.textContent = "回放";
+    replayBtnEl.classList.remove("replay-stop");
+    replayBtnEl.disabled = !(r && node.history.length >= 2);
+    replaySpeedEl.disabled = false;
+    replayInfoEl.textContent = "";
   }
 }
 
@@ -607,6 +826,10 @@ function handleEventMessage(topic, text) {
     time: message.time || "",
     summary: message.summary || ""
   };
+  // E1 B2：事件态驱动标牌徽标 + 粒子（处理中橙色加速）；钩子供验收断言
+  updateSignForNode(message.nodeId);
+  applyEventVisuals(message.nodeId);
+  document.body.dataset.eventBadge = message.nodeId + "|" + message.state;
   if (selectedNodeId === message.nodeId) renderSidebar();
 }
 
@@ -628,6 +851,11 @@ function handlePriorityMessage(topic, text) {
     return;
   }
   priorityWinner = message.nodeId;
+  setPriorityHalo(priorityWinner);
+  // E1 B3：优先变化自动聚焦（交互闸门：首次交互前只出光环不动镜头；同焦点/动画中不抢）
+  if (userHasInteracted && message.nodeId !== "" && !focusAnim) {
+    focusBuilding(message.nodeId);
+  }
   renderSidebar();
 }
 

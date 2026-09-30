@@ -121,3 +121,40 @@ body {
 .demo-buttons button:hover { border-color: var(--blue); color: var(--blue); }
 
 .hint { color: #aaa; font-size: 12px; margin-top: 12px; }
+
+/* E1 B4 事件回放条 */
+.replay-box {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.replay-box button {
+  flex: 1;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  background: var(--card);
+  padding: 6px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.replay-box button:disabled { opacity: 0.45; cursor: default; }
+
+.replay-box button.replay-stop {   /* 回放中：橙色实底，显眼防误以为卡死（用户要求） */
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+  font-weight: bold;
+}
+
+.replay-box select {
+  border: 1px solid #ddd;
+  background: var(--card);
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
+.replay-info { color: var(--orange); font-size: 12px; margin-top: 6px; }

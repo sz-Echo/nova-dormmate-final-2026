@@ -31,6 +31,16 @@
     <div id="sideTime" class="side-time"></div>
     <h3>最近记录</h3>
     <ul id="sideHistory"></ul>
+    <h3>事件回放（E1）</h3>
+    <div id="replayBox" class="replay-box">
+      <button id="replayBtn" disabled>回放</button>
+      <select id="replaySpeed">
+        <option value="1">1×</option>
+        <option value="4" selected>4×</option>
+        <option value="8">8×</option>
+      </select>
+    </div>
+    <p id="replayInfo" class="replay-info"></p>
     <h3>演示（SPEC §6 四组回归，作用于选中楼）</h3>
     <div id="demoButtons" class="demo-buttons">
       <button data-temp="25" data-hum="60">25/60 正常</button>
