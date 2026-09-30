@@ -25,9 +25,10 @@ const STATUS_STYLE = {
 
 let scene, camera, renderer, controls;   // 任务书关键词：scene / camera / renderer
 let selectedNodeId = null;               // A1 预留：当前查看的是谁
+let priorityWinner = "";                 // A3：当前优先节点（来自 Dashboard 广播，本页只展示）
 const dormVisuals = {};                  // { nodeId: { group, status, sphereTargetY, bodyMat, sphere, sphereMat, pointLight, sign, signCtx, signTexture, particles, fanBlades, ring } }
 const nodes = {};                        // { nodeId: { latest, history[], actionState } }，history 上限 HISTORY_LIMIT（统一 JSON 六字段）
-NODE_IDS.forEach(function (id) { nodes[id] = { latest: null, history: [], actionState: null }; });
+NODE_IDS.forEach(function (id) { nodes[id] = { latest: null, history: [], actionState: null, eventState: null }; });
 // vendor 缺失防御：three.min.js 加载失败时顶层不抛 ReferenceError（降级横幅由启动调用处兜底）
 const raycaster = (typeof THREE !== "undefined") ? new THREE.Raycaster() : null;
 const clock = (typeof THREE !== "undefined") ? new THREE.Clock() : null;
@@ -36,6 +37,9 @@ const clock = (typeof THREE !== "undefined") ? new THREE.Clock() : null;
 const WS_URL = "ws://localhost:8083";   // WebSocket 端口（mosquitto.conf listener 8083 + protocol websockets）
 const TOPIC = "dormmate/+/env";         // 三节点订阅（SPEC §8：dormmate/{nodeId}/env）
 const ACTION_TOPIC = "dormmate/+/action";   // A2 动作通道订阅（SPEC §9 A2 / MASTER_PLAN §6.1）
+const EVENT_TOPIC = "dormmate/+/event";     // A3 事件状态通道（Dashboard 状态机广播，本页只订阅展示）
+const PRIORITY_TOPIC = "dormmate/priority"; // A3 优先节点通道（Dashboard 广播，本页只订阅展示，不自行算优先规则）
+const EVENT_STATES = ["OPEN", "HANDLING", "RECOVERED", "CANCELLED"];
 const VALID_ACTIONS = ["fan_on", "fan_off"];
 const REQUIRED_FIELDS = ["nodeId", "temperature", "humidity", "status", "time", "action"];
 const TIME_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;   // SPEC §4 time 全格式
@@ -53,6 +57,7 @@ const sideStatusEl = document.getElementById("sideStatus");
 const sideMetricsEl = document.getElementById("sideMetrics");
 const sideAdviceEl = document.getElementById("sideAdvice");
 const sideActionEl = document.getElementById("sideAction");
+const sideEventEl = document.getElementById("sideEvent");
 const sideTimeEl = document.getElementById("sideTime");
 const sideHistoryEl = document.getElementById("sideHistory");
 
@@ -493,13 +498,20 @@ function renderSidebar() {
     sideMetricsEl.textContent = "点击一栋楼查看详情";
     sideAdviceEl.textContent = "";
     sideActionEl.textContent = "";
+    sideEventEl.textContent = "";
     sideTimeEl.textContent = "";
     sideHistoryEl.innerHTML = "";
     return;
   }
   const node = nodes[selectedNodeId];
   const r = node && node.latest;
-  sideNodeIdEl.textContent = selectedNodeId;
+  sideNodeIdEl.textContent = selectedNodeId + (priorityWinner === selectedNodeId ? " ★当前重点" : "");
+  // A3 事件行：Dashboard 状态机广播（OPEN/HANDLING/RECOVERED/CANCELLED），本页只展示不自行判断
+  const evt = node.eventState;
+  const EVENT_LABEL = { OPEN: "待处理", HANDLING: "处理中", RECOVERED: "已恢复", CANCELLED: "已取消" };
+  sideEventEl.textContent = evt
+    ? ("事件：" + (EVENT_LABEL[evt.state] || evt.state) + (evt.time ? "（" + evt.time.slice(11) + "）" : ""))
+    : "";
   // A2 动作行：显示该节点当前动作状态（fan_on 风扇运行中 / fan_off 已停止），与 Dashboard 动作条同源（MQTT 动作通道）
   const st = node.actionState;
   sideActionEl.textContent = st ? (st.action === "fan_on" ? "风扇运行中（" + st.actionTime.slice(11) + "）" : "风扇已停止") : "";
@@ -560,6 +572,63 @@ function handleActionMessage(topic, text) {
     actionTime: message.actionTime || ""
   };
   setDormAction(message.nodeId, message.action);
+}
+
+// ---- A3 事件状态通道：Dashboard 状态机广播（OPEN/HANDLING/RECOVERED/CANCELLED），本页订阅展示不自行判断 ----
+function handleEventMessage(topic, text) {
+  const parts = topic.split("/");
+  if (parts.length !== 3 || parts[0] !== "dormmate" || parts[2] !== "event") {
+    drop("事件消息 topic 非法：" + topic);
+    return;
+  }
+  const topicNodeId = parts[1];
+  let message;
+  try {
+    message = JSON.parse(text);
+  } catch (err) {
+    drop("事件消息不是合法 JSON：" + text.slice(0, 80));
+    return;
+  }
+  if (typeof message !== "object" || message === null || Array.isArray(message)) {
+    drop("事件消息不是 JSON 对象：" + text.slice(0, 80));
+    return;
+  }
+  if (message.nodeId !== topicNodeId) {
+    drop("事件串线拦截：topic=" + topic + " 但消息 nodeId=" + message.nodeId);
+    return;
+  }
+  if (NODE_IDS.indexOf(message.nodeId) < 0 || EVENT_STATES.indexOf(message.state) < 0) {
+    drop("事件消息节点/状态值非法：" + text.slice(0, 80));
+    return;
+  }
+  nodes[message.nodeId].eventState = {
+    eventId: message.eventId || "",
+    state: message.state,
+    time: message.time || "",
+    summary: message.summary || ""
+  };
+  if (selectedNodeId === message.nodeId) renderSidebar();
+}
+
+// ---- A3 优先节点通道：Dashboard 广播（程序计算，本页不自行算优先规则，只展示）----
+function handlePriorityMessage(topic, text) {
+  let message;
+  try {
+    message = JSON.parse(text);
+  } catch (err) {
+    drop("优先消息不是合法 JSON：" + text.slice(0, 80));
+    return;
+  }
+  if (typeof message !== "object" || message === null || Array.isArray(message) || typeof message.nodeId !== "string") {
+    drop("优先消息格式非法：" + text.slice(0, 80));
+    return;
+  }
+  if (message.nodeId !== "" && NODE_IDS.indexOf(message.nodeId) < 0) {
+    drop("优先消息未知节点 " + message.nodeId);
+    return;
+  }
+  priorityWinner = message.nodeId;
+  renderSidebar();
 }
 
 // ---- MQTT 实时驱动（校验链与 dashboard/app.js 同序同款：容错 -> 守卫 -> 字段 -> 范围 -> 串线 -> 重算）----
@@ -662,6 +731,12 @@ client.on("connect", function () {
     client.subscribe(ACTION_TOPIC, function (err) {
       if (err) { showWarn("动作通道订阅失败：" + err.message); }
     });
+    client.subscribe(EVENT_TOPIC, function (err) {
+      if (err) { showWarn("事件通道订阅失败：" + err.message); }
+    });
+    client.subscribe(PRIORITY_TOPIC, function (err) {
+      if (err) { showWarn("优先通道订阅失败：" + err.message); }
+    });
     return;
   }
   setConnState(true, "已连接 " + WS_URL);
@@ -671,6 +746,12 @@ client.on("connect", function () {
   client.subscribe(ACTION_TOPIC, function (err) {
     if (err) { showWarn("动作通道订阅失败：" + err.message); }
   });
+  client.subscribe(EVENT_TOPIC, function (err) {
+    if (err) { showWarn("事件通道订阅失败：" + err.message); }
+  });
+  client.subscribe(PRIORITY_TOPIC, function (err) {
+    if (err) { showWarn("优先通道订阅失败：" + err.message); }
+  });
 });
 client.on("reconnect", function () { setConnState(false, "已断开，重连中…"); });
 client.on("close", function () { setConnState(false, "已断开，重连中…"); });
@@ -678,7 +759,9 @@ client.on("error", function (err) { setConnState(false, "连接错误：" + err.
 client.on("message", function (topic, payload) {
   // mqtt.js v5 浏览器端 payload 恒为 Uint8Array，单例 TextDecoder 解码
   const text = utf8Decoder.decode(payload);
-  if (topic.split("/")[2] === "action") { handleActionMessage(topic, text); }   // A 组动作通道
+  if (topic === PRIORITY_TOPIC) { handlePriorityMessage(topic, text); }              // A3 优先节点通道
+  else if (topic.split("/")[2] === "action") { handleActionMessage(topic, text); }   // A 组动作通道
+  else if (topic.split("/")[2] === "event") { handleEventMessage(topic, text); }     // A3 事件状态通道
   else { handleMessage(topic, text); }
 });
 }   // typeof mqtt 守卫结束
