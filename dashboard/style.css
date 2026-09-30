@@ -205,6 +205,53 @@ body {
 
 .action-state { color: var(--orange); font-weight: bold; }
 
+/* E2 语音命令条（dash 前缀 id：防与 web/script.js 绑定的 #voiceCommand/#voiceResult/#cameraVideo 冲突） */
+.voice-area {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-top: 14px;
+}
+
+.voice-area h2 { font-size: 16px; margin: 0 0 8px; }
+
+.voice-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.voice-bar input {
+  flex: 1;
+  min-width: 260px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.voice-camera-state { color: var(--teal); font-size: 13px; }
+
+.camera-stop {
+  border: 1px solid var(--red);
+  color: var(--red);
+  background: var(--card);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+#dashCameraVideo {
+  width: 320px;
+  max-width: 100%;
+  border-radius: 6px;
+  margin-top: 8px;
+  display: block;
+}
+
+.voice-hint { color: #aaa; font-size: 12px; margin-top: 8px; }
+.voice-hint.error { color: var(--red); font-weight: bold; }
+
+/* E2 事件卡片里的快照引用 */
+.event-snap { color: var(--teal); }
+
 .card .action {
   color: var(--orange);
   font-size: 13px;

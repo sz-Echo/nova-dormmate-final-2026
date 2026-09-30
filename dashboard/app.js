@@ -58,6 +58,11 @@ const fanOffBtn = document.getElementById("fanOffBtn");
 const actionStateTextEl = document.getElementById("actionStateText");
 const eventListEl = document.getElementById("eventList");
 const exportEventsBtn = document.getElementById("exportEventsBtn");
+const dashVoiceCommandEl = document.getElementById("dashVoiceCommand");
+const dashVoiceResultEl = document.getElementById("dashVoiceResult");
+const dashCameraVideoEl = document.getElementById("dashCameraVideo");
+const dashCameraStateEl = document.getElementById("dashCameraState");
+const dashCameraStopBtnEl = document.getElementById("dashCameraStopBtn");
 
 function setConnState(online, text) {
   connStatusEl.textContent = text;
@@ -417,6 +422,12 @@ function renderEvents() {
   events.forEach(function (ev) {
     const li = document.createElement("li");
     li.textContent = ev.summary || (ev.nodeId + " " + ev.startTime + " " + ev.problem);
+    if (ev.snapshot) {
+      const span = document.createElement("span");   // E2：事件关联快照引用（文件名含 eventId）
+      span.className = "event-snap";
+      span.textContent = " · 现场快照：" + ev.snapshot;
+      li.appendChild(span);
+    }
     eventListEl.appendChild(li);
   });
 }
@@ -496,6 +507,187 @@ function speakOverview() {
   window.speechSynthesis.speak(utterance);
 }
 speakOverviewBtn.addEventListener("click", speakOverview);
+
+// ---- E2 语音命令条：Win+H 等价 ASR（识别文字进输入框 -> Enter/失焦 -> 精确匹配指令），web/script.js 同款模式 ----
+let dashCameraStream = null;
+let lastVoiceAttemptText = "";
+
+function showVoiceResult(text, isError) {
+  dashVoiceResultEl.textContent = text;
+  dashVoiceResultEl.classList.toggle("error", !!isError);
+}
+
+function speakSelectedNode() {
+  // E2 朗读状态：TTS 读选中节点最新 MQTT 记录（真实节点数据，非单机表单）
+  if (!("speechSynthesis" in window) || !window.speechSynthesis) {
+    showWarn("浏览器不支持语音合成（speechSynthesis）——请使用 Chrome / Edge");
+    return false;
+  }
+  const r = nodes[selectedNode].latest;
+  if (!r) {
+    showWarn("选中节点暂无实时数据，无法朗读");
+    return false;
+  }
+  const text = selectedNode + "当前" + r.status + "：温度" + r.temperature + "摄氏度，湿度百分之" + r.humidity +
+    "，建议" + window.ADVICE[r.status];
+  window.speechSynthesis.cancel();   // 重复指令从头朗读，不叠加（同款做法）
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "zh-CN";
+  document.body.dataset.lastSpoken = text;   // E2 验收钩子：headless 无音频设备，钩子证明朗读内容来自选中节点真实记录
+  window.speechSynthesis.speak(utterance);
+  return true;
+}
+
+async function ensureDashCamera() {
+  // 入口先查 mediaDevices 可用性（用户要求 3）；不可用报错并附引导
+  if (dashCameraStream) { return true; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showVoiceResult("当前环境不支持摄像头——请在 localhost 或 https 下打开，并允许摄像头权限", true);
+    return false;
+  }
+  try {
+    dashCameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    dashCameraVideoEl.srcObject = dashCameraStream;
+    dashCameraVideoEl.hidden = false;
+    dashCameraStateEl.textContent = "摄像头已开启";
+    dashCameraStopBtnEl.hidden = false;
+    return true;
+  } catch (err) {
+    showVoiceResult("无法打开摄像头：" + (err.name || "未知错误") + "——请在 localhost 或 https 下打开，并允许摄像头权限", true);
+    return false;
+  }
+}
+
+function stopDashCamera() {
+  if (dashCameraStream) {
+    dashCameraStream.getTracks().forEach(function (track) { track.stop(); });
+    dashCameraStream = null;
+  }
+  dashCameraVideoEl.srcObject = null;
+  dashCameraVideoEl.hidden = true;
+  dashCameraStateEl.textContent = "";
+  dashCameraStopBtnEl.hidden = true;
+}
+
+function lastEventFor(nodeId) {
+  // 快照关联对象：处理中草稿优先，否则该节点最近已定稿事件
+  if (nodes[nodeId].event) { return nodes[nodeId].event; }
+  for (let i = events.length - 1; i >= 0; i--) {
+    if (events[i].nodeId === nodeId) { return events[i]; }
+  }
+  return null;
+}
+
+function downloadBlobLocal(blob, filename) {
+  // web/script.js downloadBlob 为模块私有，dashboard 自建同款副本（revoke 延迟 1s 防下载失败）
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+
+function takeSnapshot() {
+  // E2 拍照：摄像头帧 + 顶部黑条叠加（nodeId/时间/状态）+ 事件关联（文件名含 eventId，UPGRADE_PLAN §5 决策）
+  ensureDashCamera().then(function (ok) {
+    if (!ok) { return; }
+    const tryFrame = function (attempts) {
+      if (!dashCameraVideoEl.videoWidth || dashCameraVideoEl.readyState < 2) {   // 首帧未渲染（web 同款判断）
+        if (attempts < 30) { setTimeout(function () { tryFrame(attempts + 1); }, 100); }
+        else { showVoiceResult("视频画面加载中，请稍后再试", true); }
+        return;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = dashCameraVideoEl.videoWidth;
+      canvas.height = dashCameraVideoEl.videoHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { showVoiceResult("快照生成失败，请重试", true); return; }
+      ctx.drawImage(dashCameraVideoEl, 0, 0);
+      const r = nodes[selectedNode].latest;
+      const fs = Math.max(28, Math.round(canvas.width / 26));
+      ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+      ctx.fillRect(0, 0, canvas.width, fs * 1.8);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold " + fs + 'px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = "left";
+      ctx.fillText(selectedNode + " · " + (r ? r.time : formatNowLocal()) + " · " + (r ? r.status : "无数据"),
+        fs * 0.4, fs * 1.3);
+      const ev = lastEventFor(selectedNode);
+      const stamp = formatNowLocal().replace(/[ :]/g, "-");
+      const filename = "dormmate-" + selectedNode + (ev ? "-" + ev.eventId : "") + "-" + stamp + ".png";
+      canvas.toBlob(function (blob) {
+        if (!blob) { showVoiceResult("快照生成失败，请重试", true); return; }
+        downloadBlobLocal(blob, filename);
+        if (ev) {
+          ev.snapshot = filename;   // 草稿随 finalizeEvent 原对象入 events[]（字段自然保留）；已定稿则直接改 events[] 条目
+          renderEvents();
+        }
+        showVoiceResult("快照已保存（下载目录）：" + filename, false);
+      }, "image/png");
+    };
+    tryFrame(0);
+  });
+  return true;
+}
+
+// 指令表：正则指令先匹配（查看 dorm-x），再精确匹配关键词（web/script.js 同款标点修剪 + 未匹配保留全选）
+const DASH_VOICE_COMMANDS = [
+  {
+    pattern: /^查看\s*(dorm-[abc])$/,
+    run: function (m) { switchSelectedNode(m[1]); return { ok: true, msg: "切换到 " + m[1] }; }
+  },
+  {
+    keyword: "朗读状态",
+    run: function () { return { ok: speakSelectedNode(), msg: "朗读选中节点当前状态" }; }
+  },
+  {
+    keyword: "拍照",
+    run: function () { return { ok: takeSnapshot(), msg: "拍照并关联事件" }; }
+  },
+  {
+    keyword: "开启风扇",
+    run: function () { publishAction("fan_on"); return { ok: true, msg: "对 " + selectedNode + " 开启风扇" }; }
+  },
+  {
+    keyword: "关闭风扇",
+    run: function () { publishAction("fan_off"); return { ok: true, msg: "对 " + selectedNode + " 关闭风扇" }; }
+  }
+];
+
+function handleDashVoiceCommand(rawText) {
+  const text = rawText.replace(/^[\s。.，,！!？?、]+|[\s。.，,！!？?、]+$/g, "").trim();
+  let result = null;
+  for (let i = 0; i < DASH_VOICE_COMMANDS.length; i++) {
+    const cmd = DASH_VOICE_COMMANDS[i];
+    const m = cmd.pattern ? text.match(cmd.pattern) : null;
+    if (m) { result = cmd.run(m); break; }
+    if (!cmd.pattern && cmd.keyword === text) { result = cmd.run(null); break; }
+  }
+  if (!result) {
+    dashVoiceCommandEl.select();   // 未匹配：保留文本并全选，供修正后重新提交（不清空销毁）
+    lastVoiceAttemptText = text;
+    showVoiceResult("识别结果：" + text + " → 未匹配任何指令（可用指令：查看 dorm-a/b/c / 朗读状态 / 拍照 / 开启风扇 / 关闭风扇）", true);
+    return;
+  }
+  dashVoiceCommandEl.value = "";
+  lastVoiceAttemptText = "";
+  showVoiceResult("识别结果：" + text + " → " + (result.ok ? "已触发：" + result.msg : "未执行：" + result.msg), !result.ok);
+}
+
+function processDashVoiceInput() {
+  const text = dashVoiceCommandEl.value.trim();
+  if (!text || text === lastVoiceAttemptText) { return; }   // 空文本 / 未匹配保留的文本不重复处理
+  handleDashVoiceCommand(text);
+}
+
+dashVoiceCommandEl.addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && !e.isComposing) { processDashVoiceInput(); }   // IME 选字回车不触发
+});
+dashVoiceCommandEl.addEventListener("blur", processDashVoiceInput);
+dashCameraStopBtnEl.addEventListener("click", stopDashCamera);
 
 // ---- B2 判断依据：三节点依据卡片（每项指标附数据来源；优先节点 ★ + 原因）----
 const evidenceEls = {};
@@ -676,18 +868,21 @@ function updateCard(nodeId) {
 
 const tabEls = {};
 
+function switchSelectedNode(nodeId) {
+  // E2：tab 点击与语音指令共用同一选中切换入口
+  selectedNode = nodeId;
+  Object.keys(tabEls).forEach(function (key) {
+    tabEls[key].className = key === nodeId ? "active" : "";
+  });
+  rebuildChart();
+  refreshActionBar();   // A2 动作条随 tab 切换刷新到当前节点
+}
+
 function buildTabs() {
   NODE_IDS.forEach(function (id) {
     const btn = document.createElement("button");
     btn.textContent = id;
-    btn.addEventListener("click", function () {
-      selectedNode = id;
-      Object.keys(tabEls).forEach(function (key) {
-        tabEls[key].className = key === id ? "active" : "";
-      });
-      rebuildChart();
-      refreshActionBar();   // A2 动作条随 tab 切换刷新到当前节点
-    });
+    btn.addEventListener("click", function () { switchSelectedNode(id); });
     tabsEl.appendChild(btn);
     tabEls[id] = btn;
   });

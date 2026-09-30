@@ -48,6 +48,21 @@
     </div>
   </section>
 
+  <!-- E2 语音命令条：Win+H 语音输入法识别文字打进输入框 -> Enter/失焦提交 -> 精确匹配指令（web/script.js 等价 ASR 同款模式）。
+       指令：查看 dorm-x（切换操作对象）/ 朗读状态（TTS 读选中节点真实记录）/ 拍照（摄像头快照叠加节点时间状态、关联事件）/
+       开启风扇 / 关闭风扇（复用 A2 publishAction）。dash 前缀 id 防与 web/script.js 绑定的 #voiceCommand 等冲突 -->
+  <section class="voice-area">
+    <h2>语音指令（E2）</h2>
+    <div class="voice-bar">
+      <input id="dashVoiceCommand" type="text"
+             placeholder="Win+H 语音输入，或直接打字。可用指令：查看 dorm-a / 查看 dorm-b / 查看 dorm-c / 朗读状态 / 拍照 / 开启风扇 / 关闭风扇">
+      <span id="dashCameraState" class="voice-camera-state"></span>
+      <button id="dashCameraStopBtn" class="camera-stop" hidden>关闭摄像头</button>
+    </div>
+    <video id="dashCameraVideo" hidden autoplay playsinline muted></video>
+    <p id="dashVoiceResult" class="voice-hint">语音输入为 Win+H 等价 ASR（原生 SpeechRecognition 国内不可用，README 已知限制）</p>
+  </section>
+
   <!-- A4 今日事件：一次"发现→判断→处理→验证→恢复"的完整记录（程序组装），可导出 events.json 供 report.html 事件复盘 -->
   <section class="event-area">
     <div class="event-head">
