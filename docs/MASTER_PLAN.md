@@ -78,7 +78,7 @@
 | C2 | 固定规则没发现的 ML 能不能发现：多组新数据双判断对照 | analysis/ | 对照结果保留；不一致保留 ≥1 组解释，未出现如实记录；不调参不伪造 | docs/evidence/c/ | 已完成 |
 | C3 | 不要停在 Python：结果接回 report.html"ML 异常分析"（当前值/固定规则/ML 判断并排） | analysis/ + report.html | 换新 CSV 重新生成 ML 结果并与固定规则并排 | docs/evidence/c/ | 已完成 |
 | C4 | ML 会不会也判断不好：保留 ≥1 个不理想例子（数据+模型结果+可能原因） | README + report.html | 例子与原因落地；做到 C4 完成 C 闭环 | docs/evidence/c/ | 已完成 |
-| Final | 关闭重启验证 + 稳定版同步 GitHub | 全部 | 重启后两条链 + A/B/C 闭环复验通过 | docs/evidence/final/ | 未开始 |
+| Final | 关闭重启验证 + 稳定版同步 GitHub | 全部 | 重启后两条链 + A/B/C 闭环复验通过 | docs/evidence/final/ | 已完成 |
 
 ## 4. M1-M6 ↔ A/B/C 联系矩阵
 
@@ -103,7 +103,7 @@ M6 看板收口 → A1 → A2 → A3 → A4 → B1 → B2 → B3 → B4 → C1 �
 ```
 
 - C 严格最后（SPEC §10）；Final 在 A/B/C 全部完成之后
-- 当前状态：M1-M6 已完成；A 组（A1-A4）已完成（提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/）；B 组（B1-B4）已完成（提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/）；C 组（C1-C4）已完成（提交 73dd8f8、fcc0f9e、4762947、dda3de1，证据 docs/evidence/c/，含 C2 自实现 IsolationForest 兜底与 C4 不理想案例）；Final 复验已完成（提交 49db648，证据 docs/evidence/final/），仅剩 GitHub 稳定版推送（待网络恢复）
+- 当前状态：M1-M6 已完成；A 组（A1-A4）已完成（提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/）；B 组（B1-B4）已完成（提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/）；C 组（C1-C4）已完成（提交 73dd8f8、fcc0f9e、4762947、dda3de1，证据 docs/evidence/c/，含 C2 自实现 IsolationForest 兜底与 C4 不理想案例）；Final 复验已完成（提交 49db648，证据 docs/evidence/final/）；GitHub 稳定版已同步（master = 9b2f093，与本地 84e0fb4 内容一致）
 
 ## 6. 统一契约扩展（执行时与 SPEC 对齐）
 
@@ -220,7 +220,7 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 - analysis/analyze.py：新增 `load_events(path)`（文件缺失容错为空列表）→ render_report 增加"事件复盘"section（事件表格 + summary 复盘文本）
 - 完整故事演示：dorm-b 偏热 → 优先关注 → 开风扇 → 降温 → 恢复 → 导出 events.json → python analysis/analyze.py → report.html 出现事件复盘（截图）
 
-**S7 A 组验收交接** ✅ 已完成（2026-09-29：A1-A4 逐条对照 SPEC §9 与截图完成线全过；README 补 A 组运行方式（演示剧本 ①-⑥）；PLAN/MASTER_PLAN 状态列更新；提交与 GitHub 同步待用户确认）
+**S7 A 组验收交接** ✅ 已完成（2026-09-29：A1-A4 逐条对照 SPEC §9 与截图完成线全过；README 补 A 组运行方式（演示剧本 ①-⑥）；PLAN/MASTER_PLAN 状态列更新；提交与 GitHub 同步已完成）
 
 ### 7.4 B 组：把已有信息讲清楚（B1-B4）
 
@@ -244,7 +244,7 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 - 分工说明表（README + 本文档 §2.3）：Dashboard 当前重点 / 3D 空间状态 / TTS 当前提醒 / report.html 历史复盘——每行写明"为什么这条信息适合放在这里"
 - 验证点：四类分工演示截图；能现场说明放置理由
 
-**S5 B 组验收交接** ✅ 已完成（2026-09-29：B1-B4 逐条对照 SPEC §9 与截图完成线全过；README 补 B 组运行方式与分工说明表；PLAN/MASTER_PLAN 状态列更新；提交与 GitHub 同步待用户确认）
+**S5 B 组验收交接** ✅ 已完成（2026-09-29：B1-B4 逐条对照 SPEC §9 与截图完成线全过；README 补 B 组运行方式与分工说明表；PLAN/MASTER_PLAN 状态列更新；提交与 GitHub 同步已完成）
 
 ### 7.5 C 组：从历史数据中发现异常（C1-C4，最后做）
 
@@ -272,7 +272,7 @@ processing ──(normalStreak>=2)──> recovered(recoverTime) → 发布 fan_
 - 逐条对照 SPEC §9 C1-C4 与截图完成线（§3 表）全过；证据 docs/evidence/c/（v1/v2 报告 + 控制台 + 截图）；README 补 C 组运行方式与 C4 案例
 - 提交 + GitHub 同步（先展示变更摘要/命令，用户确认）
 
-### 7.6 Final 关闭重启验证 + 稳定版 ✅ 复验已完成（2026-09-29，提交 49db648；GitHub 推送待网络恢复）
+### 7.6 Final 关闭重启验证 + 稳定版 ✅ 已完成（2026-09-29，提交 49db648；GitHub 已同步 9b2f093）
 
 - 关闭所有进程（Mosquitto / simulator / Live Server / 微信开发者工具）→ 按 README 顺序重启：
   1. 离线链复跑：Web 录入 → 导出 CSV → `python analysis/analyze.py` → trend.png + report.html（含事件复盘/今日摘要/ML 异常分析三区）✅ F S2（19 项断言）

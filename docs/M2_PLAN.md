@@ -39,7 +39,7 @@
 - `python analysis/analyze.py --selftest` 跑 SPEC §6 四组断言（25/60→正常、16/60→偏冷、31/60→偏热、25/80→偏湿），全部打印通过 / 失败（沿用 web/test.html 证据思路）
 - **检查点**：--selftest 四组全过
 
-### S3 pandas 读 CSV + 统计（执行前先经用户确认安装 matplotlib）✅ 代码完成（临时 CSV 桩测通过，待用户真实 CSV 验收）
+### S3 pandas 读 CSV + 统计（执行前先经用户确认安装 matplotlib）✅ 代码完成（临时 CSV 桩测通过，用户真实 CSV 已验收）
 
 - `pip install matplotlib`（pandas 3.0.5 已装，无需重复安装）
 - `pd.read_csv(path, encoding="utf-8-sig")`；CLI：`python analysis/analyze.py [csv路径]`，默认 `data/dormmate.csv`，不存在时明确报错
@@ -47,13 +47,13 @@
 - 统计：记录数；温度 / 湿度最高最低（含对应 time）；各状态数量；**关注记录**（status 非正常）列表（time、温度、湿度、status）
 - **检查点**：控制台统计与 CSV 人工核对一致（如 10 条记录、2 条关注）
 
-### S4 matplotlib → data/trend.png ✅ 代码完成（Microsoft YaHei / SimHei 已注册，桩测无缺字警告，待用户打开验收）
+### S4 matplotlib → data/trend.png ✅ 代码完成（Microsoft YaHei / SimHei 已注册，桩测无缺字警告，用户已打开验收）
 
 - 中文字体：`plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei"]`；`axes.unicode_minus = False`
 - 上 subplot：温度 / 湿度随时间折线（x=time，标签稀疏 / 旋转防重叠）；下 subplot：四状态数量柱状图；输出 data/trend.png
 - **检查点**：打开 trend.png 中文正常、曲线与 CSV 数据吻合
 
-### S5 report.html 生成 ✅ 代码完成（桩测报告三要素齐全、C3 扩展点注释就位，待用户打开验收）
+### S5 report.html 生成 ✅ 代码完成（桩测报告三要素齐全、C3 扩展点注释就位，用户已打开验收）
 
 - analyze.py 拼 HTML 字符串写 data/report.html：标题 + 生成时间、**摘要**表（记录数、温湿度最高 / 最低、各状态数量）、**关注记录**表、`<img src="trend.png">`；内嵌简单 CSS
 - 结构分 section（summary / attention / trend），预留 ml section 注释（C3 IsolationForest 结果接回点）

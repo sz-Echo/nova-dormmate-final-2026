@@ -66,14 +66,14 @@
 
 - 现场演示剧本完整跑一遍；证据 docs/evidence/m3/（快照、识别结果、TTS、git log、GitHub 记录）；PLAN 看板更新；按 PLAN §6 输出交接摘要
 
-### S8 评审修复（code-review 16 条确认发现）✅ 代码完成（待用户浏览器复测）
+### S8 评审修复（code-review 16 条确认发现）✅ 代码完成（用户浏览器复测通过）
 
 - 语音指令：防抖自动提交改为 Enter / 失焦提交（+isComposing 检查）；去首尾标点精确匹配（"不要拍照"不再误触发）；未匹配保留文本全选；"朗读状态"接入 analyze()（兑现 M1 预留契约）；指令结果与真实执行结果一致
 - TTS：数据源改为 analyze() 的 lastRecord（不再读 DOM 文本与"—"哨兵）；voicesLoaded 判定后再报缺中文语音（修 getVoices 空窗误报）；zh 语音在 loadVoices 缓存
 - Camera：startCamera 同步禁用按钮 + cameraStream 防重入（修双击流泄漏）；按钮状态集中 syncCameraButtons()；快照区分"没开摄像头/帧未就绪/生成失败"并判 blob 空；stopCamera 清理旧提示
 - 复用：提取 downloadBlob（CSV 与快照共用，revoke 延迟 1 秒）、showMsg（四类提示共用，classList.toggle 不再整体覆盖 className）；CSS 卡片/输入框规则合并
 - 文档：PLAN 看板修正（M1 提交补 f8eaa47、M3 S0-S7 与三次提交、最近Commit）；README 补回校验范围与"历史仅存内存"说明、test.html 可 file:// 打开
-- 提交：待用户复测通过后提交（fix(nova-dormmate-final-2026): M3 review fixes...），GitHub 同步需用户确认
+- 提交：已提交（9fa9e37 fix(nova-dormmate-final-2026): M3 review fixes），GitHub 已同步至 a745f96
 
 ## 4. 关键设计 — 与后续阶段衔接
 

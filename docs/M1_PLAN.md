@@ -73,7 +73,7 @@ SPEC/PLAN 按任务书原文修正（M1 合并口径、§3.1 校验范围、M2/M
 - 更新 PLAN.md §4 看板（M1 完成）与 §2 状态列；按 PLAN §6 模板输出交接摘要
 - **提交**：Commit 2 `feat(nova-dormmate-final-2026): M1 web input judge history acceptance`（先展示变更摘要，用户确认后提交）
 
-### S8 评审修复（code-review 10 finder）✅ 已完成（待用户浏览器复核）
+### S8 评审修复（code-review 10 finder）✅ 已完成（用户浏览器复核通过）
 
 - PLAN.md §4 看板整体重写：删除重复的"最近Commit/下一阶段接口"旧行与过期的"待提交 Commit 2"表述；接口行修正为"M2 复用 computeStatus 规则 + CSV 落盘在 M2 内建；M3 复用 analyze()（支持传数值、返回记录 JSON）"
 - M1_PLAN S3-S6 标注清理（"待用户浏览器确认"→ 已确认）；README 增加看板指引与 iOS 键盘已知限制
@@ -86,7 +86,7 @@ SPEC/PLAN 按任务书原文修正（M1 合并口径、§3.1 校验范围、M2/M
 - style.css：`.field input` 改 `var(--card-bg)` 令牌、0.2rem 间距归档 0.35rem、头部注释压缩（验收记录以本文件 S6 为准）
 - **遗留记录（M1 不修）**：范围常量跨语言统一（M2 建 config.json）；iOS 数字键盘无负号键（README 已知限制）；双加载双绑定与 dormmateHistory 重赋值分叉（M3/M2 阶段注意）
 - **检查点**：node 桩测全过 + 用户浏览器复核（非法输入含 0x1A/1e2、Enter 触发、参数化 analyze）
-- **提交**：Commit 3（待用户确认后提交）
+- **提交**：Commit 3 已提交（f8eaa47）
 
 ## 4. 关键设计 — 与后续阶段衔接
 
