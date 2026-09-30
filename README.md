@@ -13,7 +13,7 @@
   - `python analysis/analyze.py --watch` —— 监控 `data/`：放入或更换 CSV 后**自动重新生成**，无需手动运行（Ctrl+C 停止）
   - `python analysis/analyze.py --selftest` —— SPEC §6 四组回归自测
 - **微信小程序（M4）**：微信开发者工具 → "导入项目"选择 `mobile/` 目录 → AppID 选"测试号"（工具会自动填入测试 AppID，无需注册、无需真机）→ 编译运行。核心页面：输入温湿度 → 状态 / 建议 + 带时间历史（含"载入演示数据"按钮）；打开项目时 Console 自动打印四组回归自测结果（4 行 PASS）与 ADVICE / 校验 / formatTime 附加校验行
-- **实时看板（M5）**：① 启动 Broker：`<Mosquitto安装目录>\mosquitto.exe -c <同目录>\mosquitto.conf -v`（本机为 `D:\Mosquitto\`；conf 需含 listener 1883 / listener 8083 + protocol websockets / allow_anonymous true，见 `docs/M5_PLAN.md` S1）② 启动模拟节点：`python simulator/simulate.py`（三节点 dorm-a/b/c 定时发布）③ Live Server 打开 `dashboard/index.html` → 三卡片同屏 + Chart.js 趋势（浏览器经 `ws://localhost:8083` 连 Broker）④ MQTTX 连接 `127.0.0.1:1883`、订阅 `dormmate/#` 验证
+- **实时看板（M5）**：① 启动 Broker：`<Mosquitto安装目录>\mosquitto.exe -c <同目录>\mosquitto.conf -v`（本机为 `D:\Mosquitto\`；conf 需含 listener 1883 / listener 8083 + protocol websockets / allow_anonymous true，见 `docs/C01_Plans/M5_PLAN.md` S1）② 启动模拟节点：`python simulator/simulate.py`（三节点 dorm-a/b/c 定时发布）③ Live Server 打开 `dashboard/index.html` → 三卡片同屏 + Chart.js 趋势（浏览器经 `ws://localhost:8083` 连 Broker）④ MQTTX 连接 `127.0.0.1:1883`、订阅 `dormmate/#` 验证
 - **3D 可视化（M6）**：① 启动 Broker ② `python simulator/simulate.py` ③ Live Server 打开 `three3d/index.html` → Three.js 3D 宿舍场景（三栋楼：状态色 / 指示球 / 粒子 / 标牌四类可见变化）由 MQTT 实时驱动；鼠标拖拽旋转 / 滚轮缩放 / 右键平移，点击楼查看详情；侧栏"演示"按钮可在无 Broker 时用 SPEC §6 四组回归数据打出四状态。Three.js r128 为本地 vendor（three3d/vendor/，防 CDN 网络不稳），必须用 Live Server 以项目根为工作区打开
 - **A 组业务闭环（A1-A4）**：① 启动 Broker ② `python simulator/simulate.py` ③ Live Server 打开 `dashboard/index.html`（可并排再开 `three3d/index.html` 对照）→ 顶部"优先关注"横幅按 A1 规则实时计算（另有测试页 `dashboard/test-priority.html`；现场演示脚本 `python simulator/test_a1.py --group 1|2|3|4|all` 可逐组发布预设三节点序列）④ 选中异常节点 → 点"开启风扇/通风" → Dashboard 显示"处理中"、3D 风扇转动+窗开、simulator 该节点降温（MQTT 动作通道 dormmate/{nodeId}/action）⑤ 连续 ≥2 条正常新数据 → "已恢复"+自动关扇（规则见"已知限制"）⑥"今日事件"面板自动生成完整事件（复盘叙事）→ 点"导出 events.json"存入 `data/` → `python analysis/analyze.py` → report.html 出现"事件复盘（A4）"区
 - **B 组信息闭环（B1-B4）**：① B1/B2 同 Dashboard（测试页 `dashboard/test-priority.html` 含 A1/B1/B2 断言；验证脚本 `python simulator/test_b1.py` / `test_b2.py`）② B3 今日摘要：`python analysis/make_day_data.py --out data/sim-day-1 --seed 1` → `python analysis/daily_summary.py --day data/sim-day-1` → 控制台今日摘要 + `summary.md` + 当日 `report.html`（换 seed 重新生成；验证脚本 `python simulator/test_b3.py`）③ B4：Dashboard"朗读提醒"按钮（TTS 只读当前提醒，分工说明见"主要功能"B 组表）
@@ -84,4 +84,5 @@
 ## 文档
 
 - 项目规格：`docs/DORMMATE_SPEC.md`
-- 执行计划：`docs/PLAN.md`（M1 见 `docs/M1_PLAN.md`，M2 见 `docs/M2_PLAN.md`，M3 详细步骤与现场演示剧本见 `docs/M3_PLAN.md`，M4 见 `docs/M4_PLAN.md`，M5 见 `docs/M5_PLAN.md`，M6 见 `docs/M6_PLAN.md`）
+- 执行计划：`docs/PLAN.md`（M1 见 `docs/C01_Plans/M1_PLAN.md`，M2 见 `docs/C01_Plans/M2_PLAN.md`，M3 详细步骤与现场演示剧本见 `docs/C01_Plans/M3_PLAN.md`，M4 见 `docs/C01_Plans/M4_PLAN.md`，M5 见 `docs/C01_Plans/M5_PLAN.md`，M6 见 `docs/C01_Plans/M6_PLAN.md`）
+- 综合作品升级计划（V0.8R5）：`docs/V08R5_Plans/UPGRADE_PLAN.md`

@@ -1,6 +1,6 @@
 # DormMate Final 执行计划（PLAN）
 
-> 本文件是**活文档**：每阶段结束更新第 2 节总览表的状态列与第 4 节看板。唯一事实源见 DORMMATE_SPEC.md，冲突时以 SPEC 为准；A/B/C/Final 详细执行步骤与契约见 MASTER_PLAN.md。
+> 本文件是**活文档**：每阶段结束更新第 2 节总览表的状态列与第 4 节看板。唯一事实源见 DORMMATE_SPEC.md，冲突时以 SPEC 为准；A/B/C/Final 详细执行步骤与契约见 docs/C01_Plans/MASTER_PLAN.md。
 
 ## 1. 计划原则
 
@@ -13,7 +13,7 @@
 7. **A / B 可交叉**：A 组（优先关注 / 处理动作 / 恢复判断 / 事件复盘，依赖 M5/M6）与 B 组之间可交叉推进；各组内部按模块顺序
 8. **C 最后**：轻量 ML 应用闭环必须在 A、B 完成之后做
 9. **最终关闭重启验证**：Final 阶段关闭所有进程后重启，两条链端到端复跑通过才算收尾
-10. **MASTER_PLAN**：剩余阶段（A/B/C/Final）详细步骤、契约扩展与验收总表以 docs/MASTER_PLAN.md 为准，本文件看板与其状态同步
+10. **MASTER_PLAN**：剩余阶段（A/B/C/Final）详细步骤、契约扩展与验收总表以 docs/C01_Plans/MASTER_PLAN.md 为准，本文件看板与其状态同步
 
 ## 2. 阶段总览表
 
@@ -48,20 +48,20 @@
 ### M1 Web 主应用：输入、判断、记录
 - **阶段**：M1
 - **目标**：web/ 单页面应用（index.html + style.css + script.js）：温湿度输入 → 校验 → 统一规则判断 → 状态 + 建议 → 带时间历史（单宿舍 dorm-a）；落地统一状态规则与统一 JSON 作为全项目统一实现
-- **输入**：SPEC 第 3-6 节；详细步骤见 docs/M1_PLAN.md
+- **输入**：SPEC 第 3-6 节；详细步骤见 docs/C01_Plans/M1_PLAN.md
 - **输出**：web/ 三文件 + web/test.html（四组回归）+ 历史截图
 - **依赖**：阶段0
-- **完成线**：四组回归测试数据全部算对（25/60→正常、16/60→偏冷、31/60→偏热、25/80→偏湿）+ 任务书 M1 验收条目（见 docs/M1_PLAN.md 验收清单）
+- **完成线**：四组回归测试数据全部算对（25/60→正常、16/60→偏冷、31/60→偏热、25/80→偏湿）+ 任务书 M1 验收条目（见 docs/C01_Plans/M1_PLAN.md 验收清单）
 - **证据**：test.html 通过截图 + 页面运行截图 + 历史截图（docs/evidence/m1/）
 - **不要做什么**：不做 CSV 落盘（M2）、语音（M3）、多节点（M5 起）；无数据库 / 传感器 / LLM；历史仅存内存（刷新后可消失）
-- **风险**：规则顺序写反（偏冷 / 偏热颠倒会导致 16 与 31 都判错）→ 以四组回归测试守住；test.html 引入 script.js 时 DOM 为 null → script.js 纯函数与 DOM 操作分离（见 M1_PLAN）
+- **风险**：规则顺序写反（偏冷 / 偏热颠倒会导致 16 与 31 都判错）→ 以四组回归测试守住；test.html 引入 script.js 时 DOM 为 null → script.js 纯函数与 DOM 操作分离（见 docs/C01_Plans/M1_PLAN.md）
 - **交接接口**：M2 复用 computeStatus() 与历史 JSON（导出 CSV）；M3 复用 analyze() 入口（语音指令）；M4、M5 复用同一 status 计算逻辑，禁止各自重写
 
 ### M2 离线数据分析与报告
 - **阶段**：M2
 - **目标**：M1 历史 → 导出 data/dormmate.csv → analysis/ Python 读取 → 统计（记录数、温湿度最高 / 最低）→ 对全部记录重跑统一规则（各状态数量、关注记录）→ matplotlib 生成 trend.png → 自动生成 report.html（摘要、关注记录、趋势图）
 - **注**：任务书未明确定义"需要关注的记录"，本项目暂按 status 非正常（偏冷 / 偏热 / 偏湿）为准
-- **输入**：M1 的 computeStatus() 与历史 JSON；SPEC 第 5 节 CSV 格式；详细步骤见 docs/M2_PLAN.md
+- **输入**：M1 的 computeStatus() 与历史 JSON；SPEC 第 5 节 CSV 格式；详细步骤见 docs/C01_Plans/M2_PLAN.md
 - **输出**：data/dormmate.csv；analysis/ Python 脚本；data/trend.png；data/report.html
 - **依赖**：M1
 - **完成线**：任务书 M2 验收条目全部满足；**换一份新 CSV 后统计、图、报告全部由程序重新生成**，禁止手工修改结果冒充程序生成
@@ -129,7 +129,7 @@
 - **不要做什么**：不把"点击处理"直接当成"已恢复"；连续异常时长禁止人工判断；事件、动作和结果必须由程序真实产生
 - **风险**：三节点串线 → 优先规则以程序计算为准，action 消息走同款 topic↔nodeId 防线；A2/A3 耦合 → 严格解耦
 - **交接接口**：B1/B2 复用 A1 优先规则与 streak；B3 复用 A4 事件记录；C 依赖 A 的数据与展示端
-- **详细步骤**：docs/MASTER_PLAN.md §7.3（S0-S7）
+- **详细步骤**：docs/C01_Plans/MASTER_PLAN.md §7.3（S0-S7）
 
 ### B 把已有信息讲清楚（B1-B4）
 - **阶段**：B
@@ -142,7 +142,7 @@
 - **不要做什么**：不手写说明内容；不把同一段信息复制到多个页面
 - **风险**：程序输出与实际情况脱节 → 以程序输出为准并保留生成脚本；总览/摘要写死 → 换数据自动变化留证
 - **交接接口**：C 依赖 B 的展示端（report.html）
-- **详细步骤**：docs/MASTER_PLAN.md §7.4（S0-S5）
+- **详细步骤**：docs/C01_Plans/MASTER_PLAN.md §7.4（S0-S5）
 
 ### C 轻量 ML 应用闭环（C1-C4，从历史数据中发现异常）
 - **阶段**：C
@@ -155,7 +155,7 @@
 - **不要做什么**：不做 Label / Train-Test / Accuracy-F1 / 混淆矩阵 / 模型版本管理 / 调参；不新建后端（FastAPI / Flask / 数据库 / 模型服务）；sklearn 安装失败用纯 Python 自实现兜底并 README 记录（pip install 前征得用户同意）
 - **风险**：sklearn 在 Python 3.14 无 wheel / 安装失败 → 自实现兜底；数据量小易过拟合 → 以"跑通闭环"为完成线，不追求指标
 - **交接接口**：Final 复验（同数据同 random_state=42 同结果）
-- **详细步骤**：docs/MASTER_PLAN.md §7.5（S0-S5）
+- **详细步骤**：docs/C01_Plans/MASTER_PLAN.md §7.5（S0-S5）
 
 ### Final 关闭重启验证 + 稳定版
 - **阶段**：Final
@@ -173,7 +173,7 @@
 
 - **当前阶段**：项目收尾——Final 全部完成（复验 49db648 + 文档收口 8d94eb2 + GitHub 已同步 d384cb5）+ Open-01 前自检（文档修复 bf15203 + 演示资产入库 + 冷启动复验 62 断言全过）
 - **当前只做**：无（Open-01 四项自测已完成并通过验收：冷启动 62 断言 / 说明话术 / 改色还原 / 停 Broker 排错恢复；项目全部收口）
-- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/M3_PLAN.md）；M4 全部（S0-S6：文档对齐 / 小程序骨架 / 规则移植 / 页面交互 / 冷启动验收 / 交接 / 评审修复，用户实测通过，提交 cb947ff、6b0e91b，GitHub 同步至 f1885a4，证据 = docs/evidence/m4/ review 归档 + 用户实测记录（截图非 M4 完成线要求，无需补拍），详细见 docs/M4_PLAN.md）；M5 S0（docs/M5_PLAN.md 创建 + 看板更新，3 项决策经用户确认：程序发布+MQTTX 演示 / Python paho-mqtt / Dashboard 本地 vendor；评审修正 4 项：端口冲突检查 / 断线重连 / JSON 容错 / 历史上限裁剪）；M5 全部（S0-S5：文档对齐 / 环境 / simulator 三节点发布 / Dashboard 骨架 / 趋势与切换 / 验收交接，S1-S4 用户实测通过——Broker 冷启动、MQTTX 互测、三卡片同屏、串线与坏消息拦截，证据 docs/evidence/m5/ 6 张，详细见 docs/M5_PLAN.md）；M6 全部（S0-S6：文档对齐 / vendor r128 三文件 / 静态场景 / 状态映射+演示按钮 / MQTT 实时驱动 / 验收交接 / 评审修复，提交 415c9db、7e72183、8fb68a4，GitHub 同步至 44b391c，证据 docs/evidence/m6/，详细见 docs/M6_PLAN.md）；A 组 S0 文档对齐（SPEC §9 更新为 A1-A4/B1-B4/C1-C4 + docs/MASTER_PLAN.md 建立，提交 d973401）；A 组全部（S1-S7：simulator 动作响应 / A1 优先关注横幅+测试页+演示脚本 / A2 动作入口 / three3d 动作联动 / A3 恢复状态机 / A4 事件复盘进 report.html / 验收交接，提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/，详细见 MASTER_PLAN §7.3）；B 组全部（S1-S5：B1 当前总览 / B2 判断依据卡片 / B3 今日摘要（make_day_data + daily_summary + sim-day-1/2 数据）/ B4 朗读提醒+信息分工 / 验收交接，提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/，详细见 MASTER_PLAN §7.4）；C 组全部（S1-S5：C1 数据准备（c_history/c_new 严格分离 + random_state=42）/ C2 固定规则/ML 对照（sklearn 失败自实现 IsolationForest 兜底，README 记录替代原因）/ C3 结果接回 report.html"ML 异常分析"区（并排+差异高亮+换数据重生成）/ C4 不理想案例（27.5/70 对轻微偏离过敏感 + 可能原因 + 不做指标口径）/ 验收交接，提交 73dd8f8、fcc0f9e、4762947、dda3de1，证据 docs/evidence/c/，详细见 MASTER_PLAN §7.5）；Final 复验（F S1-S7：环境冷启动（Broker 1883/8083 + simulator 三节点）→ 实时链（Dashboard+3D 并排不串线）→ 离线链（Web 录入→CSV→analyze→report 五区）→ A 闭环重演（偏热→优先→开风扇→3D 联动→降温→已恢复→自动关扇→事件→报告复盘）→ B 信息闭环（总览/依据/朗读提醒/换 seed 摘要）→ C 对照复现（random_state=42 与已提交版本逐字段一致），test_final.py 62 项断言全过，证据 docs/evidence/final/，提交 49db648，详细见 MASTER_PLAN §7.6）
+- **已完成**：阶段0 —— docs/DORMMATE_SPEC.md、docs/PLAN.md、CLAUDE.md 已创建并提交（e1b01a7）；S0 文档对齐（SPEC/PLAN 按任务书原文修正 M1 合并口径 / 校验范围 / M2/M3 重定义 / A 组重定义 / B 组程序化说明 / C 组 IsolationForest / action 预留字段 / GitHub 仓库名 nova-dormmate-final-2026）；M1 全部（S1-S7，证据在 docs/evidence/m1/，提交 64e2aa0、f9bcd24、f8eaa47）；M2 全部（S1-S8，证据在 docs/evidence/m2/，提交 e50b815、5909f1c）；M3 全部（S0-S7：文档对齐 / Camera / TTS / 等价 ASR / README / 提交拆分 / GitHub Private 仓库推送 / 验收交接，提交 b2b293a、88aabc2、9fa9e37，GitHub 同步至 a745f96，S1-S3 用户实测通过，证据 docs/evidence/m3/，详细见 docs/C01_Plans/M3_PLAN.md）；M4 全部（S0-S6：文档对齐 / 小程序骨架 / 规则移植 / 页面交互 / 冷启动验收 / 交接 / 评审修复，用户实测通过，提交 cb947ff、6b0e91b，GitHub 同步至 f1885a4，证据 = docs/evidence/m4/ review 归档 + 用户实测记录（截图非 M4 完成线要求，无需补拍），详细见 docs/C01_Plans/M4_PLAN.md）；M5 S0（docs/C01_Plans/M5_PLAN.md 创建 + 看板更新，3 项决策经用户确认：程序发布+MQTTX 演示 / Python paho-mqtt / Dashboard 本地 vendor；评审修正 4 项：端口冲突检查 / 断线重连 / JSON 容错 / 历史上限裁剪）；M5 全部（S0-S5：文档对齐 / 环境 / simulator 三节点发布 / Dashboard 骨架 / 趋势与切换 / 验收交接，S1-S4 用户实测通过——Broker 冷启动、MQTTX 互测、三卡片同屏、串线与坏消息拦截，证据 docs/evidence/m5/ 6 张，详细见 docs/C01_Plans/M5_PLAN.md）；M6 全部（S0-S6：文档对齐 / vendor r128 三文件 / 静态场景 / 状态映射+演示按钮 / MQTT 实时驱动 / 验收交接 / 评审修复，提交 415c9db、7e72183、8fb68a4，GitHub 同步至 44b391c，证据 docs/evidence/m6/，详细见 docs/C01_Plans/M6_PLAN.md）；A 组 S0 文档对齐（SPEC §9 更新为 A1-A4/B1-B4/C1-C4 + docs/C01_Plans/MASTER_PLAN.md 建立，提交 d973401）；A 组全部（S1-S7：simulator 动作响应 / A1 优先关注横幅+测试页+演示脚本 / A2 动作入口 / three3d 动作联动 / A3 恢复状态机 / A4 事件复盘进 report.html / 验收交接，提交 d0da90d、a88ca0c、2b96f8d、78b7e37、08952d2、c92ede4，证据 docs/evidence/a1-a4/，详细见 MASTER_PLAN §7.3）；B 组全部（S1-S5：B1 当前总览 / B2 判断依据卡片 / B3 今日摘要（make_day_data + daily_summary + sim-day-1/2 数据）/ B4 朗读提醒+信息分工 / 验收交接，提交 0da67c1、ff485b5、27efd9f、c8a6771，证据 docs/evidence/b/，详细见 MASTER_PLAN §7.4）；C 组全部（S1-S5：C1 数据准备（c_history/c_new 严格分离 + random_state=42）/ C2 固定规则/ML 对照（sklearn 失败自实现 IsolationForest 兜底，README 记录替代原因）/ C3 结果接回 report.html"ML 异常分析"区（并排+差异高亮+换数据重生成）/ C4 不理想案例（27.5/70 对轻微偏离过敏感 + 可能原因 + 不做指标口径）/ 验收交接，提交 73dd8f8、fcc0f9e、4762947、dda3de1，证据 docs/evidence/c/，详细见 MASTER_PLAN §7.5）；Final 复验（F S1-S7：环境冷启动（Broker 1883/8083 + simulator 三节点）→ 实时链（Dashboard+3D 并排不串线）→ 离线链（Web 录入→CSV→analyze→report 五区）→ A 闭环重演（偏热→优先→开风扇→3D 联动→降温→已恢复→自动关扇→事件→报告复盘）→ B 信息闭环（总览/依据/朗读提醒/换 seed 摘要）→ C 对照复现（random_state=42 与已提交版本逐字段一致），test_final.py 62 项断言全过，证据 docs/evidence/final/，提交 49db648，详细见 MASTER_PLAN §7.6）
 - **阻塞**：无
 - **下一步**：无（项目全部完成；如需继续可走 SPEC 变更流程）
 - **最近Commit**：docs(nova-dormmate-final-2026): Open-01 self-test completed, project closed（本次提交）；此前 docs bf15203 + feat efcf00b 已推送 GitHub（master = 1342041）
