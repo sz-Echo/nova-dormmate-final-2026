@@ -171,7 +171,7 @@ def run_e2e():
         pg = b.new_page()
         dash_logs = []   # 诊断：捕获本实例 Console，失败时打印动作/丢弃日志定位原因
         pg.on("console", lambda msg: dash_logs.append(msg.text))
-        pg.goto("http://127.0.0.1:5500/dashboard/index.html")
+        pg.goto("http://127.0.0.1:5510/dashboard/index.html")
         ok_conn = False
         for _ in range(30):
             try:
@@ -190,7 +190,7 @@ def run_e2e():
         pg.screenshot(path=str(EVIDENCE / "D1" / "d1-three-nodes-online.png"))
 
         pg3 = b.new_page(viewport={"width": 1280, "height": 800})
-        pg3.goto("http://127.0.0.1:5500/three3d/index.html")
+        pg3.goto("http://127.0.0.1:5510/three3d/index.html")
         pg3.wait_for_timeout(4000)
         pg3.screenshot(path=str(EVIDENCE / "D1" / "d1-3d-three-buildings.png"))
 

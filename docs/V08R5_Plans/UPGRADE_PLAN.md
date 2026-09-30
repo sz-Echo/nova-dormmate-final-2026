@@ -188,6 +188,13 @@ V0.8R5 不是重做 C01，而是把已学能力（Web、Python 数据分析、Ca
 
 **阶段 B 验收标准**：E1 最低线 7 条全勾、E2 最低线 6 条全勾（逐条对照）；现场 Modify 预演通过（改 3D 状态映射、加 ASR 指令）。
 
+**✅ 已完成（2026-09-30）**：
+- B1-B6 全部实现并验证：`simulator/test_stage_b.py` 一键验收（五套件：光环 4 项 / 徽标 5 项 / 聚焦 9 项 / 回放 11 项 / 语音 12 项，exit code 0 = 全过）；E1/E2 最低线逐条对照清单内置于该脚本输出
+- 证据归档：Evidence/E1（8 张：光环×2、徽标×2、聚焦×4、回放×2）、Evidence/E2（6 项：语音条、查看切换、TTS 文本、快照 PNG、事件卡片、交互链记录）；Evidence/README.md 已更新逐项说明
+- 阶段 A 回归：B3、B4、B5、B6 后各跑 `test_upgrade.py` 均 100% PASS
+- 现场 Modify 预演（改 3D 状态映射、加 ASR 指令）列入手动演示清单，随阶段 D Run/Explain/Modify/Debug/Verify 系统性执行
+- 环境注意：验收脚本统一走 5510 端口静态服务（`python -m http.server 5510`）——VS Code Live Server（5500）监视工作区文件变化，证据截图写入会触发其页面重载打断测试（2026-09-30 实测定位，双 5500 监听为 Windows 双绑定现象）
+
 ### 阶段 C：交付物制作
 
 - **C1 README 重写**：按任务书 p19 十项清单逐项覆盖 + 已知限制 + 开源组件表（保留现有内容并补齐）
@@ -239,5 +246,5 @@ V0.8R5 不是重做 C01，而是把已学能力（Web、Python 数据分析、Ca
 - 任务书 OCR 文本含噪声，关键数字已人工核对（Commit 5 次、PPT 10-15 页、技术文档 10-15 页、视频 5-8 分钟）；其余引用以 PDF 原文为准
 - Mosquitto WebSocket 路径实测确认（dashboard 已通 `ws://localhost:8083`，路径沿用）
 - **已知现象（演示注意）**：多个 Dashboard 实例同时连接同一 Broker 时，各自独立运行事件状态机与优先规则，会重复广播事件状态并相互覆盖优先节点（3D/小程序跟随"最后广播"）。本项目按"Dashboard 状态机唯一持有者"设计，此现象仅在多实例测试环境出现（A4 验收时实测记录，`simulator/test_upgrade.py` 已做抗干扰断言）。**正式演示与验收时只开一个 Dashboard**
-- **已知限制（验收脚本依赖）**：`test_upgrade.py` 需要 5500 端口有静态服务（VS Code Live Server 或 `python -m http.server 5500`，工作区根=项目根）；Broker 与 simulator 需先运行
+- **已知限制（验收脚本依赖）**：`test_upgrade.py` 需要 5510 端口有静态服务（`python -m http.server 5510`，工作区根=项目根）；Broker 与 simulator 需先运行
 - **"已恢复"展示是瞬态**：恢复后下一条异常游走记录会按规则打破恢复（recovery=null），卡片/3D 侧栏的"已恢复"字样可能只持续数秒——这是 D3"恢复必须由新数据触发、异常回归即重新关注"规则的正确行为，非缺陷

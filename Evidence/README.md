@@ -2,7 +2,9 @@
 
 > 任务书 p19：不堆截图，每项保留最能证明结果的截图/短视频/消息记录，并配一句说明。
 > C01 阶段证据仍冻结在 `docs/evidence/`，本目录为综合作品升级阶段证据（2026-09-30 起）。
-> 多数截图由验收脚本 `python simulator/test_upgrade.py` 自动生成（exit code 0 = 阶段 A 全过）。
+> 截图由验收脚本自动生成：阶段 A `python simulator/test_upgrade.py`（exit code 0 = 全过）；
+> 阶段 B `python simulator/test_stage_b.py`（E1/E2 五套件一键验收，exit code 0 = 全过）。
+> 验收脚本请走 5510 端口静态服务（python -m http.server 5510）——VS Code Live Server（5500）会因证据文件写入重载页面，打断测试。
 
 ## D1 多节点稳定运行
 
@@ -24,13 +26,31 @@
 1. 小程序三节点卡片与 Dashboard 同屏数值一致（证明"两端读取同一套实时数据"）
 2. 小程序点"开启风扇"后 toast 提示与 Dashboard"处理中"同屏（证明"移动执行处理动作 → web 看到变化"联动）
 
-## 其余目录（阶段 B/C/D 填充）
+## E1 3D 数字孪生增强（阶段 B，B1-B4）
+
+- `e1-priority-halo-a.png` — 优先广播后对应楼底橙色呼吸光环（B1，E1⑤）
+- `e1-priority-halo-b.png` — 点击选中后金色选中环与橙色优先光环并存
+- `e1-event-badge-handling.png` — 标牌右上角橙色「处理中」徽标（B2，E1⑥）
+- `e1-event-badge-recovered.png` — 恢复后徽标变绿色「已恢复」（处理中粒子同时变橙加速）
+- `e1-focus-default.png` / `e1-focus-dorm-c-mid.png` / `e1-focus-dorm-c.png` — 镜头聚焦飞行：默认总览 → 飞行中 → 到达 dorm-c（B3，E1⑦）
+- `e1-priority-focus-dorm-b.png` — 优先节点变化自动聚焦（用户交互闸门开启后）
+- `e1-replay-playing.png` — 侧栏回放条「■ 停止回放」+「历史回放中」状态行（B4，E1⑦）
+- `e1-replay-restored.png` — 停止回放后侧栏恢复跟随实时数据
+
+## E2 Camera/ASR/TTS 交互增强（阶段 B，B5）
+
+- `e2-voice-bar.png` — Dashboard 语音命令条（Win+H 等价 ASR 入口 + 摄像头控件）
+- `e2-voice-view-dorm-b.png` — 语音「查看 dorm-b」后操作对象与 tab 同步切换
+- `e2-tts-last-spoken.txt` — 「朗读状态」朗读文本原文（来自 dorm-b 真实 MQTT 记录）
+- `e2-snapshot-dorm-b.png` — 语音「拍照」快照：顶部黑条叠加 nodeId/时间/状态，文件名含 eventId
+- `e2-event-card-with-snapshot.png` — 恢复定稿后事件卡片含「现场快照」引用（完整交互链）
+- `e2-interaction-chain.txt` — 语音命令 → 效果 全程记录
+
+## 其余目录（阶段 C/D 填充）
 
 - `D2/` 优先关注（≥3 组不同三节点情况，优先级随数据变化）— 阶段 D 归档
 - `D3/` 事件生命周期三端一致 — 阶段 D 归档
 - `D4/` 真实故障与修复 — 阶段 C/D 归档（D4 预演：Topic 写错/JSON 字段错/Broker 停/3D 映射错/移动端不同步）
 - `D5/` Rule/ML 对照案例 — 阶段 C 归档（C4 案例：27.5℃/70% 规则正常、ML 明显不同）
-- `E1/` 3D 增强（优先光环/聚焦/回放/事件徽标）— 阶段 B 归档
-- `E2/` 语音/拍照交互增强 — 阶段 B 归档
 - `Debug/` 现场 Modify/Debug 预演记录 — 阶段 D 归档
 - `Reproduce/` 交叉复现（卡点→README 修订→复现成功）— 阶段 C 归档
