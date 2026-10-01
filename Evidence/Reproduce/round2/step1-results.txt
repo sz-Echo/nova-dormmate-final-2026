@@ -1,0 +1,19 @@
+[initial] history_count=0
+input='25'/'60' -> status='正常' advice='环境舒适' err='(none)' history_count=1
+input='16'/'60' -> status='偏冷' advice='注意保暖' err='(none)' history_count=2
+input='31'/'60' -> status='偏热' advice='注意通风' err='(none)' history_count=3
+input='25'/'80' -> status='偏湿' advice='注意除湿' err='(none)' history_count=4
+input='abc'/'60' -> status='偏湿' advice='注意除湿' err='温度必须是数字' history_count=4
+input='100'/'60' -> status='偏湿' advice='注意除湿' err='温度须在 -50~50 之间' history_count=4
+input=''/'60' -> status='偏湿' advice='注意除湿' err='温度不能为空' history_count=4
+input='25'/'120' -> status='偏湿' advice='注意除湿' err='湿度须在 0~100 之间' history_count=4
+[after reload] history_count=0 statusText='—'
+[png check] step1-00-web-initial.png mean=232.1 std=52.4
+[png check] step1-01-normal.png mean=231.8 std=53.2
+[png check] step1-02-cold.png mean=232.1 std=52.6
+[png check] step1-03-hot.png mean=232.5 std=52.0
+[png check] step1-04-wet.png mean=232.8 std=51.5
+[png check] step1-05-invalid-nonnumeric.png mean=233.0 std=50.9
+[png check] step1-06-invalid-outofrange.png mean=233.0 std=50.9
+[png check] step1-07-history-before-export.png mean=233.0 std=50.9
+[png check] step1-08-after-export.png mean=233.2 std=50.1

@@ -1,0 +1,26 @@
+[dash connect] conn='已连接 ws://localhost:8083' msg='收到 3 条' waited=1.3s
+[3d connect] conn='已连接 ws://localhost:8083' msg='收到 3 条' waited=1.4s
+[dash refresh dorm-a] 6 distinct values in 12.5s: [(1.5, '26℃ / 61.2%', '10:10:54'), (4.1, '25.6℃ / 57.5%', '10:10:56'), (6.7, '25.7℃ / 55.9%', '10:10:59'), (8.8, '26℃ / 52.6%', '10:11:01'), (11.4, '25.5℃ / 49.6%', '10:11:04'), (14.0, '25.1℃ / 50.6%', '10:11:06')]
+[dash refresh dorm-b] 6 distinct values in 12.5s: [(1.5, '21℃ / 65.9%', '10:10:54'), (4.1, '20.9℃ / 67.8%', '10:10:56'), (6.7, '21℃ / 64.1%', '10:10:59'), (8.8, '21.9℃ / 63.1%', '10:11:01'), (11.4, '23.3℃ / 61.3%', '10:11:04'), (14.0, '24.3℃ / 62.2%', '10:11:06')]
+[dash refresh dorm-c] 6 distinct values in 12.5s: [(1.5, '31.3℃ / 68.5%', '10:10:54'), (4.1, '30.4℃ / 68.9%', '10:10:56'), (6.7, '30℃ / 68.2%', '10:10:59'), (8.8, '30.4℃ / 65.9%', '10:11:01'), (11.4, '29.5℃ / 65.2%', '10:11:04'), (14.0, '30℃ / 62.8%', '10:11:06')]
+[3d visuals] {'dorm-a': {'status': '正常', 'bodyColor': '#27ae60', 'particles': 'calm', 'halo': False}, 'dorm-b': {'status': '正常', 'bodyColor': '#27ae60', 'particles': 'calm', 'halo': False}, 'dorm-c': {'status': '偏热', 'bodyColor': '#e67e22', 'particles': 'heat', 'halo': True}}
+[3d particles dorm-a] moved_after_1.5s=True sample1=[5.12, 1.06, 0.9, 7.0, 0.41, -1.41, 8.49, 0.67, -0.64, 5.83, -0.14] sample2=[5.5, 1.06, 0.9, 7.38, 0.41, -1.41, 8.87, 0.67, -0.64, 6.2, -0.14]
+[3d msgCount] 收到 21 条 -> 收到 24 条 (2.5s later)
+[3d sidebar dorm-a] {'sideNodeId': 'dorm-a', 'sideStatus': '正常', 'sideMetrics': '26.5℃ / 44.4%', 'sideTime': '2026-10-01 10:11:11'} history=['10:11:11 正常 26.5℃/44.4%', '10:11:09 正常 25.8℃/47.1%', '10:11:06 正常 25.1℃/50.6%']
+[3d sidebar dorm-b] {'sideNodeId': 'dorm-b', 'sideStatus': '正常', 'sideMetrics': '23.8℃ / 66.1%', 'sideTime': '2026-10-01 10:11:11'} history=['10:11:11 正常 23.8℃/66.1%', '10:11:09 正常 25℃/63.6%', '10:11:06 正常 24.3℃/62.2%']
+[3d sidebar dorm-c] {'sideNodeId': 'dorm-c', 'sideStatus': '正常', 'sideMetrics': '29.6℃ / 60.1%', 'sideTime': '2026-10-01 10:11:11'} history=['10:11:11 正常 29.6℃/60.1%', '10:11:09 正常 29.1℃/63.2%', '10:11:06 偏热 30℃/62.8%']
+[dash banner] 当前 3 个宿舍均正常，无需优先关注
+[conn] dash='已连接 ws://localhost:8083' 3d='已连接 ws://localhost:8083'
+[consist dorm-a] paho_last2=['2026-10-01 10:11:09', '2026-10-01 10:11:11']
+   dash: {'temperature': 26.5, 'humidity': 44.4, 'status': '正常', 'time': '2026-10-01 10:11:11'} dom={'metrics': '26.5℃ / 44.4%', 'time': '2026-10-01 10:11:11', 'status': '正常'} recalc=正常
+   3d  : {'temperature': 26.5, 'humidity': 44.4, 'status': '正常', 'time': '2026-10-01 10:11:11'} recalc=正常
+   -> dash==3d: True; dash.time in paho last2: True
+[consist dorm-b] paho_last2=['2026-10-01 10:11:09', '2026-10-01 10:11:11']
+   dash: {'temperature': 23.8, 'humidity': 66.1, 'status': '正常', 'time': '2026-10-01 10:11:11'} dom={'metrics': '23.8℃ / 66.1%', 'time': '2026-10-01 10:11:11', 'status': '正常'} recalc=正常
+   3d  : {'temperature': 23.8, 'humidity': 66.1, 'status': '正常', 'time': '2026-10-01 10:11:11'} recalc=正常
+   -> dash==3d: True; dash.time in paho last2: True
+[consist dorm-c] paho_last2=['2026-10-01 10:11:09', '2026-10-01 10:11:11']
+   dash: {'temperature': 29.6, 'humidity': 60.1, 'status': '正常', 'time': '2026-10-01 10:11:11'} dom={'metrics': '29.6℃ / 60.1%', 'time': '2026-10-01 10:11:11', 'status': '正常'} recalc=正常
+   3d  : {'temperature': 29.6, 'humidity': 60.1, 'status': '正常', 'time': '2026-10-01 10:11:11'} recalc=正常
+   -> dash==3d: True; dash.time in paho last2: True
+[counts] dash received=24 dropped=0; 3d received=24 dropped=0

@@ -1,0 +1,12 @@
+[dash] conn='已连接 ws://localhost:8083'
+[3d] conn='已连接 ws://localhost:8083'
+[dash hit] latest={'nodeId': 'dorm-b', 'temperature': 29, 'humidity': 72, 'status': '正常', 'time': '2026-09-30 10:00:00', 'action': ''} at thread_start+0.83s (publish sent ~+0.5s)
+[3d hit] latest={'nodeId': 'dorm-b', 'temperature': 29, 'humidity': 72, 'status': '正常', 'time': '2026-09-30 10:00:00', 'action': ''} sidebar={'sideNodeId': 'dorm-b', 'sideStatus': '正常', 'sideMetrics': '29℃ / 72%', 'sideTime': '2026-09-30 10:00:00'}
+[publish cmd] (0, '', '', 1.8050134181976318)
+[dash displayed the published record] yes, latency=0.00s from first hit
+[3d displayed the published record] yes, latency=0.06s from first hit
+[dash dorm-b history contains manual record] [{'status': '正常', 'temp': 29, 'hum': 72, 'time': '2026-09-30 10:00:00'}]
+[3d dorm-b history contains manual record] [{'status': '正常', 'temp': 29, 'hum': 72, 'time': '2026-09-30 10:00:00'}]
+[dash dropped] 丢弃 0 条 (hidden=True)
+[3d dropped] 丢弃 0 条 (hidden=True)
+[dash dorm-b card after] 29℃ / 72% / 2026-09-30 10:00:00

@@ -1,0 +1,6 @@
+[dash] conn='已连接 ws://localhost:8083'
+[3d] conn='已连接 ws://localhost:8083'
+[publish cmd] returncode=0 stdout='' stderr='' took=1.80s
+[dash saw] MISSED window
+[3d saw] MISSED window
+[dash dorm-b DOM after check] metrics=28.9℃ / 68.6% time=2026-10-01 10:12:24

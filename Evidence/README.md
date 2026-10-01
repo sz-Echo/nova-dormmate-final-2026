@@ -53,4 +53,8 @@
 - `D4/` 真实故障与修复 — 阶段 C/D 归档（D4 预演：Topic 写错/JSON 字段错/Broker 停/3D 映射错/移动端不同步）
 - `D5/` Rule/ML 对照案例 — 阶段 C 归档（C4 案例：27.5℃/70% 规则正常、ML 明显不同）
 - `Debug/` 现场 Modify/Debug 预演记录 — 阶段 D 归档
-- `Reproduce/` 交叉复现（卡点→README 修订→复现成功）— 阶段 C 归档
+- `Reproduce/` 交叉复现三件套（阶段 C 已完成，2026-10-01）：
+  - `reproduce-log.md` — 第一次冷执行日志（7 条卡点：MQTTX 替代路径 / 移动端 GUI / 发布间隔 2.5s / CSV 衔接 / 区块命名 / appid）
+  - `readme-revision.diff` — 卡点对应的 README 6 处修订
+  - `reproduce-result.md` — 第二次冷执行结果（两条链全通、修订点逐条验证）
+  - `shots/` 第一次复现截图 22 张、`round2/` 第二次复现截图与日志 26 件、`repro-web-20261001.csv` 复现数据
