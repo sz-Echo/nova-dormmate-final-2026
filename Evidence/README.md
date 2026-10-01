@@ -73,7 +73,8 @@
 （阶段 D 将补：Topic 写错 / JSON 字段错 / Broker 停 / 3D 映射错 / 移动端不同步的现场预演记录）
 
 ## 其余目录（阶段 D 填充）
-- `Debug/` 现场 Modify/Debug 预演记录 — 阶段 D 归档
+- `Debug/` 现场 Modify/Debug 预演记录（阶段 D，2026-10-01 起归档）：
+  - `d3-modify-color.png` — D3 Modify 用例 4「改 3D 状态映射」：偏热楼体主色改为红色（ff0000）后注入偏热消息的验证截图（改后已还原）
 - `Reproduce/` 交叉复现三件套（阶段 C 已完成，2026-10-01）：
   - `reproduce-log.md` — 第一次冷执行日志（7 条卡点：MQTTX 替代路径 / 移动端 GUI / 发布间隔 2.5s / CSV 衔接 / 区块命名 / appid）
   - `readme-revision.diff` — 卡点对应的 README 6 处修订
