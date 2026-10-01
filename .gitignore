@@ -5,3 +5,7 @@ docs/demo/rec-*/
 docs/demo/dub-tmp/
 docs/demo/mobile-*.webm
 docs/demo/rec-merge*/
+
+# PPT 生成工具的 npm 依赖（docs/V08R5_Plans/gen_ppt.js 本地工具）
+docs/V08R5_Plans/node_modules/
+docs/V08R5_Plans/package*.json
