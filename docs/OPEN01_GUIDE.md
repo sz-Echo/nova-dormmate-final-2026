@@ -162,15 +162,15 @@
 | 4 | 改 3D 状态映射 | `three3d/app.js` STATUS_STYLE 偏热主色 0xe67e22 → 0xff0000 | 刷新后偏热楼体变红 | 改回 |
 | 5 | 调优先规则 | `dashboard/priority.js` 交换 ①② 比较顺序（次数优先） | test-priority.html 对应组结果变化 | 改回 |
 
-## 第四章 Debug：5 个可控故障预演（D4，证据入 Evidence/Debug/）
+## 第四章 Debug：5 个可控故障预演（D4，2026-10-01 已预演 1-4，证据入 Evidence/Debug/）
 
-| # | 故障 | 现象 | 定位 | 修复 | 验证 |
+| # | 故障 | 现象（实测） | 定位 | 修复 | 验证 |
 |---|---|---|---|---|---|
-| 1 | Topic 写错（`dormmate/dorm-x/env`） | Dashboard 无反应（未订阅该 topic） | 对比契约表 Topic 格式 | 改回 `dormmate/{nodeId}/env` | 卡片更新 |
-| 2 | JSON 字段错（缺 humidity） | 横幅告警 + 丢弃计数 +1 | 校验链六字段检查 | 补全字段重发 | 恢复更新 |
-| 3 | Broker 停 | 两端"未连接/重连中"、停止刷新 | ws://8083 断开 | 重启 Broker | 自动重连恢复 |
-| 4 | 3D 节点映射错（CLICK_X 改错） | 点击楼体选中错误节点 | 对照 CLICK_X 比例 | 改回 | 选中正确 |
-| 5 | 移动端不同步（域名校验未勾选） | 小程序连不上 8083 | 开发者工具设置 | 勾选"不校验合法域名…" | 卡片实时更新 |
+| 1 | Topic 写错（`dormmate/dorm-x/env`） | ✅ 预演：丢弃计数 +1 告警——Dashboard 订阅 `+/env` 通配符能收到，校验链"未知节点 dorm-x"防线拦截 | 对比契约表 Topic 格式 + 未知节点防线 | 改回 `dormmate/{nodeId}/env` | 卡片更新（d4-debug1-wrong-topic.png） |
+| 2 | JSON 字段错（缺 humidity） | ✅ 预演：横幅"消息缺少字段 humidity" + 丢弃计数 +1 | 校验链六字段检查 | 补全字段重发 | 恢复更新（d4-debug2-missing-field.png） |
+| 3 | Broker 停 | ✅ 预演：连接状态变"已断开，重连中…" | ws://8083 断开 | 重启 Broker | 自动重连恢复（d4-debug3-broker-down.png / d4-debug3-broker-recovered.png） |
+| 4 | 3D 节点映射错（mesh dormId 篡改） | ✅ 预演：点击 dorm-a 楼位置无法正确选中 | 对照 tagDorm 标签映射 | 还原映射（重载） | 选中恢复 dorm-a（d4-debug4-wrong-mapping.png） |
+| 5 | 移动端不同步（域名校验未勾选） | 小程序连不上 8083 报错 | 开发者工具设置 | 勾选"不校验合法域名…" | 卡片实时更新（GUI 步骤，现场演示验证） |
 
 ## 第五章 Verify：自动化断言与最终完成线（D5）
 
