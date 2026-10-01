@@ -119,3 +119,60 @@
 | GitHub 远端当日不可达（网络时断时通） | 提交后重试 push（先展示命令）；不重试轰炸 |
 | docs/PLAN.md 最近Commit 行 | 本次收尾提交时更新为实际哈希 |
 | docs/evidence/m4/ 无截图 | 截图非 M4 完成线要求；证据以 review 归档 + 用户实测记录为准（文档口径已统一） |
+
+---
+
+# V0.8R5 现场验收自测（任务书 p22-23：Run / Explain / Modify / Debug / Verify）
+
+> 2026-10-01 起，随 UPGRADE_PLAN 阶段 D 执行。现场验收五项，本文为陪跑文档。
+> 演示前必做：README「演示前重置系统状态」（清空 events.json → 重启 Broker/simulator → 刷新页面）。
+> 现场只开一个 Dashboard（多实例会互相覆盖事件广播）。
+
+## 第一章 Run：冷启动演练（D1，2026-10-01 已演练通过）
+
+按 README 第四节冷启动清单从关闭状态执行（每步含预期）：
+
+| 步骤 | 命令 / 操作 | 预期 | 2026-10-01 演练 |
+|---|---|---|---|
+| 0 关闭状态 | 确认无 mosquitto/simulator/http.server 进程、无 Dashboard 页面 | 端口 1883/8083/5510 无监听 | ✅ |
+| 1 Broker | `D:\Mosquitto\mosquitto.exe -c D:\Mosquitto\mosquitto.conf -v` | 1883/8083 listener 就绪 | ✅ |
+| 2 模拟节点 | `python simulator/simulate.py` | 约每 2.5 秒三节点发布六字段 JSON | ✅ |
+| 3 静态服务 | 项目根 `python -m http.server 5510` | Serving HTTP on port 5510 | ✅ |
+| 4 Dashboard | 打开 `http://127.0.0.1:5510/dashboard/` | 已连接 + 三卡片刷新 + 趋势图 | ✅（截图 docs/evidence/upgrade/d1-dashboard.png） |
+| 5 3D | 打开 `http://127.0.0.1:5510/three3d/` | 已连接 + 三栋楼状态色随消息变化 | ✅（截图 docs/evidence/upgrade/d1-3d.png） |
+| 6 移动端 | 开发者工具编译 mobile/（需人工 GUI） | 三节点卡片与 Dashboard 数值一致 | 人工步骤（E3 补拍证据已覆盖） |
+| 7 离线链 | web 页四组回归 + 导出 CSV → `python analysis/analyze.py` | 四组全对 + report.html 生成 | ✅（回归四组全过） |
+| 收尾 | 按第 6 章关闭；`git status` 干净 | data/ 无改动 | ✅ |
+
+## 第二章 Explain：随机功能说明话术（D2）
+
+现场被随机指定一个功能时的回答框架（三步）：
+
+1. **数据从哪来**：`simulator/simulate.py` 三节点随机游走 → 统一规则算 status → 六字段 JSON → `dormmate/{nodeId}/env`（MQTT 1883/8083）。
+2. **什么处理**：各端订阅后过校验链（JSON 合法 / 六字段 / topic↔nodeId 一致 / 范围）→ **本地规则重算 status（不信任消息值）** → 更新界面；事件状态经 Dashboard 状态机广播 `dormmate/{nodeId}/event`。
+3. **为什么是这个结果**：优先横幅 = 连续异常时长 → 次数 → nodeId 顺序；已恢复 = 连续 ≥2 条正常新数据（按钮不能改）；3D 楼色 = 本地重算的状态映射。
+
+## 第三章 Modify：5 个预演用例（D3，改完必须还原 + 复跑验证）
+
+| # | 用例 | 改哪 | 验证 | 还原 |
+|---|---|---|---|---|
+| 1 | 改状态阈值 | `web/script.js` computeStatus 的 30 改 29（或 dashboard 同源） | 输入 29.5℃ 由"正常"变"偏热" | 改回 30 |
+| 2 | 改移动端显示字段 | `mobile/pages/index/index.wxml` 卡片加一行字段 | 模拟器显示新字段 | 还原 |
+| 3 | 加 ASR 指令 | `dashboard/app.js` DASH_VOICE_COMMANDS 加一条（如"查看全部"） | 语音输入新指令有反应 | 删除 |
+| 4 | 改 3D 状态映射 | `three3d/app.js` STATUS_STYLE 偏热主色 0xe67e22 → 0xff0000 | 刷新后偏热楼体变红 | 改回 |
+| 5 | 调优先规则 | `dashboard/priority.js` 交换 ①② 比较顺序（次数优先） | test-priority.html 对应组结果变化 | 改回 |
+
+## 第四章 Debug：5 个可控故障预演（D4，证据入 Evidence/Debug/）
+
+| # | 故障 | 现象 | 定位 | 修复 | 验证 |
+|---|---|---|---|---|---|
+| 1 | Topic 写错（`dormmate/dorm-x/env`） | Dashboard 无反应（未订阅该 topic） | 对比契约表 Topic 格式 | 改回 `dormmate/{nodeId}/env` | 卡片更新 |
+| 2 | JSON 字段错（缺 humidity） | 横幅告警 + 丢弃计数 +1 | 校验链六字段检查 | 补全字段重发 | 恢复更新 |
+| 3 | Broker 停 | 两端"未连接/重连中"、停止刷新 | ws://8083 断开 | 重启 Broker | 自动重连恢复 |
+| 4 | 3D 节点映射错（CLICK_X 改错） | 点击楼体选中错误节点 | 对照 CLICK_X 比例 | 改回 | 选中正确 |
+| 5 | 移动端不同步（域名校验未勾选） | 小程序连不上 8083 | 开发者工具设置 | 勾选"不校验合法域名…" | 卡片实时更新 |
+
+## 第五章 Verify：自动化断言与最终完成线（D5）
+
+- 全绿清单：`python simulator/test_final.py`（62 断言）+ `python simulator/test_upgrade.py`（14 项端到端）+ `python simulator/test_stage_b.py`（五套件）+ 回归四例（web/test.html / --selftest）
+- 任务书 §10 最终完成线逐条勾选（D1-D5 全完成 / 两链真实跑通 / E1-E3 全完成 / D3 事件生命周期 / 三端一致 / ≥1 故障修复 / ≥1 Rule-ML 对照 / GitHub 完整 ≥5 commit / Evidence 可追溯 / 交叉复现三件套 / PPT 10-15 页 / 技术文档 10-15 页 / 视频 5-8 分钟 / 现场核验五项）
