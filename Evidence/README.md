@@ -38,6 +38,7 @@
 - `e2-voice-view-dorm-b.png` — 语音「查看 dorm-b」后操作对象与 tab 同步切换
 - `e2-tts-last-spoken.txt` — 「朗读状态」朗读文本原文（来自 dorm-b 真实 MQTT 记录）
 - `e2-snapshot-dorm-b.png` — 语音「拍照」快照：顶部黑条叠加 nodeId/时间/状态，文件名含 eventId
+- `e2-snapshot-real.png` — 真实摄像头快照（2026-10-01 实拍）：语音命令「拍照」下载的 PNG，顶部黑条叠加「dorm-b · 时间 · 状态」白字（PPT 第 8 页 E2 图引用此件）
 - `e2-event-card-with-snapshot.png` — 恢复定稿后事件卡片含「现场快照」引用（完整交互链）
 - `e2-interaction-chain.txt` — 语音命令 → 效果 全程记录
 
