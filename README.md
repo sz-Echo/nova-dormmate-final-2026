@@ -190,7 +190,7 @@ Broker 地址：`127.0.0.1`，TCP 端口 `1883`，WebSocket 端口 `8083`（浏�
 
 - 录制：`python simulator/record_demo.py` —— 按故事线全自动录制 8 幕（Playwright 双 iframe 录屏 + 移动端 gdigrab 区域录窗合成；脚本自启自停 Broker / 静态服务、录制前自动重置 events.json、结束后恢复基线）。单幕重录 `--scene s3`；S3/S5 幕需微信开发者工具模拟器窗口在屏幕可见（录制时自动置顶）
 - 配音：`python simulator/add_dub.py` —— edge-tts 自动配音（Xiaoxiao 女声）+ 硬字幕烧录 + SRT 软字幕 + 结尾收尾；台词时间轴按 `scene-timing.json` 各幕实际时长自动校正
-- 成品：`docs/demo/demo-v08r5-final.mp4`（**7:32**，故事线：dorm-b 偏热 → 标记重点 → 多端同步 → Camera 快照 → 执行处理 → 新数据恢复 → 故障修复（坏 JSON）→ 冷启动 → Rule/ML 对照与不理想案例）；旁白文案见 `docs/demo/demo-script.md`，台词校对表 `docs/demo/dub-lines.txt`，软字幕 `docs/demo/demo-v08r5-subtitles.srt`
+- 成品：`docs/demo/demo-v08r5-final.mp4`（**7:34**，故事线：dorm-b 偏热 → 标记重点 → 多端同步 → Camera 快照 → 执行处理 → 新数据恢复 → 故障修复（坏 JSON）→ 冷启动 → Rule/ML 对照与不理想案例）；旁白文案见 `docs/demo/demo-script.md`，台词校对表 `docs/demo/dub-lines.txt`，软字幕 `docs/demo/demo-v08r5-subtitles.srt`
 - 成品视频文件不入 git，本地保存在 `docs/demo/`（录制方法见上，随时可重录）
 
 ## 十二、常见问题与基本排查
