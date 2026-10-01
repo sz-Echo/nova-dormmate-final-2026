@@ -1,0 +1,3 @@
+{"bad json
+# 经 MQTTX 向 dormmate/dorm-b/env 发布的故意破坏的 JSON
+# Dashboard 校验链 JSON.parse 失败 -> 横幅告警 + 丢弃计数 +1 + 页面不受影响

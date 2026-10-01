@@ -80,6 +80,17 @@ allow_anonymous true
 
 > 注：① Dashboard/3D/web 均为纯静态页面，任何 localhost 静态服务皆可（第 3 步的 5510 端口为项目验收脚本统一约定）；VS Code Live Server 也可用，但注意其监视工作区文件变化，证据截图写入会触发页面重载（见"常见问题"）。② web 页的 Camera 功能要求 localhost 或 https，file:// 双击打开会被浏览器禁用。
 
+### 演示前重置系统状态（正式演示/现场验收必做）
+
+演示效果依赖干净的系统状态，按以下顺序重置，确保事件面板从空白开始实时生成、横幅干净、丢弃计数为 0：
+
+1. **清空事件数据**：`git checkout -- data/events.json`（或删除该文件后重新导出）——清除历史演示/测试遗留的事件，报告"事件复盘"区不再混入旧数据
+2. **重启 Broker 与模拟节点**：停掉再按冷启动清单第 1-2 步重启——页面内存态（事件/丢弃计数/横幅）随刷新清零
+3. **刷新页面**：Dashboard / 3D 浏览器标签重新加载（Ctrl+F5）——丢弃计数归零、错误横幅消失
+4. **核对**：事件面板空白、顶部无红色告警横幅、丢弃计数 0、"当前 3 个宿舍均正常"横幅——确认干净后才开始演示
+
+> 演示视频录制脚本 `record_demo.py` 已内置此重置（录制前自动清空 events.json、每幕全新页面实例），录制产物不携带残留状态。
+
 ## 五、MQTT Broker 与 Topic 结构
 
 Broker 地址：`127.0.0.1`，TCP 端口 `1883`，WebSocket 端口 `8083`（浏览器端经 `ws://localhost:8083` 连接）。
@@ -177,10 +188,10 @@ Broker 地址：`127.0.0.1`，TCP 端口 `1883`，WebSocket 端口 `8083`（浏�
 
 ## 十一、演示视频
 
-- 录制：`python simulator/record_demo.py` —— 按故事线全自动录制（Playwright 录屏 + 多端同屏合成，脚本自启自停 Broker / simulator / 静态服务）
-- 配音：`python simulator/add_dub.py` —— edge-tts 自动配音（Xiaoxiao 女声）+ 硬字幕烧录 + SRT 软字幕 + 收尾
-- 成品：`docs/demo/demo-v08r5-final.mp4`（5-8 分钟，故事线：dorm-b 偏热 → 标记重点 → 多端同步 → 快照 → 处理 → 恢复 → 故障修复 → 冷启动 → Rule/ML 对照）；旁白文案见 `docs/demo/demo-script.md`
-- 成品视频文件不入 git，本地保存在 `docs/demo/`（录制方法见 README，随时可重录）
+- 录制：`python simulator/record_demo.py` —— 按故事线全自动录制 8 幕（Playwright 双 iframe 录屏 + 移动端 gdigrab 区域录窗合成；脚本自启自停 Broker / 静态服务、录制前自动重置 events.json、结束后恢复基线）。单幕重录 `--scene s3`；S3/S5 幕需微信开发者工具模拟器窗口在屏幕可见（录制时自动置顶）
+- 配音：`python simulator/add_dub.py` —— edge-tts 自动配音（Xiaoxiao 女声）+ 硬字幕烧录 + SRT 软字幕 + 结尾收尾；台词时间轴按 `scene-timing.json` 各幕实际时长自动校正
+- 成品：`docs/demo/demo-v08r5-final.mp4`（**7:32**，故事线：dorm-b 偏热 → 标记重点 → 多端同步 → Camera 快照 → 执行处理 → 新数据恢复 → 故障修复（坏 JSON）→ 冷启动 → Rule/ML 对照与不理想案例）；旁白文案见 `docs/demo/demo-script.md`，台词校对表 `docs/demo/dub-lines.txt`，软字幕 `docs/demo/demo-v08r5-subtitles.srt`
+- 成品视频文件不入 git，本地保存在 `docs/demo/`（录制方法见上，随时可重录）
 
 ## 十二、常见问题与基本排查
 

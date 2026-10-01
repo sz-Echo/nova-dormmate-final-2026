@@ -7,6 +7,8 @@
 #   ③ 核心三端一致性（Playwright：Dashboard dorm-b 偏热→处理中→已恢复；3D 侧栏事件行与广播一致）
 # 前置：Broker（127.0.0.1:1883/8083）与 simulator（python simulator/simulate.py）已运行
 # 运行：python simulator/test_upgrade.py（exit code 0 = 全部通过）
+# 正式演示前请按 README「演示前重置系统状态」清单清理（events.json / 重启服务 / 刷新页面），
+# 确保事件面板从空白开始、丢弃计数为 0
 # 证据：自动截图归档到 Evidence/D1、Evidence/E3（旧证据 docs/evidence/ 不动）
 import json
 import socket

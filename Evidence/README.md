@@ -18,13 +18,8 @@
 - `e3-fan-running-3d.png` — 同一动作驱动 3D 侧栏"事件：处理中"（风扇运行）
 - `e3-recovered-dashboard.png` — 新数据触发恢复后 Dashboard"已恢复"
 - `e3-broadcast-messages.txt` — 捕获的 `dormmate/{nodeId}/event`（OPEN/HANDLING/RECOVERED）与 `dormmate/priority` 广播消息原文——三端同一状态源证据（同 eventId 贯穿完整生命周期）
-
-### 待补拍（小程序端，由开发者工具人工截图）
-
-补拍时机：**阶段 A 验收完成后的第一次开发者工具实测时**（即现在，代码已就绪）。补两张后放入 E3/ 并更新本说明：
-
-1. 小程序三节点卡片与 Dashboard 同屏数值一致（证明"两端读取同一套实时数据"）
-2. 小程序点"开启风扇"后 toast 提示与 Dashboard"处理中"同屏（证明"移动执行处理动作 → web 看到变化"联动）
+- `e3-mobile-dashboard-sync.png` — 小程序三节点卡片与 Dashboard 同屏数值一致（两端读取同一套实时数据，2026-10-01 补拍）
+- `e3-mobile-fan-action.png` — 小程序点"开启风扇"后 toast 与 Dashboard"处理中"同屏（移动执行处理动作 → web 看到变化的联动，2026-10-01 补拍）
 
 ## E1 3D 数字孪生增强（阶段 B，B1-B4）
 
@@ -65,9 +60,17 @@
 - `d5-report-ml-section.png` — report.html"ML 异常分析"区：当前值/固定规则/ML 判断并排、差异行高亮
 - `d5-c-compare.json` — 对照结果数据副本（与 `data/c_compare.json` 逐字节一致，8 组对照）
 
-## 其余目录（阶段 D 填充）
+## D4 真实故障与修复（阶段 C，C5 视频 S7 幕 + 独立复现证据）
 
-- `D4/` 真实故障与修复 — 阶段 C/D 归档（C5 视频 S7 故障段截图 + 阶段 D 预演：Topic 写错/JSON 字段错/Broker 停/3D 映射错/移动端不同步）
+- `d4-badjson-payload.txt` — 故意破坏的 JSON 原文（经 `dormmate/dorm-b/env` 发布）
+- `d4-badjson-warning.png` — Dashboard 拦截告警横幅（"消息不是合法 JSON：{bad json"，元素级截图）
+- `d4-drop-count.png` — 丢弃计数"丢弃 1 条"（拦截计数证据）
+- `d4-after-fix.png` — 修复重发合法消息后页面恢复更新
+- `d4-coldstart-console.png` — S7 冷启动段画面（真实 Broker/模拟节点启动输出 console 面板）
+
+（阶段 D 将补：Topic 写错 / JSON 字段错 / Broker 停 / 3D 映射错 / 移动端不同步的现场预演记录）
+
+## 其余目录（阶段 D 填充）
 - `Debug/` 现场 Modify/Debug 预演记录 — 阶段 D 归档
 - `Reproduce/` 交叉复现三件套（阶段 C 已完成，2026-10-01）：
   - `reproduce-log.md` — 第一次冷执行日志（7 条卡点：MQTTX 替代路径 / 移动端 GUI / 发布间隔 2.5s / CSV 衔接 / 区块命名 / appid）

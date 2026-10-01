@@ -1,0 +1,7 @@
+# 演示媒体与录制中间产物（不入 git；成品本地保存在 docs/demo/，录制方法见 README）
+docs/demo/*.webm
+docs/demo/*.mp4
+docs/demo/rec-*/
+docs/demo/dub-tmp/
+docs/demo/mobile-*.webm
+docs/demo/rec-merge*/
