@@ -1,0 +1,7 @@
+event {"nodeId": "dorm-b", "eventId": "dorm-b-20261001103114", "state": "OPEN", "time": "2026-10-01 10:31:14", "summary": "发现异常：偏热"}
+event {"nodeId": "dorm-b", "eventId": "dorm-b-20261001103114", "state": "HANDLING", "time": "2026-10-01 10:31:20", "summary": "已开启风扇，处理中（移动端触发）"}
+event {"nodeId": "dorm-b", "eventId": "dorm-b-20261001103114", "state": "RECOVERED", "time": "2026-10-01 10:31:25", "summary": "10:31:14 dorm-b 连续偏热 → 优先关注 dorm-b（已连续偏热 0.2 分钟） → 10:31:20 开启风扇并通风 → 10:31:25 恢复正常"}
+event {"nodeId": "dorm-b", "eventId": "dorm-b-20261001103126", "state": "OPEN", "time": "2026-10-01 10:31:26", "summary": "发现异常：偏热"}
+priority {"nodeId": "dorm-b", "reason": "优先关注 dorm-b：已连续偏热 0 分钟；dorm-a、dorm-c 当前正常。", "time": "2026-10-01 10:31:14"}
+priority {"nodeId": "", "reason": "当前 3 个宿舍均正常，无需优先关注", "time": "2026-10-01 10:31:24"}
+priority {"nodeId": "dorm-b", "reason": "优先关注 dorm-b：已连续偏热 0 分钟；dorm-a、dorm-c 当前正常。", "time": "2026-10-01 10:31:26"}

@@ -1,0 +1,74 @@
+[
+  {
+    "time": "2026-09-28 10:00:00",
+    "temperature": 25.0,
+    "humidity": 58.0,
+    "rule_status": "正常",
+    "ml_verdict": 1,
+    "ml_text": "接近历史常态",
+    "ml_score": 0.4804
+  },
+  {
+    "time": "2026-09-28 10:01:00",
+    "temperature": 25.6,
+    "humidity": 60.0,
+    "rule_status": "正常",
+    "ml_verdict": 1,
+    "ml_text": "接近历史常态",
+    "ml_score": 0.4748
+  },
+  {
+    "time": "2026-09-28 10:02:00",
+    "temperature": 29.0,
+    "humidity": 72.0,
+    "rule_status": "正常",
+    "ml_verdict": -1,
+    "ml_text": "与历史明显不同",
+    "ml_score": 0.6738
+  },
+  {
+    "time": "2026-09-28 10:03:00",
+    "temperature": 27.5,
+    "humidity": 70.0,
+    "rule_status": "正常",
+    "ml_verdict": -1,
+    "ml_text": "与历史明显不同",
+    "ml_score": 0.6738
+  },
+  {
+    "time": "2026-09-28 10:04:00",
+    "temperature": 16.0,
+    "humidity": 60.0,
+    "rule_status": "偏冷",
+    "ml_verdict": -1,
+    "ml_text": "与历史明显不同",
+    "ml_score": 0.5641
+  },
+  {
+    "time": "2026-09-28 10:05:00",
+    "temperature": 31.0,
+    "humidity": 60.0,
+    "rule_status": "偏热",
+    "ml_verdict": -1,
+    "ml_text": "与历史明显不同",
+    "ml_score": 0.5967
+  },
+  {
+    "time": "2026-09-28 10:06:00",
+    "temperature": 25.0,
+    "humidity": 80.0,
+    "rule_status": "偏湿",
+    "ml_verdict": -1,
+    "ml_text": "与历史明显不同",
+    "ml_score": 0.6219
+  },
+  {
+    "time": "2026-09-28 10:07:00",
+    "temperature": 18.0,
+    "humidity": 74.0,
+    "rule_status": "正常",
+    "ml_verdict": -1,
+    "ml_text": "与历史明显不同",
+    "ml_score": 0.6539
+  }
+]

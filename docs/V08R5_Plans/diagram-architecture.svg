@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="560" viewBox="0 0 920 560" font-family="Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#5b6b7b"/>
+    </marker>
+    <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#1f8a4c"/>
+    </marker>
+    <marker id="arrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563a8"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="920" height="560" fill="#ffffff"/>
+  <text x="460" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#2b3a48">DormMate 系统架构：一个系统、两条数据链、多端协同</text>
+
+  <!-- 离线分析链（上半） -->
+  <rect x="28" y="52" width="864" height="170" rx="10" fill="#f4f9f4" stroke="#1f8a4c" stroke-width="1.5"/>
+  <text x="42" y="76" font-size="14" font-weight="bold" fill="#1f8a4c">离线分析链（历史数据 → 分析 → 报告）</text>
+
+  <rect x="60" y="92" width="170" height="62" rx="8" fill="#ffffff" stroke="#1f8a4c" stroke-width="1.2"/>
+  <text x="145" y="116" text-anchor="middle" font-size="13" font-weight="bold" fill="#2b3a48">web/index.html</text>
+  <text x="145" y="136" text-anchor="middle" font-size="11" fill="#5b6b7b">温湿度输入 · 统一规则判断</text>
+
+  <rect x="290" y="92" width="120" height="62" rx="8" fill="#ffffff" stroke="#1f8a4c" stroke-width="1.2"/>
+  <text x="350" y="116" text-anchor="middle" font-size="13" font-weight="bold" fill="#2b3a48">CSV 导出</text>
+  <text x="350" y="136" text-anchor="middle" font-size="11" fill="#5b6b7b">4 列最小格式 · UTF-8</text>
+
+  <rect x="470" y="92" width="180" height="62" rx="8" fill="#ffffff" stroke="#1f8a4c" stroke-width="1.2"/>
+  <text x="560" y="112" text-anchor="middle" font-size="13" font-weight="bold" fill="#2b3a48">analysis/analyze.py</text>
+  <text x="560" y="130" text-anchor="middle" font-size="11" fill="#5b6b7b">pandas 统计 · 规则重算</text>
+  <text x="560" y="146" text-anchor="middle" font-size="11" fill="#5b6b7b">c_ml 对照（IsolationForest）</text>
+
+  <rect x="710" y="92" width="160" height="62" rx="8" fill="#ffffff" stroke="#1f8a4c" stroke-width="1.2"/>
+  <text x="790" y="116" text-anchor="middle" font-size="13" font-weight="bold" fill="#2b3a48">data/report.html</text>
+  <text x="790" y="136" text-anchor="middle" font-size="11" fill="#5b6b7b">摘要 · 趋势 · 事件复盘</text>
+  <text x="790" y="150" text-anchor="middle" font-size="11" fill="#5b6b7b">ML 异常分析</text>
+
+  <line x1="230" y1="123" x2="286" y2="123" stroke="#1f8a4c" stroke-width="1.6" marker-end="url(#arrG)"/>
+  <line x1="410" y1="123" x2="466" y2="123" stroke="#1f8a4c" stroke-width="1.6" marker-end="url(#arrG)"/>
+  <line x1="650" y1="123" x2="706" y2="123" stroke="#1f8a4c" stroke-width="1.6" marker-end="url(#arrG)"/>
+
+  <rect x="60" y="176" width="810" height="34" rx="6" fill="#e8f3ea"/>
+  <text x="465" y="198" text-anchor="middle" font-size="11.5" fill="#1f8a4c">数据存储 = CSV 文件（data/）：dormmate.csv · c_history.csv · c_new.csv · events.json · sim-day-*/  —— 无数据库（技术边界）</text>
+
+  <!-- 实时系统链（下半） -->
+  <rect x="28" y="240" width="864" height="300" rx="10" fill="#f2f7fb" stroke="#2563a8" stroke-width="1.5"/>
+  <text x="42" y="264" font-size="14" font-weight="bold" fill="#2563a8">实时系统链（模拟节点 → MQTT Broker → 三端订阅同一套实时状态）</text>
+
+  <rect x="60" y="284" width="170" height="66" rx="8" fill="#ffffff" stroke="#2563a8" stroke-width="1.2"/>
+  <text x="145" y="306" text-anchor="middle" font-size="13" font-weight="bold" fill="#2b3a48">simulator/simulate.py</text>
+  <text x="145" y="326" text-anchor="middle" font-size="11" fill="#5b6b7b">三节点 dorm-a/b/c</text>
+  <text x="145" y="342" text-anchor="middle" font-size="11" fill="#5b6b7b">随机游走 · 动作响应降温</text>
+
+  <rect x="300" y="284" width="150" height="66" rx="8" fill="#ffffff" stroke="#2563a8" stroke-width="1.2"/>
+  <text x="375" y="306" text-anchor="middle" font-size="13" font-weight="bold" fill="#2b3a48">Mosquitto Broker</text>
+  <text x="375" y="326" text-anchor="middle" font-size="11" fill="#5b6b7b">1883 TCP · 8083 WebSocket</text>
+  <text x="375" y="342" text-anchor="middle" font-size="11" fill="#5b6b7b">Topic：env/action/event/priority</text>
+
+  <line x1="230" y1="310" x2="296" y2="310" stroke="#2563a8" stroke-width="1.6" marker-end="url(#arrB)"/>
+  <text x="263" y="300" text-anchor="middle" font-size="10.5" fill="#2563a8">env 发布</text>
+
+  <!-- 三端 -->
+  <rect x="520" y="276" width="130" height="52" rx="8" fill="#ffffff" stroke="#2563a8" stroke-width="1.2"/>
+  <text x="585" y="298" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#2b3a48">Dashboard</text>
+  <text x="585" y="316" text-anchor="middle" font-size="10.5" fill="#5b6b7b">实时看板 · 状态机唯一持有</text>
+
+  <rect x="520" y="342" width="130" height="52" rx="8" fill="#ffffff" stroke="#2563a8" stroke-width="1.2"/>
+  <text x="585" y="364" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#2b3a48">three3d</text>
+  <text x="585" y="382" text-anchor="middle" font-size="10.5" fill="#5b6b7b">3D 数字孪生</text>
+
+  <rect x="520" y="408" width="130" height="52" rx="8" fill="#ffffff" stroke="#2563a8" stroke-width="1.2"/>
+  <text x="585" y="430" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#2b3a48">mobile 小程序</text>
+  <text x="585" y="448" text-anchor="middle" font-size="10.5" fill="#5b6b7b">快查 · 开风扇 · 手写 MQTT</text>
+
+  <line x1="450" y1="302" x2="516" y2="302" stroke="#2563a8" stroke-width="1.6" marker-end="url(#arrB)"/>
+  <line x1="450" y1="325" x2="516" y2="368" stroke="#2563a8" stroke-width="1.6" marker-end="url(#arrB)"/>
+  <line x1="450" y1="340" x2="516" y2="434" stroke="#2563a8" stroke-width="1.6" marker-end="url(#arrB)"/>
+  <text x="480" y="296" text-anchor="middle" font-size="10.5" fill="#2563a8">订阅 env</text>
+  <text x="482" y="330" text-anchor="middle" font-size="10.5" fill="#2563a8">event / priority</text>
+
+  <!-- 反向通道：action -->
+  <line x1="585" y1="460" x2="585" y2="496" stroke="#5b6b7b" stroke-width="1.6"/>
+  <line x1="585" y1="496" x2="240" y2="496" stroke="#5b6b7b" stroke-width="1.6"/>
+  <line x1="240" y1="496" x2="240" y2="354" stroke="#5b6b7b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="410" y="512" text-anchor="middle" font-size="11" fill="#5b6b7b">action 动作通道（fan_on / fan_off）：Dashboard / 移动端 → simulator 降温 + 3D 风扇</text>
+
+  <!-- 状态机广播说明 -->
+  <rect x="700" y="276" width="170" height="120" rx="8" fill="#fffbe8" stroke="#c9a227" stroke-width="1.2"/>
+  <text x="785" y="298" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a6d1d">Dashboard 事件状态机</text>
+  <text x="785" y="318" text-anchor="middle" font-size="10.5" fill="#5b6b7b">OPEN → HANDLING → RECOVERED</text>
+  <text x="785" y="336" text-anchor="middle" font-size="10.5" fill="#5b6b7b">恢复仅由新数据触发</text>
+  <text x="785" y="354" text-anchor="middle" font-size="10.5" fill="#5b6b7b">广播 event/priority topic</text>
+  <text x="785" y="372" text-anchor="middle" font-size="10.5" fill="#5b6b7b">3D / 移动端订阅渲染</text>
+  <text x="785" y="390" text-anchor="middle" font-size="10.5" fill="#5b6b7b">（同一事件不各自维护）</text>
+
+  <rect x="700" y="408" width="170" height="52" rx="8" fill="#ffffff" stroke="#c9a227" stroke-width="1.2"/>
+  <text x="785" y="430" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2b3a48">E2 交互：语音命令条</text>
+  <text x="785" y="448" text-anchor="middle" font-size="10.5" fill="#5b6b7b">查看/朗读/拍照/开关风扇</text>
+
+  <!-- 校验链标注 -->
+  <text x="60" y="530" font-size="11" fill="#8a6d1d">统一防线：topic↔nodeId 串线校验 · 坏 JSON 拦截告警 · status 一律本地规则重算（不信任消息值） · 规则零重写（web/dashboard/mobile/3D/analysis 同源）</text>
+</svg>

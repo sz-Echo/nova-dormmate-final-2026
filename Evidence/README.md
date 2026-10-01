@@ -46,12 +46,28 @@
 - `e2-event-card-with-snapshot.png` — 恢复定稿后事件卡片含「现场快照」引用（完整交互链）
 - `e2-interaction-chain.txt` — 语音命令 → 效果 全程记录
 
-## 其余目录（阶段 C/D 填充）
+## D2 持续异常与优先关注（阶段 C，采集器 `simulator/capture_d.py --d2`）
 
-- `D2/` 优先关注（≥3 组不同三节点情况，优先级随数据变化）— 阶段 D 归档
-- `D3/` 事件生命周期三端一致 — 阶段 D 归档
-- `D4/` 真实故障与修复 — 阶段 C/D 归档（D4 预演：Topic 写错/JSON 字段错/Broker 停/3D 映射错/移动端不同步）
-- `D5/` Rule/ML 对照案例 — 阶段 C 归档（C4 案例：27.5℃/70% 规则正常、ML 明显不同）
+- `d2-priority-group1.png` — 组①只有 dorm-b 偏热 20 分钟 → 横幅"优先关注 dorm-b：已连续偏热 20 分钟"
+- `d2-priority-group2.png` — 组②dorm-b 偏热 20 分钟 vs dorm-c 偏湿 5 分钟 → 优先 dorm-b（时长优先）
+- `d2-priority-group3.png` — 组③三节点都异常、时长相同 → 次数兜底优先 dorm-b（4 条）
+
+## D3 事件生命周期三端一致（阶段 C，采集器 `simulator/capture_d.py --d3`）
+
+- `d3-handling-dashboard.png` — 注入 dorm-b 偏热 + fan_on（移动端同构）后 Dashboard"处理中"
+- `d3-handling-3d.png` — 同一事件 3D 侧栏事件行 + 风扇（HANDLING 广播渲染）
+- `d3-recovered-dashboard.png` — 2 条正常新数据触发恢复后 Dashboard"已恢复"
+- `d3-recovered-3d.png` — 3D 端同一事件的已恢复状态
+- `d3-broadcast-messages.txt` — dorm-b 事件 OPEN→HANDLING→RECOVERED 同 eventId 广播原文 + priority 消息（三端同一状态源）
+
+## D5 Rule/ML 对照案例（阶段 C，采集器 `simulator/capture_d.py --d5`）
+
+- `d5-report-ml-section.png` — report.html"ML 异常分析"区：当前值/固定规则/ML 判断并排、差异行高亮
+- `d5-c-compare.json` — 对照结果数据副本（与 `data/c_compare.json` 逐字节一致，8 组对照）
+
+## 其余目录（阶段 D 填充）
+
+- `D4/` 真实故障与修复 — 阶段 C/D 归档（C5 视频 S7 故障段截图 + 阶段 D 预演：Topic 写错/JSON 字段错/Broker 停/3D 映射错/移动端不同步）
 - `Debug/` 现场 Modify/Debug 预演记录 — 阶段 D 归档
 - `Reproduce/` 交叉复现三件套（阶段 C 已完成，2026-10-01）：
   - `reproduce-log.md` — 第一次冷执行日志（7 条卡点：MQTTX 替代路径 / 移动端 GUI / 发布间隔 2.5s / CSV 衔接 / 区块命名 / appid）
