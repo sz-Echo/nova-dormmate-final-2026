@@ -172,7 +172,18 @@
 | 4 | 3D 节点映射错（mesh dormId 篡改） | ✅ 预演：点击 dorm-a 楼位置无法正确选中 | 对照 tagDorm 标签映射 | 还原映射（重载） | 选中恢复 dorm-a（d4-debug4-wrong-mapping.png） |
 | 5 | 移动端不同步（域名校验未勾选） | 小程序连不上 8083 报错 | 开发者工具设置 | 勾选"不校验合法域名…" | 卡片实时更新（GUI 步骤，现场演示验证） |
 
-## 第五章 Verify：自动化断言与最终完成线（D5）
+## 第五章 Verify：自动化断言与最终完成线（D5，2026-10-01 全绿）
 
-- 全绿清单：`python simulator/test_final.py`（62 断言）+ `python simulator/test_upgrade.py`（14 项端到端）+ `python simulator/test_stage_b.py`（五套件）+ 回归四例（web/test.html / --selftest）
-- 任务书 §10 最终完成线逐条勾选（D1-D5 全完成 / 两链真实跑通 / E1-E3 全完成 / D3 事件生命周期 / 三端一致 / ≥1 故障修复 / ≥1 Rule-ML 对照 / GitHub 完整 ≥5 commit / Evidence 可追溯 / 交叉复现三件套 / PPT 10-15 页 / 技术文档 10-15 页 / 视频 5-8 分钟 / 现场核验五项）
+**断言全绿**：`python simulator/test_final.py`（62 断言，FINAL RESULT: 0 failures）+ `python simulator/test_upgrade.py`（阶段 A 验收全部通过）+ `python simulator/test_stage_b.py`（阶段 B 验收全部通过）+ 回归四例（web/test.html / --selftest）
+
+**任务书 §10 最终完成线逐条勾选：**
+
+| # | 完成线 | 状态 | 证据 |
+|---|---|---|---|
+| 1 | 五个场景（D1-D5）全部完成；离线分析链、实时系统链真实跑通 | ✅ | test_final 0 failures；冷启动演练 8 步（第一章） |
+| 2 | E1 3D 增强 / E2 交互增强 / E3 同步协同全部完成；D3 事件生命周期从发现、处理走到后续数据验证与恢复/未恢复 | ✅ | test_stage_b 五套件全过；D3 证据（Evidence/D3，同 eventId 三态广播） |
+| 3 | web/Dashboard、移动端、3D 围绕同一套实时状态或共享事件状态保持一致 | ✅ | test_upgrade 三端一致性断言；E3 补拍证据 |
+| 4 | ≥1 次真实故障与修复；≥1 个 Rule/ML 对照案例 | ✅ | Evidence/D4（坏 JSON 拦截修复）；D5 案例 27.5℃/70%（0.6738） |
+| 5 | GitHub 仓库完整、≥5 次有意义 Commit；Evidence 目录完整可追溯 | ✅ | 阶段 C 7 次提交 + 阶段 D 3 次；Evidence 九目录索引 |
+| 6 | 1 次同伴交叉复现（发现问题→修订→再次复现）；PPT 10-15 页；技术文档 10-15 页正文；视频 5-8 分钟 | ✅ | Evidence/Reproduce 三件套；PPT 14 页；PDF 11 页；视频 7:34 |
+| 7 | 通过现场核验 Run/Explain/Modify/Debug/Verify | ✅ 已预演 | 第一至四章演练记录与证据（现场正式核验按本指南执行） |

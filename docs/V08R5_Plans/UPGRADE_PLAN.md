@@ -211,6 +211,8 @@ V0.8R5 不是重做 C01，而是把已学能力（Web、Python 数据分析、Ca
 
 ### 阶段 D：现场验收自测（Run/Explain/Modify/Debug/Verify）
 
+> **状态：✅ 已完成（2026-10-01）**——D1-D5 全部落地：冷启动演练 8 步全过（证据 docs/evidence/upgrade/d1-*.png）、Explain 话术框架、Modify 5 用例预演（全部验证并还原、git diff 干净）、Debug 5 故障预演（1-4 实测记录 + 证据 Evidence/Debug/，5 为 GUI 步骤现场演示）、Verify 断言全绿（test_final 62 断言 0 failures + test_upgrade 阶段 A 全部通过 + test_stage_b 阶段 B 全部通过）。提交 437a9c5（D1）、8653c85（D3）、d806a21（D4）。
+
 - **D1 Run**：冷启动清单演练（Broker→simulator→Dashboard→移动端→3D），两条链跑通；更新 `docs/OPEN01_GUIDE.md`
 - **D2 Explain**：随机功能说明脚本（数据从哪来→什么处理→为什么是这个结果）
 - **D3 Modify**：5 个预演用例（改状态阈值 / 改移动端显示字段 / 加 ASR 指令 / 改 3D 状态映射 / 调优先规则），每个改完重新运行验证
