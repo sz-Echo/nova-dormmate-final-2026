@@ -197,15 +197,17 @@ V0.8R5 不是重做 C01，而是把已学能力（Web、Python 数据分析、Ca
 
 ### 阶段 C：交付物制作
 
-- **C1 README 重写**：按任务书 p19 十项清单逐项覆盖 + 已知限制 + 开源组件表（保留现有内容并补齐）
-- **C2 技术文档**（`docs/V08R5_Plans/TECHNICAL_REPORT.md`，10-15 页正文，6 部分：项目概述 / 系统与数据链 / 核心机制（Topic 设计、MQTT 过程、web-移动端同步机制）/ D1-D5 与 E1-E3 关键实现 / 测试与验证（回归、验证、Rule/ML 对照、交叉复现）/ 自主设计与 Open Enhancement；配系统架构图、事件状态图、关键截图）
-- **C3 PPT**（10-15 页，任务书 p20-21 的 12 项内容，用 pptx skill 生成）
-- **C4 Reproduce 交叉复现**：Claude 扮演"从未接触项目的同学"，只依据仓库+README 冷执行（环境准备→依赖安装→启动组件→复现两条链）；记录卡点 → 修订 README → 再次复现成功；证据（卡点记录、README diff、复现结果截图/日志）入 `Evidence/Reproduce/`
-- **C5 演示视频重录**（5-8 分钟，任务书 p22 故事线）：dorm-b 偏热 → 系统标记重点 → Web/移动端/3D 同步 → Camera 快照 → 执行处理 → 新数据 → 恢复 → 多端事件更新 → 制造一次故障（错误 JSON）并修复 → 冷启动跑通链路 → Rule/ML 对照；扩展 `simulator/record_demo.py` + `add_dub.py`
-- **C6 Evidence/ 建设**：D1-D5、E1-E3、Debug、Reproduce 子目录 + `Evidence/README.md` 索引（每项证据一句说明）；docs/evidence/ 旧证据不动
-- **C7 Git 提交**：≥5 次有意义提交（如 feat(mobile)/feat(dashboard)/feat(three3d)/docs(...)/test(...)），每次提交前展示变更摘要，经确认后提交
+> **状态：✅ 已完成（2026-10-01）**——C1-C7 全部落地；6 次有意义提交（03e5756 README 重写 / 2f124c8 交叉复现证据与修订 / 780c250 技术文档与证据补齐 / e680c2b 故事线演示录制与配音 / 859ccf1 PPT）；验收标准逐条达标（PDF 11 页、PPT 14 页、视频 7:34、Reproduce 三件套、Evidence 九目录索引齐全）
 
-**阶段 C 验收标准**：任务书 §8 各交付物页数/时长/结构达标；Reproduce 有"卡点+修订+复现"三件套。
+- **C1 ✅ README 重写**：按任务书 p19 十项清单逐项覆盖 + 已知限制 + 开源组件表；新增演示前重置系统状态清单（events.json / 重启服务 / 刷新页面）
+- **C2 ✅ 技术文档**（`docs/V08R5_Plans/TECHNICAL_REPORT.md` + `.pdf`，**11 页正文** ∈ [10,15]，6 部分 + 多端分工；配自绘架构图/事件状态图 SVG→PNG、证据拼图 4 张；渲染管线 `simulator/render_report.py`，页数口径=渲染 PDF 页数）
+- **C3 ✅ PPT**（`docs/V08R5_Plans/DormMate_V08R5_PPT.pptx`，**14 页** ∈ [10,15]，任务书 12 项内容 + 封面/收尾；E2 页为真实摄像头快照；每页备注附讲稿要点；生成器 `docs/V08R5_Plans/gen_ppt.js`，validate 全过）
+- **C4 ✅ Reproduce 交叉复现**：两轮冷执行（只凭 README + 全新 venv）；7 条卡点 → README 6 处修订 → 第二轮两条链全通、修订点逐条验证；三件套证据在 `Evidence/Reproduce/`（reproduce-log.md / readme-revision.diff / reproduce-result.md + 两轮截图 48 件）
+- **C5 ✅ 演示视频重录**（`docs/demo/demo-v08r5-final.mp4`，**7:34** ∈ [5,8] 分钟，任务书 p22 故事线 9 beats 全含：dorm-b 偏热 → 标记重点 → 多端同步（移动端同屏）→ Camera 快照 → 处理 → 恢复 → 故障修复（坏 JSON）→ 冷启动 → Rule/ML 对照；`record_demo.py` 8 幕 + gdigrab 区域捕获（竖屏窗口优先+置顶防遮挡）+ `add_dub.py` edge-tts 配音硬字幕；媒体不入 git（.gitignore），成品本地保存）
+- **C6 ✅ Evidence/ 建设**：D1-D5、E1-E3、Debug、Reproduce 九子目录 + 索引（每项一句说明）；移动端 E3 补拍 2 张已入；docs/evidence/ 旧证据不动
+- **C7 ✅ Git 提交**：6 次有意义提交（≥5 达标），每次提交前展示变更摘要经确认
+
+**阶段 C 验收标准**：任务书 §8 各交付物页数/时长/结构达标；Reproduce 有"卡点+修订+复现"三件套。✅ 全部达标
 
 ### 阶段 D：现场验收自测（Run/Explain/Modify/Debug/Verify）
 

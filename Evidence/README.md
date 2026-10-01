@@ -3,7 +3,8 @@
 > 任务书 p19：不堆截图，每项保留最能证明结果的截图/短视频/消息记录，并配一句说明。
 > C01 阶段证据仍冻结在 `docs/evidence/`，本目录为综合作品升级阶段证据（2026-09-30 起）。
 > 截图由验收脚本自动生成：阶段 A `python simulator/test_upgrade.py`（exit code 0 = 全过）；
-> 阶段 B `python simulator/test_stage_b.py`（E1/E2 五套件一键验收，exit code 0 = 全过）。
+> 阶段 B `python simulator/test_stage_b.py`（E1/E2 五套件一键验收，exit code 0 = 全过）；
+> 阶段 C 补 D2/D3/D5（`simulator/capture_d.py`）与 D4（C5 视频 + 复现证据）、Reproduce 三件套（2026-10-01 完成）。
 > 验收脚本请走 5510 端口静态服务（python -m http.server 5510）——VS Code Live Server（5500）会因证据文件写入重载页面，打断测试。
 
 ## D1 多节点稳定运行
@@ -18,7 +19,7 @@
 - `e3-fan-running-3d.png` — 同一动作驱动 3D 侧栏"事件：处理中"（风扇运行）
 - `e3-recovered-dashboard.png` — 新数据触发恢复后 Dashboard"已恢复"
 - `e3-broadcast-messages.txt` — 捕获的 `dormmate/{nodeId}/event`（OPEN/HANDLING/RECOVERED）与 `dormmate/priority` 广播消息原文——三端同一状态源证据（同 eventId 贯穿完整生命周期）
-- `e3-mobile-dashboard-sync.png` — 小程序三节点卡片与 Dashboard 同屏数值一致（两端读取同一套实时数据，2026-10-01 补拍）
+- `e3-mobile-dashboard-sync.png` — 小程序三节点实时快查界面（两端读取同一套实时数据，2026-10-01 实拍；PPT 第 3 页移动端图引用此件）
 - `e3-mobile-fan-action.png` — 小程序点"开启风扇"后 toast 与 Dashboard"处理中"同屏（移动执行处理动作 → web 看到变化的联动，2026-10-01 补拍）
 
 ## E1 3D 数字孪生增强（阶段 B，B1-B4）
