@@ -1,13 +1,5 @@
-event {"nodeId": "dorm-b", "eventId": "dorm-b-20260930221959", "state": "OPEN", "time": "2026-09-30 22:19:59", "summary": "发现异常：偏热"}
-event {"nodeId": "dorm-b", "eventId": "dorm-b-20260930221959", "state": "OPEN", "time": "2026-09-30 22:19:59", "summary": "发现异常：偏热"}
-event {"nodeId": "dorm-b", "eventId": "dorm-b-20260930221959", "state": "HANDLING", "time": "2026-09-30 22:19:59", "summary": "已开启风扇，处理中（移动端触发）"}
-event {"nodeId": "dorm-b", "eventId": "dorm-b-20260930221959", "state": "HANDLING", "time": "2026-09-30 22:19:59", "summary": "已开启风扇，处理中（移动端触发）"}
-event {"nodeId": "dorm-b", "eventId": "dorm-b-20260930221959", "state": "RECOVERED", "time": "2026-09-30 22:20:00", "summary": "22:19:59 dorm-b 连续偏热 → 22:19:59 开启风扇并通风 → 22:20:00 恢复正常"}
-priority {"nodeId": "dorm-c", "reason": "优先关注 dorm-c：已连续偏冷 0 分钟；dorm-a、dorm-b 当前正常。", "time": "2026-09-30 22:19:46"}
-priority {"nodeId": "", "reason": "当前 3 个宿舍均正常，无需优先关注", "time": "2026-09-30 22:19:48"}
-priority {"nodeId": "dorm-a", "reason": "优先关注 dorm-a：已连续偏湿 0 分钟；dorm-b、dorm-c 当前正常。", "time": "2026-09-30 22:19:48"}
-priority {"nodeId": "dorm-a", "reason": "优先关注 dorm-a：已连续偏湿 0 分钟；dorm-b、dorm-c 当前正常。", "time": "2026-09-30 22:19:53"}
-priority {"nodeId": "", "reason": "当前 3 个宿舍均正常，无需优先关注", "time": "2026-09-30 22:19:56"}
-priority {"nodeId": "dorm-a", "reason": "优先关注 dorm-a：已连续偏湿 0 分钟；dorm-b、dorm-c 当前正常。", "time": "2026-09-30 22:19:56"}
-priority {"nodeId": "", "reason": "当前 3 个宿舍均正常，无需优先关注", "time": "2026-09-30 22:20:00"}
-priority {"nodeId": "", "reason": "当前 3 个宿舍均正常，无需优先关注", "time": "2026-09-30 22:20:00"}
+event {"nodeId": "dorm-a", "eventId": "dorm-a-20261001184447", "state": "OPEN", "time": "2026-10-01 18:44:47", "summary": "发现异常：偏热"}
+event {"nodeId": "dorm-a", "eventId": "dorm-a-20261001184447", "state": "HANDLING", "time": "2026-10-01 18:44:47", "summary": "已开启风扇，处理中（移动端触发）"}
+event {"nodeId": "dorm-a", "eventId": "dorm-a-20261001184447", "state": "RECOVERED", "time": "2026-10-01 18:44:48", "summary": "18:44:47 dorm-a 连续偏热 → 18:44:47 开启风扇并通风 → 18:44:48 恢复正常"}
+priority {"nodeId": "", "reason": "当前 3 个宿舍均正常，无需优先关注", "time": "2026-10-01 18:44:40"}
+priority {"nodeId": "dorm-b", "reason": "优先关注 dorm-b：已连续偏热 0 分钟；dorm-a、dorm-c 当前正常。", "time": "2026-10-01 18:44:40"}
